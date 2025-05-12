@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRADS LIST</title>
+    <style>
+        body {
+            background-color: #E11A1F;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .back-button {
+            width: 128px;  /* กำหนดความกว้าง */
+			height: 50px;  /* กำหนดความสูง */
+            position: absolute;  /* กำหนดตำแหน่งแบบแน่นอน */
+            top: 30px;  /* ระยะห่างจากด้านบน */
+            left: 30px; /* ระยะห่างจากด้านซ้าย */
+            background-color:#E11A1F; /* สีพื้นหลัง */
+            color: #fff; /* สีข้อความ */
+            padding: 10px 20px; /* ระยะห่างภายในปุ่ม */
+            border: none; /* ไม่มีขอบ */
+            border-radius: 5px; /* มุมโค้งมน */
+            display: flex; /* ใช้ flexbox สำหรับจัดตำแหน่ง */
+            align-items: center; /* จัดข้อความแนวตั้งตรงกลาง */
+            justify-content: center; /* จัดข้อความแนวนอนตรงกลาง */
+            font-size: 24px; /* ขนาดตัวอักษร */
+            cursor: pointer; /* เปลี่ยนเป็นรูปมือเมื่อชี้ */
+            text-decoration: none; /* เอาขีดเส้นใต้ */
+        }
+
+        .back-button:hover {
+            background-color: #0000007f; /* เปลี่ยนสีเมื่อโฮเวอร์ */
+        }
+        
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+         /* ✅ ปรับขนาดรูปให้เหมาะกับมือถือแนวนอน */
+        @media only screen and (max-width: 896px) and (orientation: landscape) {
+            img {
+                width: 70%; /* ลดขนาดรูปภาพเมื่อ iPhone อยู่แนวนอน */
+            }
+        }
+
+        /* 📱 มือถือแนวตั้งปกติ */
+        @media (max-width: 768px) {
+            img {
+                width: 80%;
+            }
+        }
+
+        /* 🖥️ สำหรับหน้าจอใหญ่ เช่น Desktop */
+        @media (min-width: 1200px) {
+            img {
+                width: 512px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <img src="images/Temp_Check_Not Ready_Face.png" alt="#" class="custom-image"/>
+    <!-- <a href="index.html" class="back-button">← กลับ</a> -->
+</body>
+</html>

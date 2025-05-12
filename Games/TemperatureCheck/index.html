@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Check</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: black; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .gallery-container { width: 100vw; height: 100vh; overflow: hidden; position: relative; }
+        .gallery { display: flex; width: 300vw; height: 100vh; transition: transform 0.3s ease-out; will-change: transform; }
+        .slide {
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .slide:nth-child(1) { background-color: #4CB23E; }
+        .slide:nth-child(2) { background-color: #FFBD0F; }
+        .slide:nth-child(3) { background-color: #E11A1F; }
+        .loading-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 2rem;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-screen">Loading...</div>
+    <div class="gallery-container">
+        <div class="gallery">
+            <div class="slide" data-bg="images/Temp_Check_Green.png"></div>
+            <div class="slide" data-bg="images/Temp_Check_Yellow.png"></div>
+            <div class="slide" data-bg="images/Temp_Check_Red.png"></div>
+        </div>
+    </div>
+    <script>
+        const gallery = document.querySelector('.gallery');
+        const slides = document.querySelectorAll('.slide');
+        const loadingScreen = document.querySelector('.loading-screen');
+        let startX = 0, currentIndex = 0, isDragging = false, moved = false;
+
+        function preloadImages() {
+            slides.forEach((slide, index) => {
+                const img = new Image();
+                img.src = slide.getAttribute('data-bg');
+                img.onload = () => {
+                    slide.style.backgroundImage = `url(${img.src})`;
+                    slide.style.backgroundSize = 'cover';
+                    slide.style.backgroundPosition = 'center';
+                    if (index === 0) {
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(() => loadingScreen.style.display = 'none', 500);
+                    }
+                };
+            });
+        }
+
+        function moveGallery(index) {
+            gallery.style.transition = "transform 0.3s ease-out";
+            gallery.style.transform = `translateX(${-index * window.innerWidth}px)`;
+        }
+
+        function handleTouchStart(e) {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+            moved = false;
+        }
+
+        function handleTouchMove(e) {
+            if (!isDragging) return;
+            moved = true;
+            let deltaX = e.touches[0].clientX - startX;
+            gallery.style.transition = "none";
+            gallery.style.transform = `translateX(${(-currentIndex * window.innerWidth) + deltaX}px)`;
+        }
+
+        function handleTouchEnd(e) {
+            isDragging = false;
+            if (!moved) return; // ถ้าไม่มีการลาก จะไม่เปลี่ยนสไลด์
+            let endX = e.changedTouches[0].clientX;
+            if (startX - endX > 50) currentIndex = Math.min(currentIndex + 1, slides.length - 1);
+            else if (endX - startX > 50) currentIndex = Math.max(currentIndex - 1, 0);
+            requestAnimationFrame(() => moveGallery(currentIndex));
+        }
+
+        // รองรับลากเมาส์เพื่อสไลด์
+        function handleMouseDown(e) {
+            startX = e.clientX;
+            isDragging = true;
+            moved = false;
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            moved = true;
+            let deltaX = e.clientX - startX;
+            gallery.style.transition = "none";
+            gallery.style.transform = `translateX(${(-currentIndex * window.innerWidth) + deltaX}px)`;
+        }
+
+        function handleMouseUp(e) {
+            isDragging = false;
+            if (!moved) return; // ถ้าไม่มีการลาก จะไม่เปลี่ยนสไลด์
+            let endX = e.clientX;
+            if (startX - endX > 50) currentIndex = Math.min(currentIndex + 1, slides.length - 1);
+            else if (endX - startX > 50) currentIndex = Math.max(currentIndex - 1, 0);
+            requestAnimationFrame(() => moveGallery(currentIndex));
+        }
+
+        gallery.addEventListener('touchstart', handleTouchStart, { passive: true });
+        gallery.addEventListener('touchmove', handleTouchMove, { passive: true });
+        gallery.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        gallery.addEventListener('mousedown', handleMouseDown);
+        gallery.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+
+        window.addEventListener('load', preloadImages);
+    </script>
+</body>
+</html> <!-- ใช้อันนี้ -->

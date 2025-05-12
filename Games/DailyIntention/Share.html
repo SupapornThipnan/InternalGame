@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta property="og:title" content="GamesFlexx">
+    <meta property="og:description" content="ฉันได้คะแนน [SCORE] คะแนน! มาลองแข่งกับฉันสิ! [DESC]">
+    <meta property="og:image" content="https://gamesflexx.github.io/BoardGame/images/game1.png">
+    <meta property="og:url" content="https://gamesflexx.github.io/BoardGame/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="OOOPENLAB.CC">
+    <meta property="fb:app_id" content="YOUR_FACEBOOK_APP_ID"> <!-- ไม่บังคับ -->
+    <title>แชร์ไปยัง Facebook</title>
+    <script>
+        // ดึงคะแนนจาก URL
+        function getQueryParam(param) {
+            let urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // นำค่าคะแนนไปใส่ใน Open Graph
+        let score = getQueryParam("score") || "0";
+        let desc = getQueryParam("desc") || "มาลองแข่งกับฉันสิ!";
+
+                // อัปเดต Meta Tags
+        document.head.innerHTML = document.head.innerHTML
+            .replace("[SCORE]", score)
+            .replace("[DESC]", desc);
+    </script>
+</head>
+<body>
+    <h1>คุณได้คะแนน <span id="scoreDisplay">0</span> คะแนน!</h1>
+    <p id="descDisplay"></p>
+    <script>
+        document.getElementById("scoreDisplay").innerText = score;
+        document.getElementById("descDisplay").innerText = desc;
+    </script>
+    <p>ลองเล่นเกมของเราที่ <a href="https://gamesflexx.github.io/BoardGame">คลิกที่นี่</a></p>
+</body>
+</html>

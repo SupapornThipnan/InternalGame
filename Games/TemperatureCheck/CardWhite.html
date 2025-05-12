@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRADS LIST</title>
+    <style>
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .back-button {
+            width: 128px;  /* กำหนดความกว้าง */
+			height: 50px;  /* กำหนดความสูง */
+            position: absolute;  /* กำหนดตำแหน่งแบบแน่นอน */
+            top: 30px;  /* ระยะห่างจากด้านบน */
+            left: 30px; /* ระยะห่างจากด้านซ้าย */
+            background-color: #d8d8d8; /* สีพื้นหลัง */
+            color: #7e7d7d; /* สีข้อความ */
+            padding: 10px 20px; /* ระยะห่างภายในปุ่ม */
+            border: none; /* ไม่มีขอบ */
+            border-radius: 5px; /* มุมโค้งมน */
+            display: flex; /* ใช้ flexbox สำหรับจัดตำแหน่ง */
+            align-items: center; /* จัดข้อความแนวตั้งตรงกลาง */
+            justify-content: center; /* จัดข้อความแนวนอนตรงกลาง */
+            font-size: 24px; /* ขนาดตัวอักษร */
+            cursor: pointer; /* เปลี่ยนเป็นรูปมือเมื่อชี้ */
+            text-decoration: none; /* เอาขีดเส้นใต้ */
+        }
+
+        .back-button:hover {
+            background-color: #0000007f; /* เปลี่ยนสีเมื่อโฮเวอร์ */
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← กลับ</a>
+</body>
+</html>

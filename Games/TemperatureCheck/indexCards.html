@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- Responsive -->
+    <title>Temperature Check</title>
+	<!--<link rel="stylesheet" href="css/styles.css"> -->
+    <style>
+        /* ตั้งค่า body ให้อยู่ตรงกลาง */
+        body {
+            background-color: #222;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 15px;
+        }
+
+        /* ปุ่มที่ใช้รูปภาพ */
+        .image-button {
+            width: 80%; /* กำหนดให้กว้าง 80% ของหน้าจอ */
+            max-width: 400px; /* จำกัดขนาดสูงสุด */
+            height: 150px; /* ความสูงของปุ่ม */
+            border: none;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+        }
+
+        /* เอฟเฟกต์ตอนกดปุ่ม */
+        .image-button:active {
+            transform: scale(0.95);
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ปุ่มแต่ละปุ่มใช้รูปภาพแทน */
+        .green { background-image: url('images/button/Temp_Check_01.png'); }
+        .yellow { background-image: url('images/button/Temp_Check_02.png'); }
+        .red { background-image: url('images/button/Temp_Check_03.png'); }
+    </style>
+</head>
+<body>
+        <button class="image-button green" onclick="window.location.href='CardGreen.html';"></button>
+        <button class="image-button yellow" onclick="window.location.href='CardYellow.html';"></button>
+        <button class="image-button red" onclick="window.location.href='CardRed.html';"></button>
+        <!--
+        <a href="CardGreen.html"><div class="button-green"></div></a>
+        <a href="CardYellow.html"><div class="button-yellow"></div></a>
+        <a href="CardRed.html"><div class="button-Red"></div></a> 
+        -->
+    </div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+body {
+            background-color: #333;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 30px;
+}
+
+.game-list {
+    display: flex;
+    flex-direction: column;  /* จัดปุ่มเรียงในแนวตั้ง */
+    align-items: center; 
+    gap: 20px; /* ระยะห่างระหว่างปุ่ม */
+}
+
+.game-list a {
+    text-decoration: none; /* ลบขีดเส้นใต้ลิงก์ */
+    width: 100%; /* ความกว้างเริ่มต้นของปุ่ม */
+}
+
+.game-list div {
+    width: 450px;  /* ปุ่มจะเต็มพื้นที่ตามความกว้างของ a */
+    height: 150px;  /* กำหนดความสูงของปุ่ม */
+    border-radius: 10px; /* มุมโค้งมน */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* เงาเพื่อความสวยงาม */
+}
+
+/* สีของปุ่ม */
+.button-green { background-color: #0a640a; }
+.button-yellow { background-color: #ffeb00; }
+.button-Red { background-color: #ff0000; }
+.button-Rainbow {
+    background: linear-gradient(to bottom, red, orange, yellow, green, blue, indigo, violet);
+}
+.button-White { background-color: #ffffff; }
+
+ /* ปุ่มที่ใช้รูปภาพ */
+ .image-button {
+    width: 80%; /* กำหนดให้กว้าง 80% ของหน้าจอ */
+    max-width: 400px; /* จำกัดขนาดสูงสุด */
+    height: 120px; /* ความสูงของปุ่ม */
+    border: none;
+    background-size: cover;
+    background-position: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+}
+
+/* เอฟเฟกต์ตอนกดปุ่ม */
+.image-button:active {
+    transform: scale(0.95);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* ปุ่มแต่ละปุ่มใช้รูปภาพแทน */
+.green { background-image: url('green.png'); }
+.yellow { background-image: url('yellow.png'); }
+.red { background-image: url('red.png'); }
