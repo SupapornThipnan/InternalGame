@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "chrome",
+            "name": "https://supapornthipnan.github.io/InternalGame/Games/PersonalValue/index.html",
+            "request": "launch",
+            "url": "https://supapornthipnan.github.io/InternalGame/Games/PersonalValue/index.html"
+        }
+    ]
+}
