@@ -546,6 +546,9 @@ const DEF = [
    ],unlockCost:{'มอสส์เรืองแสง':5,'คริสตัล':5,'คริสตัลน้ำแข็ง':3}},
 ];
 
+// Auto-assign prereq: ด่านแต่ละด่านต้องปลดล็อคด่านก่อนหน้าก่อน
+DEF.forEach((d,i) => { d.prereq = i > 0 ? DEF[i-1].id : null; });
+
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
@@ -562,6 +565,12 @@ Object.keys(ITEMS).forEach(k => G.inv[k]=0);
 const has = cost => !cost || Object.entries(cost).every(([k,v])=>(G.inv[k]||0)>=v);
 const pay = cost => Object.entries(cost).forEach(([k,v])=>G.inv[k]-=v);
 const sn  = s => s.name.length>12 ? s.name.slice(0,12)+'…' : s.name;
+const prereqMet = s => {
+  if(!s.prereq) return true;
+  const prev = G.stages.find(x=>x.id===s.prereq);
+  return prev && prev.unlocked;
+};
+const prereqStage = s => s.prereq ? G.stages.find(x=>x.id===s.prereq) : null;
 
 function addLog(msg,type=''){G.log.unshift({day:G.day,msg,type});if(G.log.length>50)G.log.pop()}
 
@@ -600,7 +609,12 @@ function craft(id,idx){
 }
 function unlock(id){
   const s=G.stages.find(x=>x.id===id);
-  if(!s||s.unlocked||!has(s.unlockCost))return;
+  if(!s||s.unlocked)return;
+  if(!prereqMet(s)){
+    const prev=prereqStage(s);
+    toast(`🔒 ต้องปลดล็อค "${prev?.name}" ก่อน!`,'var(--red)');return;
+  }
+  if(!has(s.unlockCost)){toast('❌ ของยังไม่พอ','var(--red)');return;}
   pay(s.unlockCost);s.unlocked=true;
   toast(`🎉 ปลดล็อค ${s.emoji} ${s.name}!`,'var(--purple)');
   addLog(`ปลดล็อค ${s.emoji} ${s.name}`,'unlock');render();
@@ -734,10 +748,17 @@ function cardHTML(s){
   if(s.type==='passive'){
     body+=`<div class="item-row">${s.produces.map(i=>`<div class="item-tag">${ITEMS[i]||'?'} ${i}</div>`).join('')}</div>`;
     if(!s.unlocked){
-      body+=costHTML(s.unlockCost);
-      const ok=has(s.unlockCost);
-      body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
-        ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+      const pOk=prereqMet(s);
+      const prev=prereqStage(s);
+      if(!pOk){
+        body+=`<div class="cost-box" style="border-color:#5a2a2a"><div class="cost-title" style="color:var(--red)">🔒 ต้องปลดล็อคก่อน:</div><div class="cost-tags"><span class="ct bad">${prev?.emoji||''} ${prev?.name||''}</span></div></div>`;
+        body+=`<button class="btn btn-unlock" disabled>🔒 ปลดล็อค ${prev?.name||''} ก่อน</button>`;
+      } else {
+        body+=costHTML(s.unlockCost);
+        const ok=has(s.unlockCost);
+        body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
+          ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+      }
     } else {
       const partial=G.time/100;
       let pct=0;
@@ -756,12 +777,19 @@ function cardHTML(s){
 
   if(s.type==='craft'){
     if(!s.unlocked){
-      body+=costHTML(s.unlockCost);
-      const ok=has(s.unlockCost);
-      body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
-        ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+      const pOk=prereqMet(s);
+      const prev=prereqStage(s);
+      if(!pOk){
+        body+=`<div class="cost-box" style="border-color:#5a2a2a"><div class="cost-title" style="color:var(--red)">🔒 ต้องปลดล็อคก่อน:</div><div class="cost-tags"><span class="ct bad">${prev?.emoji||''} ${prev?.name||''}</span></div></div>`;
+        body+=`<button class="btn btn-unlock" disabled>🔒 ปลดล็อค ${prev?.name||''} ก่อน</button>`;
+      } else {
+        body+=costHTML(s.unlockCost);
+        const ok=has(s.unlockCost);
+        body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
+          ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+      }
     } else {
-      body+='<div class="recipes">';
+      body+='<div class="recipes">'; // craft unlocked recipes
       s.recipes.forEach((r,i)=>{
         const can=has(r.ing);
         const ings=Object.entries(r.ing).map(([k,v])=>{
