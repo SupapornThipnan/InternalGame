@@ -765,7 +765,320 @@
     scaled height (64) while getVisualHeight('tableSmall') stays pinned (32);
     with no custom image uploaded, both return the same pinned value (32),
     so nothing changes for objects still using the default procedural shape.
+  v3.55 (2026-07-08) — Added adjustable "Offset พื้น (px)" for tableSmall and
+    giftBox custom images, per พี่แยม's request — same idea NPC/Player
+    already had (NPC_GROUND_OFFSET): lets an uploaded photo be nudged up
+    (negative) or down (positive) from the tile's ground anchor when its own
+    empty margin doesn't match drawSprite's built-in prism assumption.
+    New TABLE_SMALL_GROUND_OFFSET / GIFTBOX_GROUND_OFFSET (mutable `let`,
+    default TILE_H*0.3 — exactly the value drawSprite already fell back to,
+    so nothing visually moves until พี่แยม adjusts it). drawObject's custom-
+    image branch now picks the right offset per objType (npc/tableSmall/
+    giftBox each get their own; every other type still falls through to
+    drawSprite's default). giftBox-as-topper (sitting on the big table) also
+    reuses GIFTBOX_GROUND_OFFSET so the same uploaded image looks consistent
+    whether placed on ground or as a table topper; vase-as-topper is
+    unchanged (vase never got its own adjustable offset). Two new inputs
+    ("โต๊ะเล็ก Offset พื้น" / "กล่องขวัญ Offset พื้น", range -200..200, same
+    bounds as NPC's) added to the existing image-size build panel, wired
+    into the existing "ใช้ขนาดนี้" button — no new button needed. A Node
+    unit test confirmed the per-type offset selection, the topper-only-for-
+    giftBox reuse, and the -200/200 clamp math; a jsdom smoke test confirmed
+    the new inputs default to 19 (TILE_H*0.3) on load and correctly update/
+    clamp after clicking apply, with no runtime errors.
+  v3.56 (2026-07-08) — Drag-palette cards in the "วางวัตถุ" tab now mirror
+    whatever custom image is uploaded for that type, per พี่แยม's request —
+    previously only the "ใส่รูปเอง" tab's own preview thumbnail showed the
+    uploaded image; the drag cards พี่แยม actually picks objects from kept
+    showing the placeholder emoji even after a real photo was set. New
+    setPaletteIcon(kind, type, dataUrl) finds the matching
+    .pal-item[data-kind][data-type] card and sets/clears its
+    background-image + hides/shows its .pal-emoji span, using the exact same
+    approach setThumbnail/clearThumbnail already used for the upload-tab
+    preview. Called from inside setThumbnail/clearThumbnail themselves, so
+    all three existing call sites (fresh upload, restoring saved images from
+    IndexedDB on page load, importing a saved-images .json) stay in sync
+    automatically with no new call sites needed. Types without an upload
+    slot (wallbox, wallbox5, frame, frameSmall) have no matching selector
+    match, so this no-ops for them and their cards are untouched. Only the
+    front-facing image is mirrored — "ด้านหลัง" (object-back) uploads don't
+    touch the palette icon, since the card should show one fixed look, not
+    cycle with facing.
+  v3.57 (2026-07-08) — Moving a small-footprint object (e.g. tableSmall) that
+    has other small-footprint objects stacked directly on top of it (same
+    quadrant, higher layer — e.g. a phone on a small table) now carries those
+    "passengers" along instead of leaving them behind, per พี่แยม's bug
+    report: the big table's toppers already moved with it (they live inside
+    the table's own state.toppers dict), but tableSmall's stacked items are
+    independent objects at higher layers via layerKey, so picking up just the
+    base left them orphaned in place. The mousedown pickup handler now walks
+    up the contiguous run of occupied layers above the picked object in its
+    quadrant (stopping at the first gap — a stack never has holes) and pulls
+    each one into movingObj.passengers, deleting them from `objects` too so
+    they don't render floating in place mid-drag. drawMovingGhost mirrors
+    them stacked above the dragged ghost using a manually-accumulated lift
+    (getStackLift can't be reused since it only counts objects really on the
+    board, and this hypothetical stack isn't "real" until a valid drop
+    commits it) — so passengers ride visibly along instead of vanishing
+    during the drag. On mouseup, the whole stack only commits if EVERY
+    passenger's target layer is also free; if any layer is blocked, the
+    entire stack (base + passengers) reverts to its original position —
+    nothing is ever dropped halfway or silently lost. Also guarded: a
+    passenger-carrying object can't be dropped onto a table corner as a
+    topper (toppers are a single slot, not a layered stack, so that would've
+    silently deleted the passenger) — that case is now rejected the same way
+    as a blocked layer. Same revert-with-passengers handling was added to the
+    existing "switching build/play mode mid-drag cancels the move" path.
+    Picking up only the TOPMOST item in a stack (not its base) is unchanged —
+    zero passengers get collected, so it still moves alone. A Node unit test
+    (this environment's jsdom is currently broken — needs Node ^20.19.0,
+    installed is 20.15.1 — so the usual jsdom smoke test couldn't run)
+    confirmed: a 2-high stack moves and lands together; picking up only the
+    top item leaves the base untouched; an invalid target (a blocked
+    passenger layer) reverts the entire stack with nothing lost; a 3-high
+    stack preserves its exact layer order after moving; and a passenger-
+    carrying vase is correctly rejected from becoming a table topper instead
+    of losing its passenger.
+  v3.58 (2026-07-08) — Right-clicking a small-footprint base (e.g. tableSmall)
+    to flip/rotate it now also flips whatever's stacked directly on top of it
+    in the same quadrant, per พี่แยม's follow-up to v3.57's move fix — same
+    "the stack should act like one physical object" idea, just for the
+    right-click orientation gesture instead of dragging. New applyFlipStep
+    (state, type) factors out the existing per-object flip logic (full 4-way
+    front/back×flip cycle for FACING_CYCLE_TYPES, plain flip toggle for
+    everything else) so it can be applied identically to the base and to
+    each passenger. New getStackAbove(c,r,sub,layer) is a read-only sibling
+    of v3.57's passenger-collection loop — same contiguous-run-stops-at-
+    first-gap walk, just without deleting anything from `objects`, since
+    nothing is being picked up here. The contextmenu handler now calls
+    applyFlipStep on the clicked object as before, then — only if it's
+    small-footprint — also calls it on every object getStackAbove finds
+    above it. Right-clicking a passenger directly (not the base) is
+    unchanged: only that one item flips, the rest of the stack is untouched.
+    A Node unit test (jsdom still can't run in this environment — see
+    v3.57's note) confirmed: flipping a tableSmall base advances a giftBox
+    passenger through the exact same step in lockstep over two clicks;
+    right-clicking the passenger directly leaves the base alone; a plain
+    (non-facing-cycle) passenger just toggles flip like its base does; a
+    3-high stack flips fully from the bottom; and a base with nothing
+    stacked on it still flips normally with no phantom passengers created.
+  v3.59 (2026-07-08) — Fixed the hover/click area for a custom-uploaded
+    object image ballooning into invisible transparent padding around the
+    artwork, per พี่แยม's bug report: a nightstand photo apparently had extra
+    empty margin above the actual furniture in the file, and hovering that
+    empty-looking gap (well above the visible object) still lit up the
+    yellow hover outline. Root cause: getVisualHeight's forHitTest path
+    (v3.54) sized the hit-test hexagon off the uploaded image's raw
+    naturalHeight — the WHOLE file, padding included — instead of just the
+    visible artwork. New computeOpaqueHeightPx(img) scans an uploaded
+    image's pixels ONCE (cached as img.opaqueHeightPx, a plain extra
+    property on the Image object, so it's never recomputed on the hot
+    mousemove/hover path) to find the tight top/bottom bounds of its actual
+    non-transparent content; wired into applyCustomImage so it runs for
+    every object/object-back image, whether from a fresh upload, restoring
+    from IndexedDB on page load, or importing a saved-images .json — all
+    three already funnel through that one function. getVisualHeight's
+    forHitTest branch now multiplies opaqueHeightPx by the same contain-fit
+    scale instead of naturalHeight, so the hit area matches what's actually
+    drawn. Deliberately scoped to forHitTest ONLY — the pinned/small display
+    outline (forHitTest false/omitted, used by drawHoverOutline) still reads
+    naturalHeight exactly as before, untouched, so no object's visible
+    yellow outline changes size from this fix. Falls back to the old
+    naturalHeight behavior whenever opaqueHeightPx isn't available yet (e.g.
+    the one-time canvas pixel read failed) — wrapped in try/catch, never
+    throws. A Node unit test (jsdom still can't run in this environment —
+    see v3.57's note; this one also needs a real <canvas>, which plain Node
+    doesn't have either, so only the pure alpha-scanning and height-formula
+    logic were tested directly) confirmed: a synthetic image with padding on
+    both top and bottom trims to exactly its opaque band; a fully-opaque
+    image is untouched; a fully-transparent image safely falls back to the
+    full height instead of collapsing to zero; a top-only-padding case (the
+    exact nightstand scenario) trims off just the margin; and
+    getVisualHeight's forHitTest branch correctly picks opaqueHeightPx when
+    present, leaves the non-hit-test display height alone, and falls back to
+    naturalHeight when no trim data exists yet.
+  v3.60 (2026-07-08) — Corrected a formula bug in v3.59's fix: พี่แยม tested
+    v3.59 with a real PNG (transparent background, confirmed) and the hover
+    area was still extending above the visible nightstand. Re-deriving the
+    math from drawSprite's actual anchoring exposed the bug — v3.59 cached
+    the TIGHT opaque bounding-box height (bottomOpaqueRow - topOpaqueRow),
+    but drawSprite() anchors the BOTTOM EDGE OF THE WHOLE FILE to the ground
+    point (`ctx.drawImage(img, x-w/2, y-h+go, w, h)` — h is the full scaled
+    file height, not just the opaque part), so any transparent margin BELOW
+    the artwork was silently subtracted from the hit height too — making
+    v3.59's number always ≤ correct (never larger), which can't explain a
+    still-oversized hit area on its own. Fixed computeOpaqueHeightPx to only
+    find the FIRST opaque row from the top (img.opaqueTopPx) — bottom padding
+    is irrelevant since the anchor is already pinned to the file's bottom
+    edge regardless — and getVisualHeight's forHitTest branch now returns
+    (naturalHeight - opaqueTopPx) * scale instead. A Node unit test
+    (synthetic pixel buffers, same reasoning as v3.59's — no real <canvas> in
+    this Node environment) confirmed the new formula against the specific
+    top+bottom-padding case that would have exposed v3.59's bug, plus the
+    no-padding and fully-transparent fallback cases. Since this formula
+    correction alone doesn't obviously explain the still-oversized area
+    พี่แยม saw either (both old and new formulas can only shrink the hit
+    height relative to the pre-v3.59 naturalHeight baseline, never grow it),
+    a TEMPORARY diagnostic console.log was added to computeOpaqueHeightPx
+    (clearly marked, logs once per image load: naturalW/H, opaqueTopPx, and
+    top-margin %) so the actual numbers can be read from the browser
+    DevTools console next time — to be removed once the real cause is
+    confirmed and fixed for good.
+  v3.61 (2026-07-08) — The "ขนาดรูป" build-panel numbers (table/tableSmall/
+    vase/giftBox width, height, and ground offsets, plus NPC/Player's own
+    width/height/offset) now persist across a page reload, per พี่แยม's
+    request — previously these lived only in plain `let` variables, so
+    dialing in a custom value and reloading silently reset everything back
+    to the hardcoded defaults, the same class of problem the uploaded images
+    themselves had before IndexedDB (v3.51) fixed it for them. New
+    saveSettingToStorage(name, value)/loadSettingFromStorage(name) reuse
+    that exact same IndexedDB database/object store — it's a schemaless
+    key→value store, so a numeric setting under a 'setting:'-prefixed key
+    (settingStorageKey) coexists safely alongside the dataURL-valued image
+    keys (which are always 'kind_type', never starting with that prefix) —
+    no new database, no version bump, no migration needed. Both "ใช้ขนาดนี้"
+    buttons (NPC's own, and table/tableSmall/vase/giftBox's shared one) now
+    call saveSettingToStorage for each value right after committing it to
+    its `let` variable, same moment the value already gets written to its
+    input field. New restoreImageSizeSettings() mirrors restoreOrMigrateImage
+    (async, IndexedDB reads aren't synchronous) and runs once after both
+    apply-button handlers are wired, so every input element it might update
+    already exists — each of the 13 settings restores independently via a
+    small `restore(name, apply)` helper that only calls `apply` when the
+    loaded value is a finite number, so one missing/corrupted setting can
+    never block or corrupt the others. A Node unit test (real IndexedDB
+    isn't available in this Node environment either, so this mirrors the
+    key-prefixing and the restore-guard logic against a mocked in-memory
+    store) confirmed: none of the 13 setting keys collide with any real
+    image storage key; save→load round-trips the exact value; the restore
+    guard correctly accepts a valid number but rejects null/NaN/non-number
+    values (leaving the hardcoded default untouched instead of corrupting
+    it); and a Promise.all batch of restores with one missing value doesn't
+    block the others from restoring correctly.
+  v3.62 (2026-07-08) — Found and fixed a second, real bug behind พี่แยม's
+    still-oversized tableSmall hover area (v3.59/v3.60 helped but didn't
+    fully explain it): getSilhouettePolygon's generic hexagon path — used by
+    tableSmall/giftBox — never accounted for TABLE_SMALL_GROUND_OFFSET /
+    GIFTBOX_GROUND_OFFSET at all. drawSprite() DOES shift the actually-drawn
+    custom image down/up by that offset (the "Offset พื้น (px)" input,
+    v3.55), so the silhouette/hit-test polygon stayed anchored to the WRONG
+    (un-offset) ground point while the real image moved away from it —
+    leaving a phantom gap above the object that still registered as hover,
+    sized exactly to พี่แยม's own configured offset (15px for tableSmall in
+    this case). NPC already had this exact fix (npcCy = cy + NPC_GROUND_OFFSET
+    when a custom image is active) since npcCy was introduced — tableSmall/
+    giftBox just never got the same treatment when their own ground-offset
+    inputs shipped in v3.55. Fixed getSilhouettePolygon (ground placement)
+    and getTopperSilhouettePolygon (giftBox-as-topper on the big table,
+    which reuses GIFTBOX_GROUND_OFFSET too per v3.55) to shift by the
+    relevant offset whenever a custom image is active — ignored when there's
+    no custom image, matching NPC's pattern, since the procedural vector
+    shapes (drawTableSmall/drawGiftBox) always ignore this offset too. A
+    Node unit test confirmed the shift direction/magnitude (ty = cy +
+    offset, tableSmall and giftBox use their own independent offsets, no
+    custom image = untouched, other types completely unaffected) and that
+    the hexagon's roof apex moves strictly CLOSER to the ground point after
+    the fix, never farther. Flagged honestly to พี่แยม: this closes exactly
+    the offset-sized part of the gap (15px here) — if the configured "ขนาด
+    รูป" max-height itself (e.g. 64px) is large relative to how tall the
+    artwork actually looks, some hover area above the object may legitimately
+    remain by v3.54's original design (the whole configured box is meant to
+    be hoverable for a tall custom image) rather than being a bug; the
+    TEMPORARY debug console.log from v3.60 is still in place to help confirm
+    if any gap remains after this fix.
+  v3.63 (2026-07-08) — Design change per พี่แยม's explicit call, after the
+    v3.59→v3.62 series of edge-case chases never fully closed the gap: the
+    yellow select outline for tableSmall/giftBox is now a fixed indicator of
+    the object's plain 1x1 footprint at its grid/quadrant position — full
+    stop. It no longer reads the uploaded custom image AT ALL: not its size,
+    aspect ratio, transparent padding, or ground offset. getVisualHeight's
+    pin (TABLE_SMALL_HEIGHT / GIFTBOX_HEIGHT, previously only applied when
+    forHitTest was false/omitted) is now returned unconditionally — the
+    forHitTest branch that made hit-testing size itself off the real image
+    (v3.54) no longer applies to these two types at all. Reverted v3.62's
+    ground-offset shift in getSilhouettePolygon and
+    getTopperSilhouettePolygon (giftBox-as-topper) for the same reason —
+    offset only nudges the DRAWN image now, never the outline. Removed the
+    v3.60 TEMPORARY debug console.log from computeOpaqueHeightPx, no longer
+    needed for tableSmall/giftBox (that trimming logic still runs for
+    table/vase/npc, which are completely unchanged — they never had this pin
+    and still size their hit-test off the real uploaded image, same as
+    always). Trade-off พี่แยม explicitly accepted: a custom photo that
+    visually extends taller than the fixed footprint is only
+    clickable/hoverable within that footprint now, not across its whole
+    visible height — reintroducing the exact limitation v3.54 was written to
+    remove, traded deliberately for zero remaining edge cases. A Node unit
+    test confirmed: tableSmall/giftBox return the identical pinned height
+    for forHitTest true and false (display and hit-test are now the same
+    shape); presence/absence of a custom image makes no difference at all;
+    and every other type (tested with vase) is completely unaffected — still
+    sizes itself off the real image exactly as before.
+  v3.64 (2026-07-09) — Fixed a real player-movement collision bug, per
+    พี่แยม's report of walking through walls/tables/trees/rocks/boxes/
+    tableSmall in Play mode. Two compounding bugs in the old cellBlocked/
+    tryMove, both confirmed with real step-by-step simulations using the
+    actual movement constants (player.speed=3.2, dt clamped 0.05, matching
+    loop()) before AND after the fix — not just reasoned about:
+    (1) cellBlocked snapped the player's continuous position to the NEAREST
+    half-step and did an exact-key lookup there, which only "owned" a
+    0.5-wide collision band around each object's placement point — but
+    every object visually renders a full 1.0-wide footprint (adjacent tile
+    centers are 1.0 grid unit apart with diamonds touching edge-to-edge, per
+    gridToScreen), so a player could walk up to 25% of a tile's width
+    INTO an object before the snap-based check ever caught up. Simulated: a
+    player walking straight into a wall at col 5 (real edge at col 4.5)
+    used to stop at col 4.64 — now stops at col 4.48, right at the edge.
+    (2) Worse: because tryMove checked the col-move and row-move
+    SEQUENTIALLY, with the row-check reusing player.col AFTER the col-check
+    had potentially already updated it, a diagonal approach (this game's
+    ONLY movement input — W/A/S/D are all diagonal combos, there's no
+    pure-axis key) could exploit that stale/fresh mismatch to slide
+    diagonally all the way around/through a lone 1x1 obstacle without ever
+    being blocked, since neither axis-check alone ever landed on the
+    object's own key at the same instant. Simulated: approaching a lone
+    tableSmall diagonally used to end with the player at (56.57, 56.00) —
+    walked straight past it, never stopped once.
+    Replaced both with pointBlocked(col,row): a continuous point-in-
+    footprint test (every blocking tile, full- or small-footprint alike,
+    treated as a uniform 1x1 square — small-footprint keeps the existing
+    "any occupied quadrant blocks the WHOLE tile" rule) — and rewrote
+    tryMove to check the FULL diagonal destination first (the common case,
+    since input is always diagonal), falling back to an axis-only slide
+    ONLY when the diagonal is blocked, and critically making the two
+    fallback slides mutually exclusive (else-if, not two independent ifs).
+    That last part mattered: an earlier draft of this fix tested each slide
+    independently and still let the player sneak diagonally into an
+    obstacle's footprint, because each slide only moves ONE axis while the
+    other still sits at its old, outside-the-obstacle value — individually
+    each looked "free," but applying both combined back into the exact
+    blocked point. Caught by testing every frame's position, not just the
+    final one. anyBlockingInQuadrant, now dead code (its only caller was the
+    removed cellBlocked), was deleted.
+    Verified with simulations (all re-run against the corrected code, not
+    just reasoned through): straight-line approach into a wall now stops
+    right at its true visual edge; diagonal approach into a lone tableSmall
+    is NEVER inside its footprint on any of 500 simulated frames (checked
+    every frame, not just the end state) while still naturally sliding
+    around it if the player keeps holding the same diagonal key — confirmed
+    as correct/expected behavior for a standalone 1-tile obstacle, distinct
+    from the actual bug (visually clipping through it); switching to a
+    different diagonal key still lets the player route around an obstacle
+    they're stuck against; and — the critical regression check — a long
+    CONTINUOUS wall line (a real level boundary, not an isolated prop)
+    remains a genuine barrier: the player slides along its face for 226
+    grid-units without ever crossing to the far side, confirming the
+    "slide around a standalone obstacle" behavior doesn't accidentally let
+    a connected wall be slipped through too.
 -->
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1111,7 +1424,7 @@
 <div>
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.54: แก้ปัญหาคลิก/hover โต๊ะเล็ก-กล่องของขวัญที่ใส่รูปเอง ไม่ครอบคลุมทั้งรูป — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.54</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.64: แก้บั๊กชนวัตถุจริงจัง — ผู้เล่นเดินทะลุกำแพง/โต๊ะ/ต้นไม้/หิน/กล่อง/โต๊ะเล็กได้ ตอนนี้ชนตรงขอบจริงแล้ว — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.64</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -1700,15 +2013,6 @@
   function anyQuadrantOccupied(c, r){
     return QUADRANT_KEYS.some(q => anyLayerOccupied(c, r, q));
   }
-  // true if any layer in this quadrant holds a blocking object — collision is
-  // still whole-tile granularity, so any blocking layer blocks the whole tile
-  function anyBlockingInQuadrant(c, r, sub){
-    for (let l = 0; l < MAX_LAYERS; l++){
-      const o = objects.get(layerKey(c, r, sub, l));
-      if (o && isBlockingObject(o)) return true;
-    }
-    return false;
-  }
 
   // cumulative real height of whatever is stacked BELOW a given layer in a
   // quadrant (layers 0..layer-1) — each layer contributes its OWN occupant's
@@ -2009,41 +2313,26 @@
     return VISUAL_HEIGHT[type] || TILE_H;
   }
 
-  // `forHitTest` (v3.54): tableSmall/giftBox pin their height below to a
-  // fixed small value for DISPLAY purposes (outline shown on hover) and
-  // stacking-lift, per v3.49/v3.53's fix — but resolveObjectKeyAt/
-  // findTopperAt reused this exact same pinned height for deciding whether
-  // the mouse is actually hovering the object, which made a tall custom
-  // photo (e.g. a real nightstand+phone reference image) only clickable
-  // near its base, nowhere near where it visually looks clickable. Passing
-  // forHitTest=true skips the pin and returns the REAL image-driven height
-  // instead (same formula every other custom-image type already uses) —
-  // used ONLY by the hit-test call sites; the drawn outline and stacking
-  // lift still call this with no 2nd argument and stay pinned/small exactly
-  // as before, so the v3.49/v3.53 "don't look oversized" fix is untouched.
+  // tableSmall/giftBox (v3.49/v3.53, RE-PINNED v3.63): both types pin their
+  // height to a fixed small value ALWAYS now — for DISPLAY (outline shown on
+  // hover), stacking-lift, AND hit-testing alike, completely ignoring
+  // whatever custom image is uploaded (size, aspect ratio, transparent
+  // padding, ground offset — none of it matters anymore for these two
+  // types). This replaces the v3.54→v3.62 approach of sizing hit-testing
+  // off the real uploaded image instead, which chased a series of edge
+  // cases (transparent-padding trim in v3.59/v3.60, missing ground-offset
+  // compensation in v3.62) without ever fully closing the gap — per
+  // พี่แยม's explicit call: lock the yellow select outline to the object's
+  // actual 1x1 footprint and position, full stop, so behavior is 100%
+  // predictable regardless of what gets uploaded. Trade-off พี่แยม accepted:
+  // if an uploaded photo visually extends taller than this fixed footprint,
+  // the part sticking out above it is no longer clickable/hoverable — same
+  // limitation these two types had before v3.54 introduced the real-image
+  // hit-test in the first place. table/vase/npc are UNCHANGED — they never
+  // had this pin and still size their hit-test off the real image below.
   function getVisualHeight(type, forHitTest){
-    if (!forHitTest){
-      // tableSmall (v3.49) is a special case: unlike table/vase/npc, its own
-      // footprint is a small 1x1 sub-cell quadrant, so letting the hover/
-      // selection hexagon (and vase-topper stacking lift) balloon with the
-      // uploaded image's real height — same as every other custom-image type
-      // below — made it look 2x the size of a normal Block once the image box
-      // grew to 64x64 (v3.48). พี่แยม asked for the hitbox/outline to always
-      // stay pinned to a normal-Block-sized footprint no matter what image is
-      // uploaded, so this ignores the custom image entirely for tableSmall —
-      // the image itself can still render up to 64x64 on screen (drawObject's
-      // drawSprite call is untouched), only the outline/stacking-lift math
-      // here is fixed. Trade-off: a vase stacked on a tall tableSmall image
-      // will sit at the fixed 32px mark (TABLE_SMALL_HEIGHT), which may look
-      // slightly embedded in a visually tall custom image instead of sitting
-      // exactly on its top edge — accepted as the better default by พี่แยม.
-      if (type === 'tableSmall') return TABLE_SMALL_HEIGHT;
-      // giftBox (v3.53) gets the exact same fixed-height treatment from
-      // launch, proactively — same reasoning as tableSmall above: it's a
-      // small 1x1 sub-cell item too, so an inflated outline/stacking-lift
-      // would look just as oversized once someone uploads a tall image.
-      if (type === 'giftBox') return GIFTBOX_HEIGHT;
-    }
+    if (type === 'tableSmall') return TABLE_SMALL_HEIGHT;
+    if (type === 'giftBox') return GIFTBOX_HEIGHT;
     // npc/table/vase have a front/back image pair — use whichever is
     // uploaded for sizing (they're expected to share the same intended
     // sprite box, so it doesn't matter which one drives the contain-fit
@@ -2057,6 +2346,17 @@
       const maxW = getObjectSpriteMaxW(type);
       const maxH = getImageMaxH(type);
       const scale = Math.min(maxW / customImg.naturalWidth, maxH / customImg.naturalHeight);
+      // hit-testing (v3.59, corrected v3.60 — see computeOpaqueHeightPx's
+      // comment) measures from drawSprite's actual anchor point (the BOTTOM
+      // of the whole file) up to where the real artwork starts
+      // (naturalHeight - opaqueTopPx), instead of the whole file's raw
+      // naturalHeight, so an empty transparent margin above the artwork
+      // doesn't inflate the hover/click area beyond what's visibly drawn.
+      // The display outline (forHitTest false/omitted) is untouched and
+      // still uses the full naturalHeight.
+      if (forHitTest && customImg.opaqueTopPx != null){
+        return (customImg.naturalHeight - customImg.opaqueTopPx) * scale;
+      }
       return customImg.naturalHeight * scale;
     }
     return VISUAL_HEIGHT[type] || TILE_H;
@@ -2112,6 +2412,14 @@
     }
     const { w, h } = getGuideSize(objType);
     const hw = w / 2, hh = h / 2;
+    // tableSmall/giftBox (v3.62, REVERTED v3.63): v3.62 briefly shifted this
+    // polygon by TABLE_SMALL_GROUND_OFFSET / GIFTBOX_GROUND_OFFSET so it
+    // tracked wherever a custom image visually landed. Superseded by v3.63's
+    // bigger decision (getVisualHeight's comment above) to lock this
+    // outline to the object's plain grid/quadrant position instead — a
+    // fixed footprint marker that never reads the custom image or its
+    // offset at all, so cy is used completely as-is here again, same as
+    // every other non-NPC type.
     return [
       [cx, cy - height - hh],
       [cx + hw, cy - height],
@@ -2139,13 +2447,17 @@
     const { w, h } = getGuideSize(type);
     const hw = w / 2, hh = h / 2;
     const height = getVisualHeight(type, forHitTest);
+    // giftBox-as-topper (v3.62, REVERTED v3.63) — see getSilhouettePolygon's
+    // matching comment: giftBox's ground offset no longer nudges this
+    // polygon at all, superseded by locking it to the topper's plain
+    // quadrant/corner position instead.
     return [
       [cx, cy - height - hh],
       [cx + hw, cy - height],
       [cx + hw, cy],
       [cx, cy + hh],
       [cx - hw, cy],
-      [cx - hw, cy - height]
+      [cx - hw, ty - height]
     ];
   }
 
@@ -2321,6 +2633,42 @@
     });
   }
 
+  // ---- Custom-image size/offset settings persistence (v3.61) ----
+  // the "ขนาดรูป" build-panel numbers (table/tableSmall/vase/giftBox
+  // width/height + ground offsets, and NPC/Player's own width/height/offset)
+  // used to live only in plain `let` variables — พี่แยม dialed them in once,
+  // but a page reload silently reset every one of them back to the hardcoded
+  // defaults, same class of problem the uploaded images themselves had
+  // before IndexedDB (v3.51) fixed it. Reuses that exact same DB/object
+  // store — it's a plain key→value store with no schema, so a numeric
+  // setting under a 'setting:'-prefixed key coexists fine alongside the
+  // dataURL-valued image keys ('object_table' etc., which never start with
+  // that prefix) with zero collision risk.
+  function settingStorageKey(name){
+    return 'setting:' + name;
+  }
+  async function saveSettingToStorage(name, value){
+    const db = await openImgDb();
+    if (!db) return;
+    try {
+      db.transaction(IMG_DB_STORE, 'readwrite').objectStore(IMG_DB_STORE).put(value, settingStorageKey(name));
+    } catch (err){
+      console.warn('บันทึกค่าตั้งค่าลง IndexedDB ไม่ได้:', name, err);
+    }
+  }
+  function loadSettingFromStorage(name){
+    return openImgDb().then(db=>{
+      if (!db) return null;
+      return new Promise(resolve=>{
+        try {
+          const req = db.transaction(IMG_DB_STORE, 'readonly').objectStore(IMG_DB_STORE).get(settingStorageKey(name));
+          req.onsuccess = ()=> resolve(req.result != null ? req.result : null);
+          req.onerror = ()=> resolve(null);
+        } catch (err){ resolve(null); }
+      });
+    });
+  }
+
   // resolves which uploaded image should actually be drawn/measured for a
   // given object type + facing ('front'/'back') — used for any type in
   // FACING_CYCLE_TYPES (npc, table, vase). Falls back to whichever of the
@@ -2410,33 +2758,73 @@
     return false;
   }
 
-  function cellBlocked(col, row){
-    const c = snapHalf(col), r = snapHalf(row);
-    const k = key(c, r);
-    if (terrain.get(k) === 'water') return true;
-    const obj = objects.get(k);
-    if (obj && isBlockingObject(obj)) return true;
-    // small-footprint objects (vase, block, ...) live in per-quadrant slots,
-    // possibly stacked several layers high — collision is still whole-tile
-    // granularity, so any occupied/blocking layer blocks the entire tile
-    for (const q of QUADRANT_KEYS){
-      if (anyBlockingInQuadrant(c, r, q)) return true;
+  // true if the continuous (col,row) point falls inside ANY blocking tile's
+  // real footprint — replaces the old cellBlocked, which snapped (col,row)
+  // to the NEAREST half-step and did an exact-key lookup there. That only
+  // "owned" a 0.5-wide collision band around each object's placement point,
+  // even though every object visually renders a full 1.0-wide footprint
+  // (adjacent tile centers are 1.0 grid unit apart with diamonds touching
+  // edge-to-edge — see gridToScreen) — so a player could visually walk up
+  // to 25% of a tile's width INTO an object before the snap-based check
+  // ever caught up, per พี่แยม's bug report (confirmed by simulation: a
+  // player stopped at col 4.64 against a wall whose real edge was at 4.5).
+  // Worse, because the old col-move and row-move checks were tested
+  // SEQUENTIALLY within the same frame — the row-check reused player.col
+  // AFTER the col-check had potentially already updated it — a diagonal
+  // approach (this game's only movement input; WASD are all diagonal
+  // combos) could exploit that stale/fresh mismatch to slide diagonally
+  // all the way around a lone 1x1 obstacle without ever being blocked by
+  // it, since neither axis-check ever landed on the object's own exact key
+  // at the same instant. A continuous point-in-footprint test fixes both
+  // at once: any point that's genuinely inside an obstacle's real square
+  // footprint is correctly caught regardless of which axis is being tested
+  // or in what order (see tryMove below for the corresponding fix that
+  // keeps both axis-checks anchored to the SAME pre-move position).
+  //
+  // Every blocking tile — whether a full-footprint object (exact key
+  // match) or a small-footprint object in any quadrant/layer (per the
+  // existing "any occupied quadrant blocks the WHOLE tile" design) — is
+  // treated uniformly as a 1x1 square centered on its own (c,r), half-width
+  // 0.5 in each axis, matching how every object actually renders.
+  function pointBlocked(col, row){
+    for (const [tk, terrainType] of terrain.entries()){
+      if (terrainType !== 'water') continue;
+      const [tc, tr] = tk.split(',').map(Number);
+      if (Math.abs(col - tc) <= 0.5 && Math.abs(row - tr) <= 0.5) return true;
+    }
+    for (const [ok, obj] of objects.entries()){
+      if (!isBlockingObject(obj)) continue;
+      const { c: oc, r: or_ } = parseKey(ok);
+      if (Math.abs(col - oc) <= 0.5 && Math.abs(row - or_) <= 0.5) return true;
     }
     return false;
   }
 
   function tryMove(dCol, dRow){
-    if (dCol !== 0){
-      const testCol = player.col + dCol;
-      if (inBounds(testCol, player.row) && !cellBlocked(testCol, player.row)){
-        player.col = testCol;
-      }
+    const startCol = player.col, startRow = player.row;
+    const testCol = startCol + dCol, testRow = startRow + dRow;
+    // check the FULL diagonal destination first — WASD are all diagonal
+    // combos in this game, so this is the common case, and checking it
+    // directly (rather than only the two axis-only fallbacks below) is
+    // what actually catches an obstacle sitting at the destination
+    if (inBounds(testCol, testRow) && !pointBlocked(testCol, testRow)){
+      if (dCol !== 0) player.col = testCol;
+      if (dRow !== 0) player.row = testRow;
+      return;
     }
-    if (dRow !== 0){
-      const testRow = player.row + dRow;
-      if (inBounds(player.col, testRow) && !cellBlocked(player.col, testRow)){
-        player.row = testRow;
-      }
+    // diagonal destination blocked — slide along ONE axis only, using the
+    // STABLE start-of-frame value for the other axis. Deliberately
+    // mutually exclusive (else-if, not two independent ifs): if EACH slide
+    // were tested and applied independently, both could individually look
+    // "free" (each only moves one axis while the other still sits at its
+    // old, outside-the-obstacle value) and combining them would silently
+    // land the player back on the exact diagonal point just rejected above
+    // — this is precisely how a diagonal approach used to slip all the way
+    // around/through a lone 1x1 obstacle uncaught.
+    if (dCol !== 0 && inBounds(testCol, startRow) && !pointBlocked(testCol, startRow)){
+      player.col = testCol;
+    } else if (dRow !== 0 && inBounds(startCol, testRow) && !pointBlocked(startCol, testRow)){
+      player.row = testRow;
     }
   }
 
@@ -3692,6 +4080,20 @@
     const lift = getTopperLift(movingObj.type, dragPreview.col, dragPreview.row);
     if (lift) ctx.translate(0, -lift);
     drawObject({ objType: movingObj.type, col: dragPreview.col, row: dragPreview.row, state: ghostState });
+    // any passengers riding along (see the mousedown pickup handler) ghost
+    // stacked directly above the base, using a manually-accumulated lift —
+    // getStackLift can't be used here since it only counts objects really
+    // sitting on the board, and this hypothetical stack isn't "real" until a
+    // valid drop actually commits it
+    let passengerLift = getVisualHeight(movingObj.type);
+    (movingObj.passengers || []).forEach((p, i) => {
+      const passengerState = Object.assign({}, p.state, { sub: dragPreview.sub, layer: dragPreview.layer + 1 + i });
+      ctx.save();
+      ctx.translate(0, -passengerLift);
+      drawObject({ objType: p.type, col: dragPreview.col, row: dragPreview.row, state: passengerState });
+      ctx.restore();
+      passengerLift += getVisualHeight(p.type);
+    });
     ctx.restore();
   }
 
@@ -3921,6 +4323,11 @@
           if (table) table.state.toppers[movingObj.fromTopper.sub] = movingObj.type;
         } else {
           objects.set(movingObj.fromKey, { type: movingObj.type, state: movingObj.state });
+          // put back any passengers (see the mousedown pickup handler) that
+          // were riding along, stacked exactly as they were before pickup
+          (movingObj.passengers || []).forEach((p, i) => {
+            objects.set(layerKey(movingObj.fromCol, movingObj.fromRow, movingObj.fromSub, movingObj.fromLayer + 1 + i), p);
+          });
         }
         movingObj = null;
         updateStats();
@@ -3948,6 +4355,7 @@
     el.style.backgroundImage = `url(${dataUrl})`;
     const emoji = el.querySelector('.pal-emoji');
     if (emoji) emoji.style.display = 'none';
+    setPaletteIcon(kind, type, dataUrl);
   }
 
   function clearThumbnail(kind, type){
@@ -3956,14 +4364,84 @@
     el.style.backgroundImage = '';
     const emoji = el.querySelector('.pal-emoji');
     if (emoji) emoji.style.display = '';
+    setPaletteIcon(kind, type, null);
+  }
+
+  // mirrors the uploaded image onto the matching drag card in the "วางวัตถุ"
+  // tab (if one exists for this kind/type — object-back/player kinds have no
+  // palette card, so the selector simply finds nothing and this no-ops) so
+  // the icon พี่แยม drags from shows the real uploaded image instead of the
+  // placeholder emoji; falls back to the original emoji when dataUrl is null
+  function setPaletteIcon(kind, type, dataUrl){
+    const item = document.querySelector(`.pal-item[data-kind="${kind}"][data-type="${type}"]`);
+    if (!item) return;
+    item.style.backgroundImage = dataUrl ? `url(${dataUrl})` : '';
+    const emoji = item.querySelector('.pal-emoji');
+    if (emoji) emoji.style.display = dataUrl ? 'none' : '';
+  }
+
+  // scans an uploaded image's real pixels ONCE (cached as img.opaqueTopPx, a
+  // plain extra property on the Image object) to find how many rows of
+  // empty transparent margin sit ABOVE its actual artwork, in the image's
+  // own natural pixel space. getVisualHeight's forHitTest path (v3.59/v3.60)
+  // uses this instead of the raw naturalHeight, originally per พี่แยม's bug
+  // report about a nightstand photo whose empty transparent margin made the
+  // hover/click area extend into that invisible gap. Still applies to
+  // table/vase/npc, which size their hit-test off the real uploaded image —
+  // NOT to tableSmall/giftBox, which v3.63 locked to a fixed footprint
+  // outline instead (see getVisualHeight's comment), so they never reach
+  // this code path's result at all anymore.
+  //
+  // v3.59 originally cached the TIGHT opaque bounding-box height
+  // (bottomOpaqueRow - topOpaqueRow), which turned out to still be wrong:
+  // drawSprite() anchors the BOTTOM EDGE OF THE WHOLE FILE to the ground
+  // point (`ctx.drawImage(img, x-w/2, y-h+go, w, h)` — h is the full scaled
+  // file height, not just the opaque part), so the hit-test hexagon's roof
+  // height needs to be measured from that same fixed bottom-of-file anchor
+  // up to where the opaque content STARTS, i.e. (naturalHeight - topOpaqueRow)
+  // — not the tight opaque span. Any transparent margin BELOW the artwork
+  // doesn't matter at all for this, since the anchor is already pinned to
+  // the file's bottom edge regardless. So this only needs to find the FIRST
+  // opaque row scanning from the top, and can stop as soon as it's found.
+  //
+  // Only affects hit-testing — the pinned/small display outline (forHitTest
+  // false/omitted) never reads this and is untouched. Wrapped in try/catch:
+  // if reading pixels ever fails for any reason, opaqueTopPx is simply left
+  // unset and getVisualHeight falls back to naturalHeight, i.e. the exact
+  // pre-v3.59 behavior.
+  function computeOpaqueHeightPx(img){
+    try {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const cctx = c.getContext('2d');
+      cctx.drawImage(img, 0, 0);
+      const data = cctx.getImageData(0, 0, w, h).data;
+      const ALPHA_THRESHOLD = 10;
+      for (let y = 0; y < h; y++){
+        for (let x = 0; x < w; x++){
+          if (data[(y * w + x) * 4 + 3] > ALPHA_THRESHOLD){
+            img.opaqueTopPx = y;
+            return;
+          }
+        }
+      }
+      // fully transparent image (shouldn't normally happen) — leave
+      // opaqueTopPx unset so the caller falls back to naturalHeight untrimmed
+    } catch (e){
+      // canvas read failed (e.g. tainted canvas) — leave opaqueTopPx
+      // unset, same as before this fix existed
+    }
   }
 
   // assigns a loaded Image into the right slot for (kind, type) — shared by
   // both a fresh upload and restoring a previously-saved image from
   // localStorage on page load, so the two stay perfectly in sync
   function applyCustomImage(kind, type, img){
-    if (kind === 'object') customObjectImages[type] = img;
-    else if (kind === 'object-back') customObjectImagesBack[type] = img;
+    if (kind === 'object'){ customObjectImages[type] = img; computeOpaqueHeightPx(img); }
+    else if (kind === 'object-back'){ customObjectImagesBack[type] = img; computeOpaqueHeightPx(img); }
     else if (kind === 'terrain') customTerrainImages[type] = img;
     else if (kind === 'player') customPlayerImage = img;
     else if (kind === 'player-back') customPlayerBackImage = img;
@@ -4623,9 +5101,27 @@
     // so it doesn't jump to layer 0 the moment you pick it up — Tab still
     // adjusts it from there
     pendingLayer = (obj.state && obj.state.layer) || 0;
-    movingObj = { type: obj.type, state: obj.state, fromKey: k };
+    const sub = obj.state && obj.state.sub;
+    // small-footprint objects can have other small-footprint objects stacked
+    // directly on top of them in the same quadrant (e.g. a phone on a small
+    // table) — unlike the big table's toppers (stored inside the table's own
+    // state), these "passengers" are independent objects sitting at higher
+    // layers, so picking up just the base would otherwise leave them behind.
+    // Collect the contiguous run of occupied layers right above this one and
+    // carry them along too — a stack never has gaps, so stop at the first
+    // empty layer.
+    const passengers = [];
+    if (isSmallFootprint(obj.type)){
+      for (let l = pendingLayer + 1; l < MAX_LAYERS; l++){
+        const pObj = objects.get(layerKey(c, r, sub, l));
+        if (!pObj) break;
+        passengers.push({ type: pObj.type, state: pObj.state });
+        objects.delete(layerKey(c, r, sub, l));
+      }
+    }
+    movingObj = { type: obj.type, state: obj.state, fromKey: k, passengers, fromCol: c, fromRow: r, fromSub: sub, fromLayer: pendingLayer };
     objects.delete(k);
-    dragPreview = { col: c, row: r, sub: obj.state && obj.state.sub, layer: pendingLayer, type: obj.type, flip: obj.state && obj.state.flip, valid: true };
+    dragPreview = { col: c, row: r, sub, layer: pendingLayer, type: obj.type, flip: obj.state && obj.state.flip, valid: true };
     canvas.style.cursor = 'grabbing';
   });
 
@@ -4638,7 +5134,18 @@
     }
     if (!movingObj) return;
     const { c, r, sub, layer } = resolveCell(e, movingObj.type);
-    const valid = isMoveValid(movingObj.type, c, r, sub, layer);
+    const passengers = movingObj.passengers || [];
+    // a table-topper drop has nowhere to put riding passengers (toppers are
+    // a single slot per corner, not a layered stack), so a base that's
+    // carrying anything can't land there — reject the whole move rather than
+    // silently dropping the passengers
+    const fullObjAtTarget = objects.get(key(c, r));
+    const wouldBecomeTopper = TABLE_TOPPER_TYPES.has(movingObj.type) && fullObjAtTarget && fullObjAtTarget.type === 'table';
+    // passengers must ALL fit directly above the base at the target quadrant
+    // too — if anything blocks even one of those layers, reject the whole
+    // stack move instead of dropping the base and orphaning the rest
+    const passengersFit = passengers.length === 0 || (!wouldBecomeTopper && passengers.every((p, i) => !objects.get(layerKey(c, r, sub, layer + 1 + i))));
+    const valid = isMoveValid(movingObj.type, c, r, sub, layer) && passengersFit;
     let moved = false;
     if (valid){
       if (isWallMountFootprint(movingObj.type)){
@@ -4652,6 +5159,11 @@
           movingObj.state.sub = sub;
           movingObj.state.layer = layer;
           objects.set(layerKey(c, r, sub, layer), { type: movingObj.type, state: movingObj.state });
+          passengers.forEach((p, i) => {
+            p.state.sub = sub;
+            p.state.layer = layer + 1 + i;
+            objects.set(layerKey(c, r, sub, layer + 1 + i), p);
+          });
         }
       } else {
         objects.set(key(c, r), { type: movingObj.type, state: movingObj.state });
@@ -4669,6 +5181,11 @@
       // failed move: revert to where it started (state untouched — sub/
       // layer are only committed on a successful move, so nothing to roll back)
       objects.set(movingObj.fromKey, { type: movingObj.type, state: movingObj.state });
+      // put back any passengers that were riding along, stacked exactly as
+      // they were before pickup
+      passengers.forEach((p, i) => {
+        objects.set(layerKey(movingObj.fromCol, movingObj.fromRow, movingObj.fromSub, movingObj.fromLayer + 1 + i), p);
+      });
     }
     pendingLayer = 0;
     justMoved = moved;
@@ -4810,18 +5327,50 @@
     }
   }
 
+  // advances one object's own orientation by one right-click step: full
+  // 4-state front/back×flip cycle for FACING_CYCLE_TYPES, plain flip toggle
+  // for everything else — shared so the base and any riding passengers
+  // (below) get exactly the same step applied
+  function applyFlipStep(state, type){
+    if (FACING_CYCLE_TYPES.has(type)) cycleFacingFlip(state);
+    else state.flip = !(state && state.flip);
+  }
+
+  // contiguous run of objects stacked directly above (c,r,sub,layer) in the
+  // same quadrant — read-only sibling of the passenger-collection loop the
+  // move-a-stack fix (v3.57) uses at pickup, just without removing anything
+  // from the board. A stack never has gaps, so this stops at the first
+  // empty layer.
+  function getStackAbove(c, r, sub, layer){
+    const above = [];
+    for (let l = layer + 1; l < MAX_LAYERS; l++){
+      const o = objects.get(layerKey(c, r, sub, l));
+      if (!o) break;
+      above.push(o);
+    }
+    return above;
+  }
+
   // right-click a placed object to change its orientation (build mode only):
   // FACING_CYCLE_TYPES (npc/table/vase) cycle all 4 front/back × flip
   // combinations (see cycleFacingFlip above); every other object just
-  // mirrors left-right as before
+  // mirrors left-right as before. A small-footprint base (e.g. tableSmall)
+  // carries anything stacked directly on top of it in the same quadrant
+  // along for the same rotation step (v3.58, per พี่แยม's request) — same
+  // "ride along" idea as moving a stack (v3.57), just for flip instead of
+  // position. Right-clicking a passenger directly (not the base) still only
+  // flips that one item, same as before.
   canvas.addEventListener('contextmenu', e=>{
     e.preventDefault();
     if (mode !== 'build') return;
     const k = resolveObjectKeyAt(e);
     const obj = k ? objects.get(k) : null;
     if (obj){
-      if (FACING_CYCLE_TYPES.has(obj.type)) cycleFacingFlip(obj.state);
-      else obj.state.flip = !(obj.state && obj.state.flip);
+      applyFlipStep(obj.state, obj.type);
+      if (isSmallFootprint(obj.type)){
+        const { c, r, sub, layer } = parseKey(k);
+        getStackAbove(c, r, sub, layer).forEach(above => applyFlipStep(above.state, above.type));
+      }
     }
   });
 
@@ -4864,6 +5413,11 @@
       Number.isFinite(rawOffset) ? rawOffset : NPC_GROUND_OFFSET));
     NPC_GROUND_OFFSET = offset;
     npcGroundOffsetInput.value = Math.round(offset);
+
+    // v3.61: persist so these survive a page reload, same as uploaded images
+    saveSettingToStorage('npcSizeW', w);
+    saveSettingToStorage('npcSizeH', h);
+    saveSettingToStorage('npcGroundOffset', offset);
   });
   document.getElementById('exportNpcImageBtn').addEventListener('click', exportNpcImage);
 
@@ -4918,7 +5472,48 @@
     giftBoxImgWInput.value = Math.round(GIFTBOX_IMAGE_MAX_W);
     giftBoxImgHInput.value = Math.round(GIFTBOX_IMAGE_MAX_H);
     giftBoxGroundOffsetInput.value = Math.round(GIFTBOX_GROUND_OFFSET);
+
+    // v3.61: persist so these survive a page reload, same as uploaded images
+    saveSettingToStorage('tableImgW', TABLE_IMAGE_MAX_W);
+    saveSettingToStorage('tableImgH', TABLE_IMAGE_MAX_H);
+    saveSettingToStorage('tableSmallImgW', TABLE_SMALL_IMAGE_MAX_W);
+    saveSettingToStorage('tableSmallImgH', TABLE_SMALL_IMAGE_MAX_H);
+    saveSettingToStorage('tableSmallGroundOffset', TABLE_SMALL_GROUND_OFFSET);
+    saveSettingToStorage('vaseImgW', VASE_IMAGE_MAX_W);
+    saveSettingToStorage('vaseImgH', VASE_IMAGE_MAX_H);
+    saveSettingToStorage('giftBoxImgW', GIFTBOX_IMAGE_MAX_W);
+    saveSettingToStorage('giftBoxImgH', GIFTBOX_IMAGE_MAX_H);
+    saveSettingToStorage('giftBoxGroundOffset', GIFTBOX_GROUND_OFFSET);
   });
+
+  // restores every "ขนาดรูป" setting saved above back from IndexedDB on page
+  // load (async, same pattern as restoreOrMigrateImage) — runs after both
+  // apply-button handlers above so every input element it touches already
+  // exists. Each restore is independent: a missing/corrupt single value
+  // just leaves that one field at its hardcoded default instead of blocking
+  // the rest.
+  async function restoreImageSizeSettings(){
+    const restore = async (name, apply) => {
+      const v = await loadSettingFromStorage(name);
+      if (typeof v === 'number' && Number.isFinite(v)) apply(v);
+    };
+    await Promise.all([
+      restore('npcSizeW', v => { PLAYER_SPRITE_MAX_W = v; npcSizeWInput.value = Math.round(v); }),
+      restore('npcSizeH', v => { PLAYER_SPRITE_MAX_H = v; VISUAL_HEIGHT.npc = v; npcSizeHInput.value = Math.round(v); }),
+      restore('npcGroundOffset', v => { NPC_GROUND_OFFSET = v; npcGroundOffsetInput.value = Math.round(v); }),
+      restore('tableImgW', v => { TABLE_IMAGE_MAX_W = v; tableImgWInput.value = Math.round(v); }),
+      restore('tableImgH', v => { TABLE_IMAGE_MAX_H = v; tableImgHInput.value = Math.round(v); }),
+      restore('tableSmallImgW', v => { TABLE_SMALL_IMAGE_MAX_W = v; tableSmallImgWInput.value = Math.round(v); }),
+      restore('tableSmallImgH', v => { TABLE_SMALL_IMAGE_MAX_H = v; tableSmallImgHInput.value = Math.round(v); }),
+      restore('tableSmallGroundOffset', v => { TABLE_SMALL_GROUND_OFFSET = v; tableSmallGroundOffsetInput.value = Math.round(v); }),
+      restore('vaseImgW', v => { VASE_IMAGE_MAX_W = v; vaseImgWInput.value = Math.round(v); }),
+      restore('vaseImgH', v => { VASE_IMAGE_MAX_H = v; vaseImgHInput.value = Math.round(v); }),
+      restore('giftBoxImgW', v => { GIFTBOX_IMAGE_MAX_W = v; giftBoxImgWInput.value = Math.round(v); }),
+      restore('giftBoxImgH', v => { GIFTBOX_IMAGE_MAX_H = v; giftBoxImgHInput.value = Math.round(v); }),
+      restore('giftBoxGroundOffset', v => { GIFTBOX_GROUND_OFFSET = v; giftBoxGroundOffsetInput.value = Math.round(v); }),
+    ]);
+  }
+  restoreImageSizeSettings();
 
   // ---- Save image / Save map / Import map ----
   const MAP_FILE_VERSION = '3.16'; // matches the game version this format was written for; import is lenient about mismatches
