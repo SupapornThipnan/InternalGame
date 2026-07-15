@@ -105,6 +105,8 @@
   .qtable td { padding: 4px 10px; }
   .tag.tierA { background: #123a2a; color: #4ade80; }
   .tag.tierB { background: #3a3212; color: #facc15; }
+  .tag.tierB2 { background: #3a3212; color: #fde047; }
+  .tag.tierBt { background: #3a3212; color: #f59e0b; }
   .tag.tierC { background: #123a3a; color: #7dd3fc; }
   .progtable select.proginput { width: 76px; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 8px; font-family: inherit; font-size: .85rem; }
   .progtable select.proginput:focus { outline: 1px solid var(--cyan); }
@@ -123,6 +125,7 @@
   <button data-tab="search">🔍 ค้นหา</button>
   <button data-tab="queue">📅 คิวคลิป</button>
   <button data-tab="progress">✍️ Progress</button>
+  <button data-tab="listitme">🗂️ ListITME</button>
   <button data-tab="settings">⚙️ ตั้งค่า</button>
 </nav>
 <main>
@@ -203,6 +206,7 @@
     <div class="toolbar" style="margin-bottom:6px">
       <button class="btn ghost" id="btnToggleStages">🔽 ซ่อน Scripts/Sounds/Footage/Final</button>
       <button class="btn ghost" id="btnToggleAllGroups">📂 กางวันที่ทั้งหมด</button>
+      <button class="btn ghost" id="btnNextTiktok">🎵 คิวลง TIKTOK VDO</button>
       <button class="btn ghost" id="btnNextShopee">🛍️ คิวลง SHOPEE VDO</button>
     </div>
     <div id="queueList"></div>
@@ -219,6 +223,37 @@
       <table class="progtable">
         <thead><tr><th>สินค้า</th><th>Scripts</th><th>Sounds</th><th>Footage</th><th>Draft</th><th>Final</th></tr></thead>
         <tbody id="progressBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ LISTITME (โควตาถ่ายคิว B+Bต / C+Cต แบบ real-time) ============ -->
+  <section id="tab-listitme" style="display:none">
+    <div id="listitmeInfo" class="empty" style="padding:10px"></div>
+    <div class="cards" id="listitmeStats" style="display:none">
+      <div class="card"><div class="label">B2(7)+B+Bต — active / โควตา</div><div class="value pink" id="listBCount">–</div></div>
+      <div class="card"><div class="label">สถานะ B2+B+Bต</div><div class="value cyan" id="listBStatus" style="font-size:1rem">–</div></div>
+      <div class="card"><div class="label">C+Cต — active / โควตา</div><div class="value pink" id="listCCount">–</div></div>
+      <div class="card"><div class="label">สถานะ C+Cต</div><div class="value cyan" id="listCStatus" style="font-size:1rem">–</div></div>
+    </div>
+    <div class="toolbar">
+      <select id="listTierFilter">
+        <option value="">ทุก Tier</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="B2">B2</option>
+        <option value="Bต">Bต</option>
+        <option value="C">C</option>
+        <option value="Cต">Cต</option>
+      </select>
+    </div>
+    <div class="tablewrap">
+      <table class="qtable">
+        <thead><tr>
+          <th>สินค้า</th><th class="center">Tier</th><th class="center">EP</th>
+          <th class="center">Footage</th><th class="center">สถานะ</th>
+        </tr></thead>
+        <tbody id="listitmeBody"></tbody>
       </table>
     </div>
   </section>
@@ -322,6 +357,13 @@
   </div></form>
 </dialog>
 
+<!-- ============ NEXT TIKTOK-VDO QUEUE MODAL (ปุ่ม "คิวลง TIKTOK VDO" ในคิวคลิป) ============ -->
+<dialog id="dlgNextTiktok">
+  <h3>🎵 คิวลง TikTok VDO ตัวถัดไป</h3>
+  <div id="nextTiktokInfo" style="margin:16px 0;font-size:1.05rem;line-height:1.6"></div>
+  <form method="dialog"><div class="actions"><button class="btn pink" value="ok">ปิด</button></div></form>
+</dialog>
+
 <!-- ============ NEXT SHOPEE-VDO QUEUE MODAL (ปุ่ม "คิวลง SHOPEE VDO" ในคิวคลิป) ============ -->
 <dialog id="dlgNextShopee">
   <h3>🛍️ คิวลง Shopee VDO ตัวถัดไป</h3>
@@ -355,7 +397,12 @@ const SHEET_SALES = 'ยอดขาย';
 const SHEET_DESC = '📝#คำอธิบาย';
 const SHEET_LINKS = '🍊🔗ShopeeLink';
 const SHEET_PROGRESS = '⚡️Progress';
+const SHEET_LISTITME = '🗂️ ListITME';
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+// ค่าเริ่มต้นที่ฝังไว้ในโค้ด กันต้องกรอกใหม่ทุกครั้งที่รีเฟรช/เปิดเบราว์เซอร์ใหม่ — แก้ในแท็บตั้งค่าเว็บได้ตามปกติ (ค่าที่กรอกเองจะทับค่านี้)
+// ชื่อชีต TODOLIST เปลี่ยนทุกเดือน ต้องมาแก้เลขนี้ในโค้ดเองด้วยตอนขึ้นเดือนใหม่ ถ้าไม่อยากกรอกในหน้าเว็บทุกเครื่อง
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxssiQazWkQnC20Wtv03ledew7nRrNpaFbxrlQWfKlpBYwP71hsUibfvZxY0UxrXv7X6A/exec';
+const DEFAULT_TODOLIST_SHEET = '7️⃣ 📝 TODOLIST-JULY26';
 
 /* ================== STATE ================== */
 let products = [], sales = [], catalog = [], range = 'all';
@@ -364,8 +411,8 @@ let charts = {};
 const $ = (s) => document.querySelector(s);
 const num = (v) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
 const baht = (v) => num(v).toLocaleString('th-TH', { maximumFractionDigits: 0 });
-const apiUrl = () => localStorage.getItem('appsScriptUrl') || '';
-const todolistSheet = () => localStorage.getItem('todolistSheet') || '';
+const apiUrl = () => localStorage.getItem('appsScriptUrl') || DEFAULT_API_URL;
+const todolistSheet = () => localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
 const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
 // ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
 const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
@@ -767,9 +814,10 @@ $('#formSale').addEventListener('submit', (e) => {
 /* ================== UI WIRING ================== */
 function switchTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  ['dash', 'search', 'products', 'queue', 'progress', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
   if (name === 'queue') loadQueue();
   if (name === 'progress') loadProgress();
+  if (name === 'listitme') loadListItme();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 $('#rangeChips').addEventListener('click', (e) => {
@@ -856,6 +904,20 @@ $('#btnToggleAllGroups').onclick = () => {
     if (isOpenNow !== expand) t.click();
   });
   btn.textContent = expand ? '📁 ยุบวันที่ทั้งหมด' : '📂 กางวันที่ทั้งหมด';
+};
+
+// หาไอเทม "ตัวถัดไป" ที่ต้องลง TikTok — ไล่ตามลำดับแถวในตาราง (เรียงตามวันที่อยู่แล้ว) ข้ามแถวที่ติ๊กลงแล้ว (tiktok==='TRUE')
+$('#btnNextTiktok').onclick = () => {
+  const next = queueItems.find(it => it.tiktok !== 'TRUE' && it.tiktok !== '');
+  if (!next) {
+    $('#nextTiktokInfo').innerHTML = '🎉 ไม่มีคิวที่ต้องลง TikTok แล้วตอนนี้ครับ';
+  } else {
+    const m = String(next.item).match(/^(ITM[_\s]?\d+)\s*(.*)$/i);
+    const code = m ? m[1].toUpperCase().replace(/\s/g, '_') : '';
+    const name = m ? m[2] : next.item;
+    $('#nextTiktokInfo').innerHTML = `<span class="sku">${esc(code)}</span><div style="font-size:1.25rem;font-weight:700;margin:6px 0">${esc(name)}</div><div style="color:var(--muted)">${esc(next.ep)}</div>`;
+  }
+  $('#dlgNextTiktok').showModal();
 };
 
 // หาไอเทม "ตัวถัดไป" ที่ต้องลง Shopee — ไล่ตามลำดับแถวในตาราง (เรียงตามวันที่อยู่แล้ว)
@@ -1018,7 +1080,9 @@ function stageCheck(it, stage, itmCode) {
 
 // A เขียว, B เหลือง (รวม B2/Bต), C ฟ้า (รวม Cต)
 function tierTag(tier) {
-  const cls = /^A/i.test(tier) ? 'tierA' : /^B/i.test(tier) ? 'tierB' : /^C/i.test(tier) ? 'tierC' : 'cat';
+  const t = String(tier || '').trim();
+  const cls = t === 'B2' ? 'tierB2' : t === 'Bต' ? 'tierBt'
+    : /^A/i.test(t) ? 'tierA' : /^B/i.test(t) ? 'tierB' : /^C/i.test(t) ? 'tierC' : 'cat';
   return `<span class="tag ${cls}">${esc(tier)}</span>`;
 }
 
@@ -1277,6 +1341,71 @@ $('#btnSaveProgress').onclick = async () => {
   updateSaveProgressBtn();
   renderProgressTable(); // แสดงค่าที่บันทึกจริงล่าสุด ไม่มี pending ค้างแล้ว
 };
+
+/* ================== LISTITME: โควตาถ่ายคิว B+Bต / C+Cต (real-time) ================== */
+// Tier A และ B2 พี่แยมกำหนดจำนวนเอง (คงที่ 7 ชิ้น) — ไม่คำนวณอัตโนมัติที่นี่
+const LISTITME_QUOTA = 14;
+const LISTITME_FOOTAGE_THRESHOLD = 4; // Footage >= 4 = success (ไม่นับในโควตา) / Footage < 4 = waiting (นับในโควตา)
+
+async function loadListItme() {
+  $('#listitmeInfo').textContent = 'กำลังโหลด…';
+  try {
+    const rows = await loadRaw(SHEET_LISTITME);
+    renderListItme(rows);
+  } catch (e) {
+    $('#listitmeInfo').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet';
+    $('#listitmeBody').innerHTML = '';
+    $('#listitmeStats').style.display = 'none';
+  }
+}
+
+let listitmeItems = []; // แคชไว้ให้ตัวกรอง Tier ใช้กรอง/เรียงใหม่โดยไม่ต้องโหลดซ้ำ
+
+function renderListItme(rows) {
+  // คอลัมน์ตามชีต 🗂️ ListITME: B=ชื่อ(idx1), C=EP ปัจจุบัน(idx2), D=Tier(idx3), E=Footage(idx4)
+  const items = rows.map(r => {
+    const p = parseItm(r[1]); if (!p) return null;
+    const ep = num(r[2]);
+    const tier = String(r[3] || '').trim();
+    const footage = epNumOf(r[4]);
+    const footageNum = footage === '' ? 0 : footage;
+    const manual = tier === 'A' || tier === 'B2'; // พี่แยมกำหนดจำนวนเอง ไม่นับในโควตา
+    return { id: p.id, name: p.name, tier, ep, footage, manual, waiting: !manual && footageNum < LISTITME_FOOTAGE_THRESHOLD };
+  }).filter(Boolean);
+  listitmeItems = items;
+
+  $('#listitmeInfo').textContent = items.length ? '' : 'ยังไม่มีข้อมูลในชีต ListITME ครับ';
+  $('#listitmeStats').style.display = items.length ? '' : 'none';
+  if (!items.length) { $('#listitmeBody').innerHTML = ''; return; }
+
+  const waitingCount = (tiers) => items.filter(it => tiers.includes(it.tier) && it.waiting).length;
+  const LISTITME_B2_FIXED = 7; // B2 พี่แยมกำหนดคงที่ 7 ชิ้น นับรวมเข้าโควตากลุ่ม B ด้วยเสมอ
+  const bCount = waitingCount(['B', 'Bต']) + LISTITME_B2_FIXED;
+  const cCount = waitingCount(['C', 'Cต']);
+  $('#listBCount').textContent = `${bCount} / ${LISTITME_QUOTA}`;
+  $('#listCCount').textContent = `${cCount} / ${LISTITME_QUOTA}`;
+  $('#listBStatus').textContent = bCount < LISTITME_QUOTA ? `🎉 ว่าง ${LISTITME_QUOTA - bCount} ช่อง หยิบสินค้าใหม่ได้` : '🔴 เต็มโควตาแล้ว';
+  $('#listCStatus').textContent = cCount < LISTITME_QUOTA ? `🎉 ว่าง ${LISTITME_QUOTA - cCount} ช่อง หยิบสินค้าใหม่ได้` : '🔴 เต็มโควตาแล้ว';
+
+  renderListItmeTable();
+}
+
+function renderListItmeTable() {
+  const tierFilter = $('#listTierFilter').value;
+  const rows = tierFilter ? listitmeItems.filter(it => it.tier === tierFilter) : listitmeItems;
+  const tierOrder = { 'A': 0, 'B': 1, 'B2': 2, 'Bต': 3, 'C': 4, 'Cต': 5 };
+  const fg = (it) => it.footage === '' ? 0 : it.footage;
+  const sorted = [...rows].sort((a, b) => (tierOrder[a.tier] ?? 9) - (tierOrder[b.tier] ?? 9) || fg(a) - fg(b));
+
+  $('#listitmeBody').innerHTML = sorted.length ? sorted.map(it => `<tr>
+    <td><span class="sku">${esc(it.id)}</span> ${esc(it.name)}</td>
+    <td class="center">${tierTag(it.tier)}</td>
+    <td class="center">${it.ep}</td>
+    <td class="center">${it.footage === '' ? '—' : it.footage}</td>
+    <td class="center">${it.manual ? '<span class="tag cat">Default</span>' : `<span class="tag ${it.waiting ? 'mid' : 'on'}">${it.waiting ? 'waiting' : 'success'}</span>`}</td>
+  </tr>`).join('') : '<tr><td colspan="5" class="empty">ไม่มีรายการ Tier นี้</td></tr>';
+}
+$('#listTierFilter').addEventListener('change', renderListItmeTable);
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
