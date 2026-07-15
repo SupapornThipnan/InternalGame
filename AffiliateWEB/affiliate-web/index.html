@@ -115,7 +115,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">กำลังโหลด…</span>
+  <span id="status">v1.0 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -348,6 +348,7 @@
 
 <script>
 /* ================== CONFIG ================== */
+const VERSION = 'v1.0';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -447,9 +448,9 @@ async function loadAll() {
     products = products.filter(p => p.SKU);
     sales = sales.filter(s => s.SKU);
     catalog = buildCatalog(descRows, linkRows);
-    $('#status').textContent = `✅ อัปเดต ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'})} น.`;
+    $('#status').textContent = `${VERSION} · ✅ อัปเดต ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'})} น.`;
   } catch (e) {
-    $('#status').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet (Anyone with link – Viewer)';
+    $('#status').textContent = `${VERSION} · ⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet (Anyone with link – Viewer)`;
   }
   renderAll();
 }
