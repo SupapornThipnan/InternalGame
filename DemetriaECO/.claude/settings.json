@@ -2,10 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
+      "Bash(node --check *)",
       "Bash(node \"/private/tmp/claude-501/-Users-supapornthipnan-Desktop-Unity-InternalGame-DemetriaECO/c1d0414f-b87e-4aca-ae3e-3da6e13216cc/scratchpad/smoke_test.mjs\")",
       "Bash(cp \"/private/tmp/claude-501/-Users-supapornthipnan-Desktop-Unity-InternalGame-DemetriaECO/c1d0414f-b87e-4aca-ae3e-3da6e13216cc/scratchpad/smoke_test.mjs\" \"/Users/supapornthipnan/Desktop/Unity/InternalGame/DemetriaECO/_tmp_smoke_test.mjs\")",
       "Bash(node _tmp_smoke_test.mjs)",
-      "Bash(node -e \"console.log\\(require\\('./node_modules/jsdom/package.json'\\).engines\\)\")"
+      "Bash(node -e \"console.log\\(require\\('./node_modules/jsdom/package.json'\\).engines\\)\")",
+      "Read",
+      "Edit",
+      "Write"
     ]
   }
 }

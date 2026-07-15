@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌿 Stage Flow — Prototype</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1621;--bg2:#151f2e;--card:#1a2535;--card2:#1f2d40;
+  --border:#273a52;--text:#dde8f5;--dim:#6a85a0;
+  --gold:#f5c842;--green:#56c45a;--red:#e05050;--purple:#a060e0;
+  --r:12px;
+}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+
+/* ── HEADER ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:50}
+.logo{font-size:14px;font-weight:700;color:var(--gold);white-space:nowrap}
+.phase-steps{display:flex;align-items:center;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}
+.stp{padding:5px 18px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid var(--border);color:var(--dim);background:var(--card);transition:all .3s}
+.stp.active{background:var(--gold);color:#111;border-color:var(--gold)}
+.stp.done{background:#162a16;color:var(--green);border-color:#2a5a2a}
+.stp-arr{color:var(--dim);font-size:13px}
+.stage-tag{font-size:11px;color:var(--dim);white-space:nowrap}
+
+/* ── LAYOUT ── */
+main{max-width:960px;margin:0 auto;padding:20px 16px}
+.phase{display:none;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.phase.show{display:flex}
+
+/* ── GRID ── */
+.grid-outer{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;flex-shrink:0}
+.grid-label{font-size:11px;color:var(--dim);text-align:center;margin-bottom:8px}
+.grid{display:inline-grid;grid-template-columns:repeat(10,28px);gap:0;border:2px solid #2a4a6a;border-radius:4px;overflow:hidden;user-select:none;cursor:crosshair}
+
+/* ── PANEL ── */
+.panel{flex:1;min-width:210px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.ptitle{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+
+/* ── PROGRESS ── */
+.prog-wrap{margin:2px 0}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:4px}
+.prog-bar{height:8px;background:var(--bg2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.prog-fill{height:100%;border-radius:4px;background:linear-gradient(to right,#2a5c2a,var(--green));transition:width .3s ease}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:9px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-gold{background:var(--gold);color:#111}
+.btn-gold:hover:not(:disabled){background:#ffda50;transform:scale(1.02)}
+.btn-gold:disabled{opacity:.3;cursor:not-allowed}
+.btn-ghost{background:var(--card2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border)}
+.btn-sm{padding:5px 12px;font-size:12px;width:auto;border-radius:7px}
+
+/* ── TIP BOX ── */
+.tip{font-size:11px;color:var(--dim);line-height:1.6;padding:8px 10px;background:var(--bg2);border-radius:8px;border:1px solid var(--border)}
+
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:5px}
+.leg{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--dim)}
+
+/* ── FURNITURE PALETTE ── */
+.furn-list{display:flex;flex-direction:column;gap:5px}
+.furn-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
+.furn-item:hover{background:var(--card2);border-color:var(--dim)}
+.furn-item.sel{border-color:var(--gold);background:#201e0a}
+.fi-ico{font-size:20px;min-width:24px;text-align:center}
+.fi-info{flex:1}
+.fi-name{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.fi-size{font-size:10px;color:var(--dim)}
+.fi-cnt{font-size:12px;color:var(--dim);white-space:nowrap}
+.req-badge{font-size:9px;padding:1px 5px;background:#1f1a00;color:var(--gold);border:1px solid #4a3a00;border-radius:5px}
+
+/* ── CHECKLIST ── */
+.checklist{display:flex;flex-direction:column;gap:5px}
+.chk{display:flex;align-items:center;gap:7px;font-size:12px}
+.chk-box{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+.chk-box.ok{background:#162a16;border-color:#2a5a2a;color:var(--green)}
+.chk-lbl.ok{color:var(--green)}
+
+/* ── PHASE 3 ── */
+.complete{text-align:center;padding:30px 20px;width:100%}
+.npc{font-size:80px;display:block;animation:bounce .7s ease infinite alternate;margin-bottom:16px}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+.complete-title{font-size:24px;font-weight:700;color:var(--gold);margin-bottom:8px}
+.complete-sub{font-size:14px;color:var(--dim);margin-bottom:20px;line-height:1.6}
+.stat-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 20px;text-align:center}
+.stat-val{font-size:22px;font-weight:700;color:var(--gold)}
+.stat-lbl{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* sparkles */
+.sparkle{position:fixed;pointer-events:none;z-index:200;font-size:20px;animation:sparkleAnim 1.2s ease-out forwards}
+@keyframes sparkleAnim{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(0.3)}}
+
+/* found item toast */
+#foundToast{position:fixed;bottom:20px;right:20px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100}
+#foundToast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="foundToast"></div>
+
+<header>
+  <div class="logo">🌿 Stage Flow</div>
+  <div class="phase-steps">
+    <div class="stp active" id="stp1">① รกร้าง</div>
+    <div class="stp-arr">→</div>
+    <div class="stp" id="stp2">② วางเฟอร์</div>
+    <div class="stp-arr">→</div>
+    <div class="stp" id="stp3">③ เสร็จสิ้น</div>
+  </div>
+  <div class="stage-tag">🌾 ฟาร์มพืชผัก — Demo</div>
+</header>
+
+<main>
+
+<!-- ═══════════════ PHASE 1 ═══════════════ -->
+<div class="phase show" id="ph1">
+  <div class="grid-outer">
+    <div class="grid-label">กดค้างแล้วลากเพื่อทำความสะอาด</div>
+    <div class="grid" id="g1"></div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">📊 ความคืบหน้า</div>
+    <div class="prog-wrap">
+      <div class="prog-lbl"><span>สะอาดแล้ว</span><span id="pct">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="pfill" style="width:0%"></div></div>
+    </div>
+    <div class="tip" id="cleanTip">ลากเมาส์ผ่านขยะเพื่อเก็บกวาด ต้องสะอาดอย่างน้อย <b style="color:var(--gold)">80%</b> ถึงจะดำเนินต่อได้</div>
+
+    <div class="ptitle" style="margin-top:4px">🗑️ ประเภทขยะ</div>
+    <div class="legend">
+      <div class="leg">🌿 วัชพืช</div>
+      <div class="leg">🪨 หิน</div>
+      <div class="leg">💧 แอ่งน้ำ</div>
+      <div class="leg">🍂 ใบไม้</div>
+      <div class="leg">🌾 ฟางแห้ง</div>
+    </div>
+
+    <div class="ptitle" style="margin-top:4px">🎁 ของที่พบ</div>
+    <div id="foundList" class="tip" style="min-height:36px">ยังไม่พบของใดๆ</div>
+
+    <div style="margin-top:auto">
+      <button class="btn btn-gold" id="btn1" onclick="goPhase2()" disabled>ดำเนินต่อ — วางเฟอร์ →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PHASE 2 ═══════════════ -->
+<div class="phase" id="ph2">
+  <div class="grid-outer">
+    <div class="grid-label">เลือกเฟอร์ → คลิกวาง &nbsp;|&nbsp; <span style="color:var(--gold)">R</span> หมุน &nbsp;|&nbsp; คลิกชิ้นที่วางแล้วเพื่อถอน</div>
+    <div class="grid" id="g2"></div>
+    <div style="display:flex;gap:6px;margin-top:10px">
+      <button class="btn btn-ghost btn-sm" onclick="doRotate()">↻ หมุน (R)</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearSel()">✕ ยกเลิก</button>
+      <span id="rotLabel" style="font-size:11px;color:var(--dim);margin-left:4px;align-self:center"></span>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ptitle">🪑 เฟอร์นิเจอร์</div>
+    <div class="furn-list" id="furnList"></div>
+
+    <div class="ptitle" style="margin-top:6px">✅ เงื่อนไขบังคับ</div>
+    <div class="checklist" id="chklist"></div>
+
+    <div class="tip" style="margin-top:4px" id="ph2tip">เลือกเฟอร์จากรายการ แล้ว hover บน grid เพื่อดูตัวอย่าง คลิกเพื่อวาง</div>
+
+    <div style="margin-top:auto">
+      <button class="btn btn-gold" id="btn2" onclick="goPhase3()" disabled>เสร็จสิ้น ✨</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ PHASE 3 ═══════════════ -->
+<div class="phase" id="ph3" style="justify-content:center">
+  <div class="complete">
+    <span class="npc" id="npcSprite" style="opacity:0;transition:all .7s cubic-bezier(0.34,1.56,0.64,1);transform:scale(0.3)">🌾</span>
+    <div class="complete-title">Stage พร้อมใช้งานแล้ว!</div>
+    <div class="complete-sub" id="ph3sub">หุ่นไล่กาปรากฏตัว — เริ่มปลูกและเก็บเกี่ยวได้เลย<br>ผลผลิต: 🌾 ข้าวสาลี · 🥕 แครอท · 🧅 หอม</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-val" id="s1">0</div><div class="stat-lbl">แปลงปลูก</div></div>
+      <div class="stat-card"><div class="stat-val">1 วัน</div><div class="stat-lbl">รอบโต</div></div>
+      <div class="stat-card"><div class="stat-val">×3</div><div class="stat-lbl">ผลผลิต/รอบ</div></div>
+      <div class="stat-card"><div class="stat-val" id="s4">0</div><div class="stat-lbl">เฟอร์ตกแต่ง</div></div>
+    </div>
+    <button class="btn btn-ghost" style="max-width:180px;margin:0 auto" onclick="resetAll()">🔄 เล่นใหม่</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SHARED
+// ═══════════════════════════════════════════════════════════
+const N = 10;
+const DEBRIS = ['🌿','🪨','💧','🍂','🌾'];
+const DEBRIS_REWARD = {'🌿':'🌱 เมล็ดพืช','🪨':'🪨 หิน','💧':'💧 น้ำ','🍂':'🍂 ปุ๋ยใบไม้','🌾':'🌾 ฟาง'};
+
+function getBorder(r,c){
+  const rS = c < N-1 ? ((c+1)%2===0 ? '1.5px solid #2a4a6a' : '1px dashed #162030') : 'none';
+  const bS = r < N-1 ? ((r+1)%2===0 ? '1.5px solid #2a4a6a' : '1px dashed #162030') : 'none';
+  return `border-right:${rS};border-bottom:${bS}`;
+}
+
+let toastT;
+function showToast(msg){
+  const el=document.getElementById('foundToast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+function spawnSparkle(x,y,emoji='✨'){
+  const el=document.createElement('div');
+  el.className='sparkle';el.textContent=emoji;
+  el.style.left=x+'px';el.style.top=y+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PHASE 1 — CLEANUP
+// ═══════════════════════════════════════════════════════════
+let p1Grid=[], p1Cleaned=0, p1Total=0, p1Mouse=false;
+let p1Found={};
+
+function initP1(){
+  p1Grid=[];p1Cleaned=0;p1Total=0;p1Found={};
+  const g=document.getElementById('g1');g.innerHTML='';
+  for(let r=0;r<N;r++){
+    p1Grid[r]=[];
+    for(let c=0;c<N;c++){
+      const d=DEBRIS[Math.floor(Math.random()*DEBRIS.length)];
+      p1Grid[r][c]=d;p1Total++;
+      const div=document.createElement('div');
+      div.id=`d1-${r}-${c}`;
+      div.style.cssText=`width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px;background:#1c1207;transition:background .2s;${getBorder(r,c)}`;
+      div.textContent=d;
+      div.addEventListener('mouseenter',()=>{if(p1Mouse)p1Clean(r,c)});
+      div.addEventListener('mousedown',()=>{p1Mouse=true;p1Clean(r,c)});
+      g.appendChild(div);
+    }
+  }
+  p1UpdateUI();
+}
+
+function p1Clean(r,c){
+  if(!p1Grid[r][c])return;
+  const d=p1Grid[r][c];
+  p1Grid[r][c]=null;p1Cleaned++;
+  p1Found[d]=(p1Found[d]||0)+1;
+  const el=document.getElementById(`d1-${r}-${c}`);
+  if(el){el.textContent='';el.style.background='#0d1a0d';}
+  p1UpdateUI();
+}
+
+function p1UpdateUI(){
+  const pct=Math.round(p1Cleaned/p1Total*100);
+  document.getElementById('pct').textContent=pct+'%';
+  document.getElementById('pfill').style.width=pct+'%';
+  const btn=document.getElementById('btn1');
+  btn.disabled=pct<80;
+  const tip=document.getElementById('cleanTip');
+  if(pct>=100)tip.innerHTML='🎉 สะอาดหมดจด! กดดำเนินต่อได้เลย';
+  else if(pct>=80)tip.innerHTML='✨ สะอาดพอแล้ว! กดดำเนินต่อได้เลย หรือจะล้างต่อก็ได้';
+  else tip.innerHTML=`ลากเมาส์ผ่านขยะเพื่อเก็บกวาด ต้องสะอาดอย่างน้อย <b style="color:var(--gold)">80%</b>`;
+  const fl=document.getElementById('foundList');
+  const keys=Object.keys(p1Found);
+  if(!keys.length){fl.textContent='ยังไม่พบของใดๆ';return;}
+  fl.innerHTML=keys.map(k=>`<span style="margin-right:8px">${DEBRIS_REWARD[k]} ×${p1Found[k]}</span>`).join('');
+}
+
+document.addEventListener('mouseup',()=>{p1Mouse=false});
+
+// ═══════════════════════════════════════════════════════════
+//  PHASE 2 — FURNISH
+// ═══════════════════════════════════════════════════════════
+const FURNS=[
+  {id:'plot', name:'แปลงปลูก', emoji:'🟫', w:1,h:1, col:'#2a1505', brd:'#6a3a10', mandatory:true, need:9, stock:20},
+  {id:'fence',name:'รั้วไม้',   emoji:'🪵', w:2,h:1, col:'#1a0f05', brd:'#5a3a10', mandatory:false,need:0, stock:8},
+  {id:'bucket',name:'ถังน้ำ',   emoji:'🪣', w:1,h:2, col:'#05101a', brd:'#1a4a6a', mandatory:false,need:0, stock:4},
+  {id:'deco', name:'ดอกไม้',    emoji:'🌻', w:1,h:1, col:'#1a1500', brd:'#4a4000', mandatory:false,need:0, stock:10},
+  {id:'shed', name:'โกดังเล็ก', emoji:'🏚️', w:2,h:2, col:'#1a0800', brd:'#4a2200', mandatory:false,need:0, stock:2},
+];
+
+let p2Grid=[], p2Sel=null, p2Rot=0, p2Counts={}, p2Hover={r:-1,c:-1};
+
+function initP2(){
+  p2Grid=Array.from({length:N},()=>Array(N).fill(null));
+  p2Sel=null;p2Rot=0;p2Hover={r:-1,c:-1};
+  p2Counts={};FURNS.forEach(f=>p2Counts[f.id]=0);
+  buildG2();renderFurnList();renderChecklist();updateBtn2();
+}
+
+function buildG2(){
+  const g=document.getElementById('g2');g.innerHTML='';
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const div=document.createElement('div');
+    div.id=`d2-${r}-${c}`;
+    div.style.cssText=`width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;background:#0d1a0d;transition:background .1s;${getBorder(r,c)}`;
+    div.addEventListener('mouseenter',()=>{p2Hover={r,c};renderG2()});
+    div.addEventListener('mouseleave',()=>{p2Hover={r:-1,c:-1};renderG2()});
+    div.addEventListener('click',()=>p2Click(r,c));
+    g.appendChild(div);
+  }
+}
+
+function effSize(){
+  if(!p2Sel)return null;
+  return p2Rot%2===0?{w:p2Sel.w,h:p2Sel.h}:{w:p2Sel.h,h:p2Sel.w};
+}
+
+function canPlace(r,c,w,h){
+  if(r+h>N||c+w>N)return false;
+  for(let dr=0;dr<h;dr++)for(let dc=0;dc<w;dc++)if(p2Grid[r+dr][c+dc])return false;
+  return true;
+}
+
+function footprint(r,c){
+  const sz=effSize();if(!sz||r<0)return new Set();
+  const s=new Set();
+  for(let dr=0;dr<sz.h;dr++)for(let dc=0;dc<sz.w;dc++){
+    const nr=r+dr,nc=c+dc;
+    if(nr<N&&nc<N)s.add(`${nr},${nc}`);
+  }
+  return s;
+}
+
+function renderG2(){
+  const fp=footprint(p2Hover.r,p2Hover.c);
+  const sz=effSize();
+  const valid=p2Hover.r>=0&&sz?canPlace(p2Hover.r,p2Hover.c,sz.w,sz.h):false;
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+    const el=document.getElementById(`d2-${r}-${c}`);if(!el)continue;
+    const placed=p2Grid[r][c];
+    const inFp=fp.has(`${r},${c}`);
+    if(placed){
+      const f=FURNS.find(x=>x.id===placed.fid);
+      el.style.background=f?f.col:'#1a2535';
+      el.style.borderColor=placed.isRoot&&inFp?'rgba(255,255,255,.4)':f?f.brd:'transparent';
+      el.textContent=placed.isRoot?(f?f.emoji:''):'';
+      el.style.fontSize=placed.isRoot&&f&&(f.w>1||f.h>1)?'18px':'14px';
+    } else if(inFp){
+      el.style.background=valid?'#1a3a10':'#3a1010';
+      el.style.borderColor=valid?'#3a7a20':'#7a2020';
+      el.textContent='';
+    } else {
+      el.style.background='#0d1a0d';
+      el.style.borderColor='';
+      el.textContent='';
+    }
+  }
+}
+
+function p2Click(r,c){
+  if(!p2Sel){
+    const pl=p2Grid[r][c];
+    if(pl)removeByRoot(pl.rootR,pl.rootC,pl.fid);
+    return;
+  }
+  const sz=effSize();
+  if(!canPlace(r,c,sz.w,sz.h))return;
+  for(let dr=0;dr<sz.h;dr++)for(let dc=0;dc<sz.w;dc++)
+    p2Grid[r+dr][c+dc]={fid:p2Sel.id,rootR:r,rootC:c,isRoot:dr===0&&dc===0};
+  p2Counts[p2Sel.id]++;
+  // sparkle
+  const el=document.getElementById(`d2-${r}-${c}`);
+  if(el){const b=el.getBoundingClientRect();spawnSparkle(b.left+14,b.top+window.scrollY,'✨')}
+  if(p2Sel.id==='plot')showToast(`🟫 แปลงปลูก ${p2Counts['plot']}/${p2Sel.need}`);
+  renderG2();renderFurnList();renderChecklist();updateBtn2();
+}
+
+function removeByRoot(rr,rc,fid){
+  for(let r=0;r<N;r++)for(let c=0;c<N;c++)
+    if(p2Grid[r][c]?.rootR===rr&&p2Grid[r][c]?.rootC===rc)p2Grid[r][c]=null;
+  p2Counts[fid]=Math.max(0,(p2Counts[fid]||0)-1);
+  renderG2();renderFurnList();renderChecklist();updateBtn2();
+}
+
+function renderFurnList(){
+  const el=document.getElementById('furnList');el.innerHTML='';
+  FURNS.forEach(f=>{
+    const isSel=p2Sel?.id===f.id;
+    const sz=p2Rot%2===0?{w:f.w,h:f.h}:{w:f.h,h:f.w};
+    const div=document.createElement('div');
+    div.className='furn-item'+(isSel?' sel':'');
+    div.innerHTML=`
+      <div class="fi-ico">${f.emoji}</div>
+      <div class="fi-info">
+        <div class="fi-name">${f.name}${f.mandatory?`<span class="req-badge">★ บังคับ</span>`:''}</div>
+        <div class="fi-size">${sz.w}×${sz.h} sub-cell</div>
+      </div>
+      <div class="fi-cnt">${p2Counts[f.id]||0}${f.mandatory?'/'+f.need:''}</div>
+    `;
+    div.onclick=()=>{p2Sel=isSel?null:f;renderFurnList();renderG2();};
+    el.appendChild(div);
+  });
+}
+
+function renderChecklist(){
+  const el=document.getElementById('chklist');el.innerHTML='';
+  FURNS.filter(f=>f.mandatory).forEach(f=>{
+    const n=p2Counts[f.id]||0;
+    const ok=n>=f.need;
+    const div=document.createElement('div');div.className='chk';
+    div.innerHTML=`
+      <div class="chk-box${ok?' ok':''}">${ok?'✓':''}</div>
+      <span class="chk-lbl${ok?' ok':''}">${f.emoji} ${f.name} — ${n}/${f.need}</span>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function updateBtn2(){
+  const done=FURNS.filter(f=>f.mandatory).every(f=>(p2Counts[f.id]||0)>=f.need);
+  document.getElementById('btn2').disabled=!done;
+  if(done)document.getElementById('ph2tip').innerHTML='✅ ครบแล้ว! กด <b>เสร็จสิ้น</b> เพื่อปลดล็อค Stage';
+}
+
+function doRotate(){
+  p2Rot=(p2Rot+1)%4;
+  const labels=['→ ปกติ','↓ 90°','← 180°','↑ 270°'];
+  document.getElementById('rotLabel').textContent=labels[p2Rot];
+  renderFurnList();renderG2();
+}
+function clearSel(){p2Sel=null;renderFurnList();renderG2();}
+document.addEventListener('keydown',e=>{if(e.key==='r'||e.key==='R')doRotate()});
+
+// ═══════════════════════════════════════════════════════════
+//  PHASE TRANSITIONS
+// ═══════════════════════════════════════════════════════════
+function goPhase2(){
+  document.getElementById('ph1').classList.remove('show');
+  document.getElementById('ph2').classList.add('show');
+  document.getElementById('stp1').className='stp done';
+  document.getElementById('stp2').className='stp active';
+  initP2();
+}
+
+function goPhase3(){
+  const plots=p2Counts['plot']||0;
+  const decos=(p2Counts['fence']||0)+(p2Counts['bucket']||0)+(p2Counts['deco']||0)+(p2Counts['shed']||0);
+  document.getElementById('s1').textContent=plots;
+  document.getElementById('s4').textContent=decos;
+  document.getElementById('ph2').classList.remove('show');
+  document.getElementById('ph3').classList.add('show');
+  document.getElementById('stp2').className='stp done';
+  document.getElementById('stp3').className='stp active';
+  // NPC appear
+  setTimeout(()=>{
+    const npc=document.getElementById('npcSprite');
+    npc.style.opacity='1';npc.style.transform='scale(1)';
+    // burst sparkles
+    for(let i=0;i<8;i++){
+      setTimeout(()=>{
+        const x=300+Math.random()*300,y=200+Math.random()*200;
+        spawnSparkle(x,y,['✨','🌟','⭐','💫'][Math.floor(Math.random()*4)]);
+      },i*120);
+    }
+  },200);
+}
+
+function resetAll(){
+  ['ph1','ph2','ph3'].forEach(id=>document.getElementById(id).classList.remove('show'));
+  ['stp1','stp2','stp3'].forEach((id,i)=>document.getElementById(id).className='stp'+(i===0?' active':''));
+  const npc=document.getElementById('npcSprite');
+  npc.style.opacity='0';npc.style.transform='scale(0.3)';
+  document.getElementById('ph1').classList.add('show');
+  initP1();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════════════
+initP1();
+</script>
+</body>
+</html>

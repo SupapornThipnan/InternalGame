@@ -25,7 +25,7 @@ header{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:1px
 .clock-label{text-align:center;font-size:10px;color:var(--dim);margin-top:2px}
 .speed-row{display:flex;gap:3px}
 .spd{background:var(--card);border:1px solid var(--border);color:var(--dim);padding:3px 9px;border-radius:7px;cursor:pointer;font-size:11px;font-family:inherit;transition:all .15s}
-.spd:hover{background:var(--card2);color:var(--text)}
+/* .spd:hover removed */
 .spd.active{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
 
 /* NIGHT */
@@ -52,15 +52,15 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px}
 .filter-row{display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
 .filter-info{font-size:11px;color:var(--dim);margin-left:auto}
 .ftab{background:var(--card);border:1px solid var(--border);color:var(--dim);padding:4px 12px;border-radius:20px;cursor:pointer;font-size:12px;font-family:inherit;transition:all .15s}
-.ftab:hover{background:var(--card2);color:var(--text)}
+/* .ftab:hover removed */
 .ftab.active{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
 
 /* STAGES */
 .stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:12px}
 
 /* CARD */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,box-shadow .2s}
-.card:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(0,0,0,.4)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:box-shadow .2s}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.5)}
 .card.locked{opacity:.6}
 .card.rdy{border-color:var(--gold);animation:glow 2s ease-in-out infinite}
 @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(245,200,66,.25)}50%{box-shadow:0 0 18px rgba(245,200,66,.55)}}
@@ -111,15 +111,15 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px}
 /* buttons */
 .btn{width:100%;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
 .btn-plant{background:#2d6e30;color:#c8f0c8}
-.btn-plant:hover{background:#3a8a3e}
+/* .btn-plant:hover removed */
 .btn-wait{background:var(--bg2);color:var(--dim);border:1px solid var(--border);cursor:default}
 .btn-harvest{background:var(--gold);color:#1a0e00}
-.btn-harvest:hover{background:#ffda50;transform:scale(1.02)}
+/* .btn-harvest:hover removed */
 .btn-unlock{background:linear-gradient(135deg,#2d1a5c,#5c3aaa);color:#e0d0ff;border:1px solid #7050c0}
-.btn-unlock:hover:not(:disabled){background:linear-gradient(135deg,#3d2a7c,#7050c0)}
+/* .btn-unlock:hover removed */
 .btn-unlock:disabled{opacity:.35;cursor:not-allowed}
 .btn-craft{background:#4a1a80;color:#d0a0ff;border:none;padding:4px 10px;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
-.btn-craft:hover:not(:disabled){background:#6030a0}
+/* .btn-craft:hover removed */
 .btn-craft:disabled{opacity:.3;cursor:not-allowed}
 
 /* LOG */
@@ -130,6 +130,31 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px}
 .log-row.t-unlock .log-msg{color:var(--purple)}
 .log-row.t-craft .log-msg{color:#c080ff}
 .log-row.t-day .log-msg{color:var(--dim);font-style:italic}
+.log-row.t-quest .log-msg{color:#f5c842}
+
+/* MONEY */
+.money-chip{background:#1f1a00;border:1px solid #4a3a00;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--gold)}
+
+/* QUEST */
+.quest-panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;margin-bottom:12px}
+.quest-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.quest-count{font-size:11px;color:var(--dim);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;border-radius:10px}
+.quest-empty{font-size:12px;color:var(--dim);text-align:center;padding:12px 0}
+.quest-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.qcard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:6px}
+.qcard.new{border-color:var(--gold);box-shadow:0 0 10px rgba(245,200,66,.2)}
+.q-npc{display:flex;align-items:center;gap:6px}
+.q-npc-ico{font-size:18px}
+.q-npc-name{font-size:12px;font-weight:700;flex:1}
+.q-reward{font-size:12px;font-weight:700;color:var(--gold)}
+.q-req{display:flex;flex-wrap:wrap;gap:3px}
+.qr{font-size:11px;padding:2px 6px;border-radius:5px;border:1px solid}
+.qr.ok{background:#112211;border-color:#2a5a2a;color:var(--green)}
+.qr.bad{background:#221111;border-color:#5a2a2a;color:var(--red)}
+.btn-submit{width:100%;padding:6px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;background:linear-gradient(135deg,#7a5800,var(--gold));color:#111}
+/* .btn-submit:hover removed */
+.btn-submit:disabled{opacity:.3;cursor:not-allowed;background:var(--card2);color:var(--dim)}
+.quest-next{font-size:10px;color:var(--dim);text-align:right;margin-top:4px}
 
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
@@ -141,16 +166,17 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px}
 <div id="toast"></div>
 
 <header>
-  <div class="logo">🌸 Demetria ECO Demo</div>
+  <div class="logo">🌸 Demetria ECO Demo <span style="font-size:10px;font-weight:400;color:var(--dim);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1px 7px;margin-left:4px;vertical-align:middle">v0.6.1</span></div>
   <div class="day-badge">วันที่ <b id="hDay">1</b><span id="hPhase" style="color:var(--dim);font-size:11px;margin-left:4px">เช้า</span></div>
+  <div class="money-chip">💰 <span id="hMoney">0</span></div>
   <div class="clock-wrap">
     <div class="clock-track"><div class="clock-knob" id="clockKnob">☀️</div></div>
     <div class="clock-label" id="clockLabel">กลางวัน</div>
   </div>
   <div class="speed-row">
-    <button class="spd active" onclick="setSpeed(1)">1x</button>
+    <button class="spd" onclick="setSpeed(1)">1x</button>
     <button class="spd" onclick="setSpeed(2)">2x</button>
-    <button class="spd" onclick="setSpeed(5)">5x</button>
+    <button class="spd active" onclick="setSpeed(5)">5x</button>
     <button class="spd" onclick="setSpeed(10)">10x</button>
     <button class="spd" onclick="togglePause()" id="pauseBtn">⏸</button>
     <button class="spd active" onclick="toggleNight()" id="nightBtn" title="เปิด/ปิด แสงกลางวัน-กลางคืน">🌙</button>
@@ -161,6 +187,19 @@ main{max-width:1200px;margin:0 auto;padding:12px 16px}
   <div class="panel">
     <div class="panel-title">🎒 คลังของ</div>
     <div class="inv-grid" id="invGrid"></div>
+  </div>
+
+  <div class="quest-panel">
+    <div class="quest-header">
+      <div class="panel-title" style="margin-bottom:0">📜 เควสจาก NPC</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="quest-next" id="questNext"></div>
+        <div class="quest-count" id="questCount">0 / 20</div>
+      </div>
+    </div>
+    <div class="quest-list" id="questList">
+      <div class="quest-empty">ยังไม่มีเควส — ปลดล็อค NPC stage ก่อน แล้วรอสักครู่!</div>
+    </div>
   </div>
 
   <div class="filter-row">
@@ -295,267 +334,272 @@ const DEF = [
   // ── WAVE 2 ─── EARLY ────────────────────────────────────
   {id:'farm_b',wave:2,cat:'farm',name:'ไร่ผัก',type:'passive',emoji:'🥬',accent:'#3d7d2a',
    unlocked:false,growDays:2,amount:3,produces:['มันฝรั่ง','กะหล่ำปลี','มะเขือเทศ'],
-   unlockCost:{'ขนมปัง':3,'นม':5}},
+   unlockCost:{'แยมเบอร์รี่':2,'สลัด':2,'ขนมปัง':3,'นม':5}},
 
   {id:'forest_b',wave:2,cat:'forest',name:'ป่าลึก',type:'passive',emoji:'🌳',accent:'#1e6e45',
    unlocked:false,growDays:1,amount:3,produces:['สมุนไพร','ดอกไม้ป่า','หิน'],
-   unlockCost:{'ไม้':5,'เห็ด':5}},
+   unlockCost:{'ขนมปัง':2,'สลัด':2,'แยมเบอร์รี่':2,'ไม้':5,'เห็ด':5}},
 
   {id:'animal_b',wave:2,cat:'animal',name:'โรงแกะ-เป็ด-แพะ',type:'passive',emoji:'🐑',accent:'#8b6020',
    unlocked:false,growDays:2,amount:3,produces:['ขนแกะ','ไข่เป็ด','นมแพะ'],
-   unlockCost:{'ขนมปัง':3,'น้ำผึ้ง':5}},
+   unlockCost:{'แยมเบอร์รี่':2,'สลัด':2,'ขนมปัง':3,'น้ำผึ้ง':5}},
 
   {id:'animal_fish',wave:2,cat:'animal',name:'บ่อเลี้ยงปลา',type:'passive',emoji:'🐟',accent:'#1a5a8a',
    unlocked:false,growDays:1,amount:3,produces:['ปลา','ไข่ปลา','สาหร่าย'],
-   unlockCost:{'ไม้':5,'หิน':3}},
+   unlockCost:{'ขนมปัง':2,'แยมเบอร์รี่':2,'สลัด':2,'ไม้':5,'หิน':3}},
 
   {id:'npc_soup',wave:2,cat:'craft',name:'ร้านซุป',type:'craft',emoji:'🍲',accent:'#8b3020',
    unlocked:false,recipes:[
      {name:'ซุปเห็ด',emoji:'🍲',ing:{'เห็ด':2,'หอม':1,'สมุนไพร':1}},
      {name:'สตูว์',emoji:'🥘',ing:{'มันฝรั่ง':1,'แครอท':1,'เนื้อกระต่าย':1}},
      {name:'ต้มยำ',emoji:'🍜',ing:{'เห็ดหอม':1,'สมุนไพร':1,'ขิง':1}},
-   ],unlockCost:{'เห็ด':8,'หอม':5,'สมุนไพร':5}},
+   ],unlockCost:{'แยมเบอร์รี่':3,'สลัด':3,'ขนมปัง':5,'เห็ด':8,'หอม':5,'สมุนไพร':5}},
 
   {id:'npc_wood',wave:2,cat:'craft',name:'โรงงานไม้',type:'craft',emoji:'🪵',accent:'#5a3010',
    unlocked:false,recipes:[
      {name:'เฟอร์นิเจอร์',emoji:'🪑',ing:{'ไม้':3}},
      {name:'กรอบรูป',emoji:'🖼️',ing:{'ไม้':2,'คริสตัล':1}},
      {name:'ของเล่นไม้',emoji:'🪆',ing:{'ไม้':2,'ขนแกะ':1}},
-   ],unlockCost:{'ไม้':10,'หิน':5}},
+   ],unlockCost:{'แยมเบอร์รี่':2,'สลัด':3,'ขนมปัง':3,'ไม้':10,'หิน':5}},
 
   // ── WAVE 3 ─── MID ──────────────────────────────────────
   {id:'farm_c',wave:3,cat:'farm',name:'ไร่ข้าวโพด',type:'passive',emoji:'🌽',accent:'#3d7d2a',
    unlocked:false,growDays:2,amount:3,produces:['ข้าวโพด','ฟักทอง','บีทรูท'],
-   unlockCost:{'กะหล่ำปลี':5,'นมแพะ':5}},
+   unlockCost:{'ซุปเห็ด':2,'ของเล่นไม้':2,'เฟอร์นิเจอร์':2,'กะหล่ำปลี':5,'นมแพะ':5}},
 
   {id:'forest_cave',wave:3,cat:'forest',name:'ถ้ำแร่',type:'passive',emoji:'⛏️',accent:'#4a3a6a',
    unlocked:false,growDays:2,amount:3,produces:['คริสตัล','หินแร่','ฟอสซิล'],
-   unlockCost:{'หิน':8,'ไม้':5}},
+   unlockCost:{'ซุปเห็ด':2,'ของเล่นไม้':2,'เฟอร์นิเจอร์':2,'หิน':8,'ไม้':5}},
 
   {id:'animal_rabbit',wave:3,cat:'animal',name:'โรงกระต่าย',type:'passive',emoji:'🐰',accent:'#8b6020',
    unlocked:false,growDays:2,amount:3,produces:['ขนกระต่าย','เนื้อกระต่าย','ปุ๋ยอินทรีย์'],
-   unlockCost:{'กะหล่ำปลี':5,'แครอท':5}},
+   unlockCost:{'เฟอร์นิเจอร์':2,'ของเล่นไม้':2,'ซุปเห็ด':3,'กะหล่ำปลี':5,'แครอท':5}},
 
   {id:'animal_bee',wave:3,cat:'animal',name:'โรงผึ้ง',type:'passive',emoji:'🐝',accent:'#8b7020',
    unlocked:false,growDays:2,amount:3,produces:['น้ำผึ้ง','ขี้ผึ้ง','เกสรดอกไม้'],
-   unlockCost:{'ดอกไม้ป่า':8,'น้ำผึ้ง':3}},
+   unlockCost:{'เฟอร์นิเจอร์':2,'ของเล่นไม้':2,'ซุปเห็ด':2,'ดอกไม้ป่า':8,'น้ำผึ้ง':3}},
 
   {id:'npc_coffee',wave:3,cat:'craft',name:'ร้านกาแฟ',type:'craft',emoji:'☕',accent:'#5a3010',
    unlocked:false,recipes:[
      {name:'กาแฟ',emoji:'☕',ing:{'เบอร์รี่ป่า':2,'น้ำผึ้ง':1}},
      {name:'ชา',emoji:'🍵',ing:{'สมุนไพร':2,'น้ำผึ้ง':1}},
      {name:'เค้ก',emoji:'🎂',ing:{'ข้าวสาลี':1,'ไข่':1,'นม':1}},
-   ],unlockCost:{'น้ำผึ้ง':5,'นม':5,'เห็ด':3}},
+   ],unlockCost:{'ซุปเห็ด':2,'เฟอร์นิเจอร์':2,'ขนมปัง':3,'น้ำผึ้ง':5,'นม':5,'เห็ด':3}},
 
   {id:'npc_bbq',wave:3,cat:'craft',name:'ร้านบาร์บีคิว',type:'craft',emoji:'🔥',accent:'#8b2010',
    unlocked:false,recipes:[
      {name:'เนื้อย่าง',emoji:'🥩',ing:{'เนื้อกระต่าย':2,'โหระพา':1}},
      {name:'ปลาย่าง',emoji:'🐠',ing:{'ปลา':2,'ขิง':1}},
      {name:'ผักย่าง',emoji:'🌽',ing:{'ข้าวโพด':1,'มะเขือเทศ':1,'ฟักทอง':1}},
-   ],unlockCost:{'เนื้อกระต่าย':5,'ข้าวโพด':5,'ปลา':3}},
+   ],unlockCost:{'เฟอร์นิเจอร์':2,'ของเล่นไม้':2,'ซุปเห็ด':3,'เนื้อกระต่าย':5,'ข้าวโพด':5,'ปลา':3}},
 
   {id:'npc_iron',wave:3,cat:'craft',name:'โรงตีเหล็ก',type:'craft',emoji:'⚒️',accent:'#3a3a3a',
    unlocked:false,recipes:[
      {name:'อุปกรณ์ฟาร์ม',emoji:'⚒️',ing:{'หินแร่':2,'ไม้':1}},
      {name:'กุญแจ',emoji:'🗝️',ing:{'หินแร่':1,'คริสตัล':1}},
      {name:'เครื่องมือ',emoji:'🔧',ing:{'หินแร่':3}},
-   ],unlockCost:{'หินแร่':10,'คริสตัล':3,'ไม้':5}},
+   ],unlockCost:{'ซุปเห็ด':3,'ของเล่นไม้':2,'เฟอร์นิเจอร์':3,'หินแร่':10,'คริสตัล':3,'ไม้':5}},
 
   // ── WAVE 4 ─── EXPANSION ────────────────────────────────
   {id:'farm_d',wave:4,cat:'farm',name:'สวนผลไม้',type:'passive',emoji:'🍎',accent:'#3d7d2a',
    unlocked:false,growDays:3,amount:3,produces:['สตรอเบอร์รี่','แอปเปิ้ล','เชอร์รี่'],
-   unlockCost:{'มะเขือเทศ':5,'น้ำผึ้ง':5}},
+   unlockCost:{'ชา':2,'อุปกรณ์ฟาร์ม':2,'กาแฟ':2,'มะเขือเทศ':5,'น้ำผึ้ง':5}},
 
   {id:'farm_flower',wave:4,cat:'farm',name:'สวนดอกไม้',type:'passive',emoji:'🌹',accent:'#7d2a5a',
    unlocked:false,growDays:2,amount:3,produces:['กุหลาบ','ทานตะวัน','ลาเวนเดอร์'],
-   unlockCost:{'สตรอเบอร์รี่':5,'น้ำผึ้ง':5}},
+   unlockCost:{'กาแฟ':2,'ชา':2,'เค้ก':2,'สตรอเบอร์รี่':5,'น้ำผึ้ง':5}},
 
   {id:'forest_swamp',wave:4,cat:'forest',name:'หนองน้ำ',type:'passive',emoji:'🐸',accent:'#2a5a2a',
    unlocked:false,growDays:2,amount:3,produces:['กก','ดอกบัว','ดินเหนียว'],
-   unlockCost:{'เห็ด':5,'สมุนไพร':5}},
+   unlockCost:{'กาแฟ':2,'อุปกรณ์ฟาร์ม':2,'เครื่องมือ':2,'เห็ด':5,'สมุนไพร':5}},
 
   {id:'forest_beach',wave:4,cat:'forest',name:'ชายหาด',type:'passive',emoji:'🐚',accent:'#1a5a7a',
    unlocked:false,growDays:1,amount:3,produces:['เปลือกหอย','ทราย','ปะการัง'],
-   unlockCost:{'ปลา':5,'สาหร่าย':3}},
+   unlockCost:{'เค้ก':2,'เครื่องมือ':2,'ซุปเห็ด':2,'ปลา':5,'สาหร่าย':3}},
 
   {id:'animal_horse',wave:4,cat:'animal',name:'คอกม้า',type:'passive',emoji:'🐴',accent:'#6a4010',
    unlocked:false,growDays:2,amount:3,produces:['ขนม้า','นมม้า','หนังม้า'],
-   unlockCost:{'ข้าวโพด':5,'ฟักทอง':3}},
+   unlockCost:{'กาแฟ':2,'เค้ก':2,'อุปกรณ์ฟาร์ม':2,'ข้าวโพด':5,'ฟักทอง':3}},
 
   {id:'animal_silk',wave:4,cat:'animal',name:'โรงไหม',type:'passive',emoji:'🧵',accent:'#6a2a6a',
    unlocked:false,growDays:3,amount:3,produces:['ใยไหม','ไหมดิบ','ดักแด้'],
-   unlockCost:{'ดอกไม้ป่า':5,'น้ำผึ้ง':5}},
+   unlockCost:{'กาแฟ':2,'ชา':2,'เค้ก':3,'ดอกไม้ป่า':5,'น้ำผึ้ง':5}},
 
   {id:'npc_sweet',wave:4,cat:'craft',name:'ร้านของหวาน',type:'craft',emoji:'🍦',accent:'#8b3070',
    unlocked:false,recipes:[
      {name:'ไอศครีม',emoji:'🍦',ing:{'นม':1,'น้ำผึ้ง':1,'สตรอเบอร์รี่':1}},
      {name:'มัฟฟิน',emoji:'🧁',ing:{'ข้าวสาลี':1,'ไข่':1,'สตรอเบอร์รี่':1}},
      {name:'ทาร์ต',emoji:'🥧',ing:{'ข้าวสาลี':1,'ไข่':1,'เชอร์รี่':1}},
-   ],unlockCost:{'ไข่':8,'สตรอเบอร์รี่':5,'นม':5}},
+   ],unlockCost:{'เค้ก':2,'ชา':2,'กาแฟ':3,'ไข่':8,'สตรอเบอร์รี่':5,'นม':5}},
 
   {id:'npc_juice',wave:4,cat:'craft',name:'ร้านน้ำผลไม้',type:'craft',emoji:'🧃',accent:'#8b6010',
    unlocked:false,recipes:[
      {name:'น้ำส้ม',emoji:'🧃',ing:{'แอปเปิ้ล':3}},
      {name:'สมูทตี้',emoji:'🥤',ing:{'สตรอเบอร์รี่':1,'เบอร์รี่ป่า':1,'นม':1}},
      {name:'น้ำมะนาว',emoji:'🍋',ing:{'สมุนไพร':2,'น้ำผึ้ง':1}},
-   ],unlockCost:{'สตรอเบอร์รี่':5,'แอปเปิ้ล':5,'เบอร์รี่ป่า':5}},
+   ],unlockCost:{'กาแฟ':3,'ชา':2,'เค้ก':3,'สตรอเบอร์รี่':5,'แอปเปิ้ล':5,'เบอร์รี่ป่า':5}},
 
   // ── WAVE 5 ─── ADVANCED ─────────────────────────────────
   {id:'farm_herb',wave:5,cat:'farm',name:'สวนสมุนไพร',type:'passive',emoji:'🌿',accent:'#2a6a2a',
    unlocked:false,growDays:2,amount:3,produces:['โหระพา','มิ้นต์','ขิง'],
-   unlockCost:{'ดอกไม้ป่า':5,'สมุนไพร':5}},
+   unlockCost:{'สมูทตี้':2,'มัฟฟิน':2,'น้ำมะนาว':2,'ดอกไม้ป่า':5,'สมุนไพร':5}},
 
   {id:'forest_bamboo',wave:5,cat:'forest',name:'ป่าไผ่',type:'passive',emoji:'🎋',accent:'#2a6a3a',
    unlocked:false,growDays:2,amount:3,produces:['ไผ่','หน่อไม้','ใบไผ่'],
-   unlockCost:{'สมุนไพร':5,'ดอกไม้ป่า':5}},
+   unlockCost:{'น้ำมะนาว':2,'ทาร์ต':2,'สมูทตี้':2,'สมุนไพร':5,'ดอกไม้ป่า':5}},
 
   {id:'farm_rice',wave:5,cat:'farm',name:'นาข้าว',type:'passive',emoji:'🍚',accent:'#4a7a20',
    unlocked:false,growDays:3,amount:3,produces:['ข้าวเจ้า','ข้าวหอม','ข้าวเหนียว'],
-   unlockCost:{'ข้าวโพด':5,'ปุ๋ยอินทรีย์':3}},
+   unlockCost:{'สมูทตี้':2,'น้ำส้ม':2,'ไอศครีม':2,'ข้าวโพด':5,'ปุ๋ยอินทรีย์':3}},
 
   {id:'npc_pizza',wave:5,cat:'craft',name:'ร้านพิซซ่า',type:'craft',emoji:'🍕',accent:'#8b3020',
    unlocked:false,recipes:[
      {name:'ชีส',emoji:'🧀',ing:{'นมแพะ':3}},
      {name:'พิซซ่า',emoji:'🍕',ing:{'ข้าวสาลี':2,'มะเขือเทศ':1,'ชีส':1}},
      {name:'ขนมปังกระเทียม',emoji:'🧄',ing:{'ข้าวสาลี':2,'โหระพา':1}},
-   ],unlockCost:{'มะเขือเทศ':8,'นมแพะ':5,'ข้าวสาลี':5}},
+   ],unlockCost:{'มัฟฟิน':3,'ทาร์ต':2,'อุปกรณ์ฟาร์ม':3,'มะเขือเทศ':8,'นมแพะ':5,'ข้าวสาลี':5}},
 
   {id:'npc_ramen',wave:5,cat:'craft',name:'ร้านราเมน',type:'craft',emoji:'🍜',accent:'#7a2010',
    unlocked:false,recipes:[
      {name:'ซุปกระดูก',emoji:'🦴',ing:{'เนื้อกระต่าย':1,'หอม':1,'ขิง':1}},
      {name:'ราเมน',emoji:'🍜',ing:{'ข้าวเจ้า':2,'ซุปกระดูก':1}},
      {name:'ไข่ต้มยาง',emoji:'🥚',ing:{'ไข่':2,'สาหร่าย':1}},
-   ],unlockCost:{'ข้าวเจ้า':5,'เนื้อกระต่าย':3,'หอม':5}},
+   ],unlockCost:{'น้ำส้ม':3,'สมูทตี้':2,'ไอศครีม':3,'ข้าวเจ้า':5,'เนื้อกระต่าย':3,'หอม':5}},
 
   {id:'animal_turtle',wave:5,cat:'animal',name:'บ่อเต่า',type:'passive',emoji:'🐢',accent:'#2a5a2a',
    unlocked:false,growDays:3,amount:3,produces:['กระดอง','ไข่เต่า','น้ำมันเต่า'],
-   unlockCost:{'ปะการัง':3,'ทราย':5}},
+   unlockCost:{'ทาร์ต':2,'น้ำมะนาว':2,'สมูทตี้':2,'ปะการัง':3,'ทราย':5}},
 
   {id:'farm_tea',wave:5,cat:'farm',name:'ไร่ชา',type:'passive',emoji:'🍵',accent:'#2a5a3a',
    unlocked:false,growDays:2,amount:3,produces:['ชาเขียว','ชาดำ','ชาดอกไม้'],
-   unlockCost:{'โหระพา':5,'น้ำผึ้ง':8}},
+   unlockCost:{'ทาร์ต':2,'ไอศครีม':2,'มัฟฟิน':3,'โหระพา':5,'น้ำผึ้ง':8}},
 
   // ── WAVE 6 ─── RARE ─────────────────────────────────────
   {id:'forest_snow',wave:6,cat:'forest',name:'ภูเขาหิมะ',type:'passive',emoji:'❄️',accent:'#2a4a7a',
    unlocked:false,growDays:3,amount:3,produces:['น้ำแข็งบริสุทธิ์','หิมะผลึก','คริสตัลน้ำแข็ง'],
-   unlockCost:{'คริสตัล':3,'หินแร่':5}},
+   unlockCost:{'ชีส':2,'ไข่ต้มยาง':2,'ราเมน':2,'คริสตัล':3,'หินแร่':5}},
 
   {id:'npc_cloth',wave:6,cat:'craft',name:'ร้านตัดเย็บ',type:'craft',emoji:'👗',accent:'#7a2a6a',
    unlocked:false,recipes:[
      {name:'เสื้อผ้า',emoji:'👗',ing:{'ฝ้าย':2,'ใยไหม':1}},
      {name:'ผ้าห่ม',emoji:'🛏️',ing:{'ขนแกะ':3}},
      {name:'กระเป๋า',emoji:'👜',ing:{'หนังม้า':1,'ฝ้าย':1,'ใยไหม':1}},
-   ],unlockCost:{'ฝ้าย':8,'ใยไหม':5,'ขนแกะ':3}},
+   ],unlockCost:{'พิซซ่า':2,'ราเมน':2,'ไอศครีม':3,'ฝ้าย':8,'ใยไหม':5,'ขนแกะ':3}},
 
   {id:'farm_cotton',wave:6,cat:'farm',name:'ไร่ฝ้าย',type:'passive',emoji:'🪡',accent:'#7a7a2a',
    unlocked:false,growDays:3,amount:3,produces:['ฝ้าย','ป่าน','ลินิน'],
-   unlockCost:{'ข้าวเจ้า':5,'หน่อไม้':5}},
+   unlockCost:{'ชีส':2,'ขนมปังกระเทียม':2,'ราเมน':2,'ข้าวเจ้า':5,'หน่อไม้':5}},
 
   {id:'npc_jewelry',wave:6,cat:'craft',name:'ร้านเครื่องประดับ',type:'craft',emoji:'💍',accent:'#6a2a8a',
    unlocked:false,recipes:[
      {name:'แหวน',emoji:'💍',ing:{'คริสตัล':2,'หินแร่':1}},
      {name:'สร้อย',emoji:'📿',ing:{'คริสตัล':1,'ใยไหม':2}},
      {name:'ต่างหู',emoji:'🔮',ing:{'ดอกไม้ป่า':1,'คริสตัล':1}},
-   ],unlockCost:{'คริสตัล':8,'ดอกไม้ป่า':5,'ใยไหม':3}},
+   ],unlockCost:{'พิซซ่า':2,'ราเมน':2,'เสื้อผ้า':2,'คริสตัล':8,'ดอกไม้ป่า':5,'ใยไหม':3}},
 
   {id:'farm_sugarcane',wave:6,cat:'farm',name:'ไร่อ้อย',type:'passive',emoji:'🎋',accent:'#5a7a1a',
    unlocked:false,growDays:2,amount:3,produces:['อ้อย','น้ำตาล','กากน้ำตาล'],
-   unlockCost:{'ชาดำ':5,'น้ำผึ้ง':5}},
+   unlockCost:{'ชีส':3,'ไข่ต้มยาง':2,'ราเมน':3,'ชาดำ':5,'น้ำผึ้ง':5}},
 
   {id:'npc_herb',wave:6,cat:'craft',name:'ร้านสมุนไพร',type:'craft',emoji:'💊',accent:'#2a6a3a',
    unlocked:false,recipes:[
      {name:'ยาบำรุง',emoji:'💊',ing:{'สมุนไพร':2,'น้ำผึ้ง':1,'ดอกไม้ป่า':1}},
      {name:'ยาแก้ไข้',emoji:'🩺',ing:{'สมุนไพร':1,'มิ้นต์':1,'ขิง':1}},
      {name:'น้ำหอม',emoji:'🧴',ing:{'ลาเวนเดอร์':1,'กุหลาบ':1,'เรซิ่น':1}},
-   ],unlockCost:{'สมุนไพร':10,'น้ำผึ้ง':5,'ดอกไม้ป่า':5}},
+   ],unlockCost:{'ราเมน':3,'ขนมปังกระเทียม':3,'พิซซ่า':3,'สมุนไพร':10,'น้ำผึ้ง':5,'ดอกไม้ป่า':5}},
 
   // ── WAVE 7 ─── ENDGAME ──────────────────────────────────
   {id:'forest_glow',wave:7,cat:'forest',name:'ป่าเรืองแสง',type:'passive',emoji:'✨',accent:'#3a2a6a',
    unlocked:false,growDays:3,amount:3,produces:['มอสส์เรืองแสง','เรซิ่น','รากไม้หายาก'],
-   unlockCost:{'กบเรืองแสง':3,'คริสตัล':5}},
+   unlockCost:{'แหวน':2,'ผ้าห่ม':2,'ยาบำรุง':3,'กบเรืองแสง':3,'คริสตัล':5}},
 
   {id:'npc_candle',wave:7,cat:'craft',name:'โรงทำเทียน',type:'craft',emoji:'🕯️',accent:'#7a5a10',
    unlocked:false,recipes:[
      {name:'เทียนหอม',emoji:'🕯️',ing:{'ขี้ผึ้ง':1,'ลาเวนเดอร์':1}},
      {name:'สบู่',emoji:'🧼',ing:{'น้ำมันเต่า':1,'ดอกไม้ป่า':1}},
      {name:'น้ำมันนวด',emoji:'🫙',ing:{'น้ำมันเมล็ด':2,'สมุนไพร':1}},
-   ],unlockCost:{'ขี้ผึ้ง':5,'ลาเวนเดอร์':5,'ดอกไม้ป่า':5}},
+   ],unlockCost:{'เสื้อผ้า':2,'ต่างหู':2,'ยาบำรุง':3,'ขี้ผึ้ง':5,'ลาเวนเดอร์':5,'ดอกไม้ป่า':5}},
 
   {id:'animal_parrot',wave:7,cat:'animal',name:'โรงนกแก้ว',type:'passive',emoji:'🦜',accent:'#2a6a3a',
    unlocked:false,growDays:3,amount:3,produces:['ขนนก','ไข่นกหายาก','เสียงเพลง'],
-   unlockCost:{'ดอกบัว':3,'ดอกไม้ป่า':5}},
+   unlockCost:{'ยาบำรุง':2,'ผ้าห่ม':2,'แหวน':2,'ดอกบัว':3,'ดอกไม้ป่า':5}},
 
   {id:'animal_croc',wave:7,cat:'animal',name:'โรงจระเข้',type:'passive',emoji:'🐊',accent:'#1a5a2a',
    unlocked:false,growDays:4,amount:3,produces:['หนังจระเข้','ฟันจระเข้','น้ำมันจระเข้'],
-   unlockCost:{'เนื้อกระต่าย':5,'หนังม้า':3}},
+   unlockCost:{'แหวน':2,'ยาบำรุง':2,'เสื้อผ้า':2,'เนื้อกระต่าย':5,'หนังม้า':3}},
 
   {id:'npc_art',wave:7,cat:'craft',name:'ร้านศิลปะ',type:'craft',emoji:'🎨',accent:'#6a1a6a',
    unlocked:false,recipes:[
      {name:'สีวาด',emoji:'🎨',ing:{'เบอร์รี่ป่า':2,'คริสตัล':1}},
      {name:'รูปวาด',emoji:'🖼️',ing:{'ฝ้าย':2,'สีวาด':2}},
      {name:'รูปปั้น',emoji:'🗿',ing:{'ดินเหนียว':3}},
-   ],unlockCost:{'เบอร์รี่ป่า':5,'คริสตัล':3,'ฝ้าย':5}},
+   ],unlockCost:{'ยาแก้ไข้':2,'กระเป๋า':2,'สร้อย':2,'เบอร์รี่ป่า':5,'คริสตัล':3,'ฝ้าย':5}},
 
   {id:'npc_book',wave:7,cat:'craft',name:'ร้านหนังสือ',type:'craft',emoji:'📚',accent:'#2a3a6a',
    unlocked:false,recipes:[
      {name:'หนังสือ',emoji:'📚',ing:{'ป่าน':2,'สีวาด':1}},
      {name:'แผนที่',emoji:'🗺️',ing:{'หนังม้า':1,'สีวาด':2}},
      {name:'บันทึกเก่า',emoji:'📜',ing:{'ฝ้าย':1,'ไม้':2}},
-   ],unlockCost:{'ฝ้าย':5,'ไม้':5,'สีวาด':3}},
+   ],unlockCost:{'ผ้าห่ม':2,'ต่างหู':2,'กระเป๋า':2,'ฝ้าย':5,'ไม้':5,'สีวาด':3}},
 
   // ── WAVE 8 ─── SPECIAL ──────────────────────────────────
   {id:'farm_mushroom',wave:8,cat:'farm',name:'โรงเพาะเห็ด',type:'passive',emoji:'🍄',accent:'#5a3a1a',
    unlocked:false,growDays:3,amount:3,produces:['เห็ดหอม','เห็ดนางฟ้า','เห็ดทรัฟเฟิล'],
-   unlockCost:{'ดินเหนียว':5,'ไม้':8}},
+   unlockCost:{'เทียนหอม':2,'หนังสือ':2,'สบู่':2,'ดินเหนียว':5,'ไม้':8}},
 
   {id:'npc_seed',wave:8,cat:'craft',name:'ร้านเมล็ดพันธุ์',type:'craft',emoji:'🌱',accent:'#2a5a2a',
    unlocked:false,recipes:[
      {name:'เมล็ดพืชหายาก',emoji:'🌱',ing:{'รากไม้หายาก':2,'เกสรดอกไม้':2}},
      {name:'ปุ๋ยพิเศษ',emoji:'🌿',ing:{'ปุ๋ยอินทรีย์':3,'เกสรดอกไม้':1}},
      {name:'กระถาง',emoji:'🪴',ing:{'ดินเหนียว':3}},
-   ],unlockCost:{'รากไม้หายาก':5,'เกสรดอกไม้':5,'ปุ๋ยอินทรีย์':5}},
+   ],unlockCost:{'สบู่':2,'หนังสือ':2,'รูปปั้น':2,'รากไม้หายาก':5,'เกสรดอกไม้':5,'ปุ๋ยอินทรีย์':5}},
 
   {id:'npc_vet',wave:8,cat:'craft',name:'คลินิกสัตว์',type:'craft',emoji:'🩺',accent:'#1a5a5a',
    unlocked:false,recipes:[
      {name:'ยาสัตว์',emoji:'💊',ing:{'สมุนไพร':2,'น้ำผึ้ง':2}},
      {name:'วิตามิน',emoji:'💉',ing:{'รากไม้หายาก':1,'นมแพะ':2}},
      {name:'อาหารพิเศษ',emoji:'🍖',ing:{'ปลา':2,'ข้าวเจ้า':1}},
-   ],unlockCost:{'ยาบำรุง':3,'ไข่นกหายาก':3,'นมแพะ':5}},
+   ],unlockCost:{'เทียนหอม':2,'รูปปั้น':2,'หนังสือ':2,'ยาบำรุง':3,'ไข่นกหายาก':3,'นมแพะ':5}},
 
   {id:'farm_cactus',wave:8,cat:'farm',name:'สวนกระบองเพชร',type:'passive',emoji:'🌵',accent:'#4a6a1a',
    unlocked:false,growDays:4,amount:3,produces:['อาโลเวร่า','มังกร','น้ำมันเมล็ด'],
-   unlockCost:{'รากไม้หายาก':3,'ทราย':5}},
+   unlockCost:{'เทียนหอม':2,'แผนที่':2,'รูปวาด':2,'รากไม้หายาก':3,'ทราย':5}},
 
   {id:'npc_music',wave:8,cat:'craft',name:'โรงดนตรี',type:'craft',emoji:'🎵',accent:'#2a2a7a',
    unlocked:false,recipes:[
      {name:'เครื่องสาย',emoji:'🎻',ing:{'ใยไหม':2,'ไม้':2}},
      {name:'กลอง',emoji:'🥁',ing:{'หนังม้า':2,'ไม้':1}},
      {name:'โน้ตเพลง',emoji:'🎼',ing:{'ฝ้าย':1,'สีวาด':1}},
-   ],unlockCost:{'ใยไหม':5,'ไม้':5,'หนังม้า':3}},
+   ],unlockCost:{'รูปวาด':2,'รูปปั้น':2,'แผนที่':2,'ใยไหม':5,'ไม้':5,'หนังม้า':3}},
 
   // ── WAVE 9 ─── LEGENDARY ────────────────────────────────
   {id:'forest_final',wave:9,cat:'forest',name:'ป่าเรืองแสง (ลึก)',type:'passive',emoji:'🌟',accent:'#3a1a6a',
    unlocked:false,growDays:4,amount:3,produces:['กบเรืองแสง','มอสส์เรืองแสง','รากไม้หายาก'],
-   unlockCost:{'มอสส์เรืองแสง':5,'คริสตัลน้ำแข็ง':3}},
+   unlockCost:{'เครื่องสาย':2,'ปุ๋ยพิเศษ':2,'โน้ตเพลง':3,'มอสส์เรืองแสง':5,'คริสตัลน้ำแข็ง':3}},
 
   {id:'npc_observatory',wave:9,cat:'craft',name:'หอดูดาว',type:'craft',emoji:'⭐',accent:'#1a1a5a',
    unlocked:false,recipes:[
      {name:'คริสตัลจักรวาล',emoji:'💫',ing:{'คริสตัล':3,'มอสส์เรืองแสง':2}},
      {name:'แผนที่ดาว',emoji:'⭐',ing:{'ไม้':2,'คริสตัลจักรวาล':1}},
      {name:'บันทึกความลับ',emoji:'📜',ing:{'รากไม้หายาก':3,'คริสตัลจักรวาล':1}},
-   ],unlockCost:{'มอสส์เรืองแสง':5,'คริสตัล':5,'คริสตัลน้ำแข็ง':3}},
+   ],unlockCost:{'โน้ตเพลง':3,'กระถาง':2,'ยาสัตว์':3,'มอสส์เรืองแสง':5,'คริสตัล':5,'คริสตัลน้ำแข็ง':3}},
 ];
 
 // Auto-assign prereq: ด่านแต่ละด่านต้องปลดล็อคด่านก่อนหน้าก่อน
-DEF.forEach((d,i) => { d.prereq = i > 0 ? DEF[i-1].id : null; });
+const WAVE_MONEY={1:50,2:150,3:300,4:600,5:1000,6:1500,7:2500,8:4000,9:6000};
+DEF.forEach((d,i) => {
+  d.prereq = i > 0 ? DEF[i-1].id : null;
+  if(!d.unlocked && i > 3) d.moneyCost = WAVE_MONEY[d.wave] || 500;
+});
 
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
 const G = {
-  day:1, time:0, speed:1, paused:false, nightEffect:true,
-  inv:{}, log:[], filter:'all',
-  stages: DEF.map(d=>({...d, planted:false, daysGrown:0, ready:false})),
+  day:1, time:0, speed:5, paused:false, nightEffect:true,
+  inv:{}, log:[], filter:'all', money:0,
+  quests:[], questIdSeq:0, nextQuestIn:15,
+  stages: DEF.map(d=>({...d, planted:false, daysGrown:0, ready:false, autoPlant:false})),
 };
 Object.keys(ITEMS).forEach(k => G.inv[k]=0);
 
@@ -573,6 +617,98 @@ const prereqMet = s => {
 const prereqStage = s => s.prereq ? G.stages.find(x=>x.id===s.prereq) : null;
 
 function addLog(msg,type=''){G.log.unshift({day:G.day,msg,type});if(G.log.length>50)G.log.pop()}
+
+// ═══════════════════════════════════════════════════════════
+//  QUEST SYSTEM
+// ═══════════════════════════════════════════════════════════
+const QUEST_MAX=20;
+const rndInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+function getQuestPool(){
+  // NPC stages ที่ปลดล็อคแล้ว → เป็นผู้ให้เควส
+  const npcs=G.stages.filter(s=>s.type==='craft'&&s.unlocked);
+  // วัตถุดิบจาก passive stages ที่ปลดล็อคแล้ว
+  const rawItems=[];
+  G.stages.forEach(s=>{if(s.type==='passive'&&s.unlocked)(s.produces||[]).forEach(i=>rawItems.push(i))});
+  // สร้าง set ของไอเทมที่หาได้จริง (วน loop handle chain crafting)
+  const obtainable=new Set(rawItems);
+  let changed=true;
+  while(changed){
+    changed=false;
+    G.stages.forEach(s=>{
+      if(s.type==='craft'&&s.unlocked)(s.recipes||[]).forEach(r=>{
+        if(!obtainable.has(r.name)&&Object.keys(r.ing).every(k=>obtainable.has(k))){
+          obtainable.add(r.name);changed=true;
+        }
+      });
+    });
+  }
+  // เอาเฉพาะของคราฟที่ ingredient ครบจาก stage ที่ปลดล็อคแล้วเท่านั้น
+  const craftedItems=[];
+  G.stages.forEach(s=>{
+    if(s.type==='craft'&&s.unlocked)(s.recipes||[]).forEach(r=>{
+      if(obtainable.has(r.name)&&!rawItems.includes(r.name))craftedItems.push(r.name);
+    });
+  });
+  const items=[...new Set([...rawItems,...craftedItems])];
+  return{npcs,items,rawItems:[...new Set(rawItems)],craftedItems:[...new Set(craftedItems)]};
+}
+
+function generateQuest(){
+  if(G.quests.length>=QUEST_MAX)return;
+  const{npcs,rawItems,craftedItems}=getQuestPool();
+  const allItems=[...rawItems,...craftedItems];
+  if(!npcs.length||!allItems.length)return;
+  const npc=npcs[rndInt(0,npcs.length-1)];
+  const numReq=rndInt(1,Math.min(3,allItems.length));
+  const shuffled=[...allItems].sort(()=>Math.random()-.5).slice(0,numReq);
+  const craftedSet=new Set(craftedItems);
+  // ของคราฟ qty สูงกว่าวัตถุดิบธรรมดา
+  const requests=shuffled.map(item=>({
+    item,
+    qty:craftedSet.has(item)?rndInt(4,12):rndInt(2,6),
+    emoji:ITEMS[item]||'?'
+  }));
+  const reward=requests.reduce((s,r)=>s+r.qty*(craftedSet.has(r.item)?rndInt(15,25):rndInt(8,15)),0);
+  G.questIdSeq++;
+  G.quests.push({
+    id:'q'+G.questIdSeq,
+    npcId:npc.id,npcName:npc.name,npcEmoji:npc.emoji,
+    requests,reward,isNew:true
+  });
+  addLog(`📜 เควสใหม่จาก ${npc.emoji} ${npc.name}`,'quest');
+  toast(`📜 เควสใหม่! ${npc.emoji} ${npc.name}`,'var(--gold)');
+  G.nextQuestIn=rndInt(20,50);
+  renderQuests();
+}
+
+function submitQuest(id){
+  const q=G.quests.find(x=>x.id===id);
+  if(!q)return;
+  const canDo=q.requests.every(r=>(G.inv[r.item]||0)>=r.qty);
+  if(!canDo){toast('❌ ของยังไม่ครบ','var(--red)');return;}
+  q.requests.forEach(r=>G.inv[r.item]-=r.qty);
+  G.money+=q.reward;
+  G.quests=G.quests.filter(x=>x.id!==id);
+  toast(`💰 +${q.reward} เหรียญ! จาก ${q.npcEmoji} ${q.npcName}`,'var(--gold)');
+  addLog(`ส่งเควส ${q.npcEmoji}${q.npcName} ได้รับ 💰${q.reward}`,'quest');
+  // spawn quest ใหม่เร็วขึ้น
+  G.nextQuestIn=rndInt(8,18);
+  render();
+}
+
+function tickQuestTimer(dtSec){
+  G.nextQuestIn-=dtSec;
+  if(G.nextQuestIn<=0){
+    generateQuest();
+    if(G.quests.length<QUEST_MAX)G.nextQuestIn=rndInt(20,50);
+  }
+  // update countdown UI
+  const el=document.getElementById('questNext');
+  if(el&&G.quests.length<QUEST_MAX&&getQuestPool().npcs.length){
+    el.textContent=`เควสถัดไปใน ~${Math.max(1,Math.ceil(G.nextQuestIn))}s`;
+  } else if(el){el.textContent='';}
+}
 
 let toastT;
 function toast(msg,color='var(--green)'){
@@ -595,9 +731,19 @@ function harvest(id){
   if(!s||!s.ready)return;
   const got=[];
   s.produces.forEach(item=>{G.inv[item]+=s.amount;got.push(`${ITEMS[item]}${item}×${s.amount}`)});
-  s.ready=false;s.planted=false;s.daysGrown=0;
+  s.ready=false;s.daysGrown=0;
+  if(s.autoPlant){s.planted=true;addLog(`🤖 ${s.emoji} ปลูกใหม่อัตโนมัติ`);}
+  else{s.planted=false;}
   toast('🌟 '+got.join(' '),'var(--gold)');
   addLog(`เก็บเกี่ยว ${got.join(' ')} จาก ${s.emoji}`,'harvest');render();
+}
+function toggleAutoPlant(id){
+  const s=G.stages.find(x=>x.id===id);
+  if(!s)return;
+  s.autoPlant=!s.autoPlant;
+  // ถ้าเปิด auto แล้วยังไม่ได้ปลูก → ปลูกทันที
+  if(s.autoPlant&&!s.planted&&!s.ready){s.planted=true;s.daysGrown=0;addLog(`🤖 ${s.emoji} เริ่มปลูกอัตโนมัติ`);}
+  render();
 }
 function craft(id,idx){
   const s=G.stages.find(x=>x.id===id);
@@ -614,10 +760,13 @@ function unlock(id){
     const prev=prereqStage(s);
     toast(`🔒 ต้องปลดล็อค "${prev?.name}" ก่อน!`,'var(--red)');return;
   }
+  if(s.moneyCost&&G.money<s.moneyCost){toast(`❌ เงินไม่พอ ต้องการ 💰${s.moneyCost}`,'var(--red)');return;}
   if(!has(s.unlockCost)){toast('❌ ของยังไม่พอ','var(--red)');return;}
-  pay(s.unlockCost);s.unlocked=true;
-  toast(`🎉 ปลดล็อค ${s.emoji} ${s.name}!`,'var(--purple)');
-  addLog(`ปลดล็อค ${s.emoji} ${s.name}`,'unlock');render();
+  pay(s.unlockCost);
+  if(s.moneyCost) G.money-=s.moneyCost;
+  s.unlocked=true;
+  toast(`🎉 ปลดล็อค ${s.emoji} ${s.name}! ใช้ไป 💰${s.moneyCost||0}`,'var(--purple)');
+  addLog(`ปลดล็อค ${s.emoji} ${s.name} (💰-${s.moneyCost||0})`,'unlock');render();
 }
 function setFilter(f){
   G.filter=f;
@@ -663,6 +812,7 @@ function loop(ts){
   if(!lastTs)lastTs=ts;
   const dt=ts-lastTs;lastTs=ts;
   if(!G.paused){
+    const dtSec=dt/1000;
     G.time+=(dt/DAY_MS)*G.speed*100;
     if(G.time>=100){G.time-=100;newDay()}
     const p=PHASE(G.time);
@@ -671,7 +821,9 @@ function loop(ts){
     const cl=document.getElementById('clockLabel');if(cl)cl.textContent=p.label;
     const hp=document.getElementById('hPhase');if(hp)hp.textContent=p.label;
     const hd=document.getElementById('hDay');if(hd)hd.textContent=G.day;
+    const hm=document.getElementById('hMoney');if(hm)hm.textContent=G.money;
     const vl=document.getElementById('nightVeil');if(vl)vl.style.background=G.nightEffect?`rgba(0,0,20,${p.night})`:'rgba(0,0,0,0)';
+    tickQuestTimer(dtSec);
     if(ts-lastRender>300){render();lastRender=ts}
   }
   requestAnimationFrame(loop);
@@ -680,7 +832,39 @@ function loop(ts){
 // ═══════════════════════════════════════════════════════════
 //  RENDER
 // ═══════════════════════════════════════════════════════════
-function render(){renderInv();renderStages();renderLog()}
+function render(){renderInv();renderQuests();renderStages();renderLog()}
+
+function renderQuests(){
+  const el=document.getElementById('questList');if(!el)return;
+  const cnt=document.getElementById('questCount');
+  if(cnt)cnt.textContent=`${G.quests.length} / ${QUEST_MAX}`;
+  if(!G.quests.length){
+    const{npcs}=getQuestPool();
+    el.innerHTML=`<div class="quest-empty">${npcs.length?'รอเควสใหม่...':'ปลดล็อค NPC stage ก่อน แล้วรอสักครู่!'}</div>`;
+    return;
+  }
+  el.innerHTML=G.quests.map(q=>{
+    const canDo=q.requests.every(r=>(G.inv[r.item]||0)>=r.qty);
+    const reqs=q.requests.map(r=>{
+      const have=(G.inv[r.item]||0);
+      const ok=have>=r.qty;
+      return`<span class="qr ${ok?'ok':'bad'}">${r.emoji} ${r.item} ${have}/${r.qty}</span>`;
+    }).join('');
+    const isNew=q.isNew;
+    if(isNew)setTimeout(()=>{q.isNew=false},2000);
+    return`<div class="qcard${isNew?' new':''}">
+      <div class="q-npc">
+        <span class="q-npc-ico">${q.npcEmoji}</span>
+        <span class="q-npc-name">${q.npcName}</span>
+        <span class="q-reward">💰 ${q.reward}</span>
+      </div>
+      <div class="q-req">${reqs}</div>
+      <button class="btn-submit" ${canDo?'':'disabled'} onclick="submitQuest('${q.id}')">
+        ${canDo?'✅ ส่งของ':'⏳ ของยังไม่ครบ'}
+      </button>
+    </div>`;
+  }).join('');
+}
 
 function renderInv(){
   const known=new Set();
@@ -713,13 +897,14 @@ function renderStages(){
   el.innerHTML=filtered.map(cardHTML).join('');
 }
 
-function costHTML(cost){
-  if(!cost)return'';
-  const tags=Object.entries(cost).map(([k,v])=>{
+function costHTML(cost,moneyCost){
+  const mTag=moneyCost?`<span class="ct ${G.money>=moneyCost?'ok':'bad'}">💰 เหรียญ ${G.money}/${moneyCost}</span>`:'';
+  const iTags=cost?Object.entries(cost).map(([k,v])=>{
     const have=(G.inv[k]||0)>=v;
     return`<span class="ct ${have?'ok':'bad'}">${ITEMS[k]||''} ${k} ${G.inv[k]||0}/${v}</span>`;
-  }).join('');
-  return`<div class="cost-box"><div class="cost-title">ต้องการ:</div><div class="cost-tags">${tags}</div></div>`;
+  }).join(''):'';
+  if(!mTag&&!iTags)return'';
+  return`<div class="cost-box"><div class="cost-title">ต้องการ:</div><div class="cost-tags">${mTag}${iTags}</div></div>`;
 }
 
 function cardHTML(s){
@@ -754,10 +939,12 @@ function cardHTML(s){
         body+=`<div class="cost-box" style="border-color:#5a2a2a"><div class="cost-title" style="color:var(--red)">🔒 ต้องปลดล็อคก่อน:</div><div class="cost-tags"><span class="ct bad">${prev?.emoji||''} ${prev?.name||''}</span></div></div>`;
         body+=`<button class="btn btn-unlock" disabled>🔒 ปลดล็อค ${prev?.name||''} ก่อน</button>`;
       } else {
-        body+=costHTML(s.unlockCost);
-        const ok=has(s.unlockCost);
+        body+=costHTML(s.unlockCost,s.moneyCost);
+        const itemOk=has(s.unlockCost);
+        const moneyOk=!s.moneyCost||G.money>=s.moneyCost;
+        const ok=itemOk&&moneyOk;
         body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
-          ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+          ${ok?'✨ ปลดล็อค':!moneyOk?'🔒 เงินไม่พอ':'🔒 ของยังไม่พอ'}</button>`;
       }
     } else {
       const partial=G.time/100;
@@ -772,6 +959,9 @@ function cardHTML(s){
       if(s.ready) body+=`<button class="btn btn-harvest" onclick="harvest('${s.id}')">🌟 เก็บเกี่ยว! ×${s.amount}</button>`;
       else if(s.planted) body+=`<button class="btn btn-wait">⏳ กำลังโต...</button>`;
       else body+=`<button class="btn btn-plant" onclick="plant('${s.id}')">🌱 เริ่มปลูก</button>`;
+      body+=`<label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;color:${s.autoPlant?'var(--green)':'var(--dim)'};cursor:pointer;user-select:none">
+        <input type="checkbox" ${s.autoPlant?'checked':''} onchange="toggleAutoPlant('${s.id}')" style="accent-color:var(--green);cursor:pointer">
+        🌱 ปลูกอัตโนมัติ</label>`;
     }
   }
 
@@ -783,10 +973,12 @@ function cardHTML(s){
         body+=`<div class="cost-box" style="border-color:#5a2a2a"><div class="cost-title" style="color:var(--red)">🔒 ต้องปลดล็อคก่อน:</div><div class="cost-tags"><span class="ct bad">${prev?.emoji||''} ${prev?.name||''}</span></div></div>`;
         body+=`<button class="btn btn-unlock" disabled>🔒 ปลดล็อค ${prev?.name||''} ก่อน</button>`;
       } else {
-        body+=costHTML(s.unlockCost);
-        const ok=has(s.unlockCost);
+        body+=costHTML(s.unlockCost,s.moneyCost);
+        const itemOk=has(s.unlockCost);
+        const moneyOk=!s.moneyCost||G.money>=s.moneyCost;
+        const ok=itemOk&&moneyOk;
         body+=`<button class="btn btn-unlock" ${ok?'':'disabled'} onclick="unlock('${s.id}')">
-          ${ok?'✨ ปลดล็อค':'🔒 ของยังไม่พอ'}</button>`;
+          ${ok?'✨ ปลดล็อค':!moneyOk?'🔒 เงินไม่พอ':'🔒 ของยังไม่พอ'}</button>`;
       }
     } else {
       body+='<div class="recipes">'; // craft unlocked recipes

@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>deetao Affiliate 📊</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f0f13; --card: #1a1a22; --card2: #22222c; --border: #2e2e3a;
+    --text: #f2f2f5; --muted: #9a9aad;
+    --cyan: #25F4EE; --pink: #FE2C55;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif; min-height: 100vh; }
+  header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 1.25rem; background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  #status { font-size: .75rem; color: var(--muted); margin-left: auto; }
+  nav { display: flex; gap: 6px; padding: 10px 16px; flex-wrap: wrap; }
+  nav button { background: var(--card); color: var(--muted); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: .9rem; font-family: inherit; }
+  nav button.active { color: #000; background: var(--cyan); border-color: var(--cyan); font-weight: 600; }
+  main { padding: 12px 16px 60px; max-width: 1100px; margin: 0 auto; }
+  .banner { background: #3a2a12; border: 1px solid #7a5a22; color: #ffce7a; padding: 10px 14px; border-radius: 10px; font-size: .85rem; margin-bottom: 14px; }
+  .banner a { color: var(--cyan); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .card .label { font-size: .75rem; color: var(--muted); }
+  .card .value { font-size: 1.45rem; font-weight: 700; margin-top: 4px; }
+  .card .value.pink { color: var(--pink); } .card .value.cyan { color: var(--cyan); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 720px) { .row { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
+  .panel h3 { font-size: .95rem; margin-bottom: 10px; color: var(--muted); font-weight: 600; }
+  .chips { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chips button { background: var(--card2); border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; border-radius: 16px; cursor: pointer; font-size: .8rem; font-family: inherit; }
+  .chips button.active { color: #000; background: var(--pink); border-color: var(--pink); font-weight: 600; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 10px; font-size: .85rem; font-family: inherit; }
+  .toolbar input { flex: 1; min-width: 140px; }
+  .btn { background: var(--cyan); color: #000; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: .85rem; font-family: inherit; }
+  .btn.pink { background: var(--pink); color: #fff; }
+  .btn.orange { background: #f6b26b; color: #2a1a08; }
+  .btn.ghost { background: var(--card2); color: var(--text); border: 1px solid var(--border); font-weight: 400; }
+  .btn:disabled { background: var(--card2); color: var(--muted); cursor: not-allowed; opacity: .6; }
+  .tablewrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; background: var(--card); }
+  th, td { padding: 9px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); cursor: pointer; user-select: none; font-size: .75rem; position: sticky; top: 0; background: var(--card2); }
+  tr:last-child td { border-bottom: none; }
+  td a { color: var(--cyan); text-decoration: none; }
+  .tag { padding: 2px 10px; border-radius: 12px; font-size: .72rem; }
+  button.tag { border: none; cursor: pointer; font-family: inherit; }
+  .tag.on { background: #123a2a; color: #4ade80; } .tag.off { background: #3a1212; color: #f87171; } .tag.mid { background: #3a3212; color: #facc15; }
+  .tag.spdone { background: #3a2412; color: #ff7a30; }
+  .markbtn.draft { background: rgba(255,122,48,.14); border-color: rgba(255,122,48,.4); }
+  .tag.pscript { background: #123a3a; color: var(--cyan); }
+  .tag.psound { background: #2a1c3a; color: #c9a8ff; }
+  .tag.pfootage { background: #1c2a3a; color: #7ab8ff; }
+  .tag.cat { background: #1c2a3a; color: #7ab8ff; }
+  .top5 li { list-style: none; display: flex; justify-content: space-between; padding: 7px 4px; border-bottom: 1px dashed var(--border); font-size: .85rem; }
+  .top5 li:last-child { border-bottom: none; }
+  .top5 .amt { color: var(--cyan); font-weight: 600; }
+  dialog { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); margin: 0; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: min(420px, 92vw); }
+  #dlgItemInfo { width: min(600px, 95vw); max-height: 85vh; overflow-y: auto; }
+  dialog::backdrop { background: rgba(0,0,0,.65); }
+  dialog h3 { margin-bottom: 14px; }
+  dialog label { display: block; font-size: .78rem; color: var(--muted); margin: 10px 0 4px; }
+  dialog input, dialog select { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: .9rem; font-family: inherit; }
+  dialog .actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+  .empty { text-align: center; color: var(--muted); padding: 30px; font-size: .9rem; }
+  .settings label { display: block; font-size: .8rem; color: var(--muted); margin: 14px 0 6px; }
+  .settings input, .settings textarea { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; font-family: inherit; box-sizing: border-box; }
+  .settings p { font-size: .85rem; color: var(--muted); margin-top: 10px; line-height: 1.7; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 12px; font-weight: 600; display: none; z-index: 99; font-size: .85rem; }
+  canvas { max-height: 260px; }
+  .item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .sku { color: var(--cyan); font-weight: 700; }
+  .name { color: var(--text); font-size: .95rem; }
+  .desc { background: var(--card2); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 12px; font-size: .85rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .desc-row { display: flex; gap: 8px; align-items: flex-start; }
+  .desc-row .desc { flex: 1; }
+  .copybtn { background: var(--card2); border: 1px solid var(--border); color: var(--cyan); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: .78rem; font-family: inherit; white-space: nowrap; }
+  .copybtn:active { background: var(--cyan); color: #000; }
+  .linkrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: .82rem; flex-wrap: wrap; }
+  .linkrow .badge { padding: 2px 10px; border-radius: 10px; font-size: .72rem; font-weight: 700; }
+  .badge.tt { background: #123a3a; color: var(--cyan); } .badge.sp { background: #3a2412; color: #ff7a30; }
+  .linkrow a { color: var(--muted); text-decoration: none; word-break: break-all; flex: 1; min-width: 150px; }
+  .linkrow a:hover { color: var(--cyan); }
+  .nolinks { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+  .qtoggle { background: none; border: none; color: var(--cyan); cursor: pointer; font-size: .75rem; padding: 2px 5px 2px 0; }
+  .qrow-hidden { display: none; }
+  .qcount { color: var(--muted); font-weight: 400; font-size: .78rem; }
+  .card input.goalInput { background: transparent; border: none; color: var(--text); font-size: 1.45rem; font-weight: 700; padding: 4px 0; width: 100%; font-family: inherit; }
+  .card input.goalInput:focus { outline: 1px solid var(--cyan); border-radius: 6px; }
+  .tag.prod { background: #2a1c3a; color: #c9a8ff; }
+  .qtable th { cursor: default; }
+  .qtable.stages-collapsed .stagecol { display: none; }
+  .qtable td.center, .qtable th.center { text-align: center; }
+  .qtable input[type=checkbox] { accent-color: #16a34a; width: 15px; height: 15px; cursor: pointer; }
+  .qtable .copybtn { padding: 3px 7px; margin-left: 4px; }
+  .itemname.clickable { cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px; }
+  .itemname.clickable:hover { background: var(--card2); }
+  .qtable td { padding: 4px 10px; }
+  .tag.tierA { background: #123a2a; color: #4ade80; }
+  .tag.tierB { background: #3a3212; color: #facc15; }
+  .tag.tierC { background: #123a3a; color: #7dd3fc; }
+  .progtable select.proginput { width: 76px; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 8px; font-family: inherit; font-size: .85rem; }
+  .progtable select.proginput:focus { outline: 1px solid var(--cyan); }
+  .progtable td.readonly { color: var(--muted); }
+  .progtable .progsave.saved { background: #123a2a; color: #4ade80; border-color: #4ade80; }
+</style>
+</head>
+<body>
+<header>
+  <h1>deetao Affiliate 📊</h1>
+  <span id="status">กำลังโหลด…</span>
+</header>
+<nav>
+  <button class="active" data-tab="dash">📊 Dashboard</button>
+  <button data-tab="products">📦 สินค้า</button>
+  <button data-tab="search">🔍 ค้นหา</button>
+  <button data-tab="queue">📅 คิวคลิป</button>
+  <button data-tab="progress">✍️ Progress</button>
+  <button data-tab="settings">⚙️ ตั้งค่า</button>
+</nav>
+<main>
+  <div id="banner" class="banner" style="display:none">
+    🔒 โหมดอ่านอย่างเดียว — ยังไม่ได้เชื่อม Apps Script จึงเพิ่ม/แก้ข้อมูลจากเว็บไม่ได้
+    ไปที่แท็บ ⚙️ ตั้งค่า เพื่อเชื่อมต่อ หรือ <a id="bannerSheetLink" target="_blank">แก้ใน Google Sheet โดยตรง</a>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section id="tab-dash">
+    <div class="chips" id="rangeChips">
+      <button data-range="month">เดือนนี้</button>
+      <button data-range="3m">3 เดือน</button>
+      <button class="active" data-range="all">ทั้งหมด</button>
+      <button class="btn pink" id="btnAddSale" style="margin-left:auto">+ บันทึกยอดขาย</button>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="label">ค่าคอมรวม</div><div class="value cyan" id="sumCom">–</div></div>
+      <div class="card"><div class="label">ยอดขายรวม</div><div class="value" id="sumSale">–</div></div>
+      <div class="card"><div class="label">จำนวนสินค้า</div><div class="value" id="cntProd">–</div></div>
+      <div class="card"><div class="label">EP ทั้งหมด</div><div class="value pink" id="cntEp">–</div></div>
+    </div>
+    <div class="row">
+      <div class="panel"><h3>ค่าคอมรายเดือน (บาท)</h3><canvas id="chartMonthly"></canvas></div>
+      <div class="panel"><h3>สัดส่วนค่าคอมตามหมวดหมู่</h3><canvas id="chartCat"></canvas></div>
+    </div>
+    <div class="panel"><h3>🏆 Top 5 สินค้าทำเงิน</h3><ul class="top5" id="top5"></ul></div>
+  </section>
+
+  <!-- ============ SEARCH (คำอธิบาย + ShopeeLink) ============ -->
+  <section id="tab-search" style="display:none">
+    <div class="toolbar">
+      <input id="sq" placeholder="🔍 พิมพ์ไอดี (เช่น 131 หรือ ITM_131) หรือชื่อสินค้า เช่น เมาส์, หูฟัง…">
+      <select id="sCat"><option value="">ทุกประเภท</option></select>
+      <select id="sFilter">
+        <option value="">ทั้งหมด</option>
+        <option value="desc">มีคำอธิบาย</option>
+        <option value="link">มีลิงก์</option>
+      </select>
+    </div>
+    <div id="searchInfo" class="empty" style="padding:10px"></div>
+    <div id="searchResults"></div>
+  </section>
+
+  <!-- ============ PRODUCTS ============ -->
+  <section id="tab-products" style="display:none">
+    <div class="toolbar">
+      <input id="q" placeholder="🔍 ค้นหา SKU / ชื่อสินค้า…">
+      <select id="fCat"><option value="">ทุกหมวด</option></select>
+      <select id="fStatus"><option value="">ทุกสถานะ</option></select>
+      <button class="btn" id="btnAddProd">+ เพิ่มสินค้า</button>
+    </div>
+    <div class="tablewrap">
+      <table id="prodTable">
+        <thead><tr>
+          <th data-k="SKU">SKU</th><th data-k="ชื่อสินค้า">ชื่อสินค้า</th><th data-k="หมวดหมู่">หมวด</th>
+          <th data-k="ราคา">ราคา</th><th data-k="ค่าคอม %">คอม %</th><th data-k="จำนวน EP">EP</th>
+          <th data-k="สถานะ">สถานะ</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty" id="prodEmpty" style="display:none">ยังไม่มีข้อมูลสินค้า — กด "+ เพิ่มสินค้า" หรือกรอกใน Google Sheet ได้เลยครับ</div>
+  </section>
+
+  <!-- ============ QUEUE (คิวคลิปจาก TODOLIST) ============ -->
+  <section id="tab-queue" style="display:none">
+    <div id="queueInfo" class="empty" style="padding:10px"></div>
+    <div class="cards" id="queueStats" style="display:none">
+      <div class="card"><div class="label">ลง TikTok แล้วเดือนนี้</div><div class="value cyan" id="qDone">–</div></div>
+      <div class="card">
+        <div class="label">เป้าหมายคลิป/เดือน</div>
+        <input id="qGoal" class="goalInput" type="number" min="0" placeholder="ใส่ตัวเลข">
+      </div>
+      <div class="card"><div class="label">วันที่เหลือในเดือน</div><div class="value" id="qDaysLeft">–</div></div>
+      <div class="card"><div class="label">เฉลี่ย/วันที่ต้องลง</div><div class="value pink" id="qAvgPerDay">–</div></div>
+    </div>
+    <div class="toolbar" style="margin-bottom:6px">
+      <button class="btn ghost" id="btnToggleStages">🔽 ซ่อน Scripts/Sounds/Footage/Final</button>
+      <button class="btn ghost" id="btnToggleAllGroups">📂 กางวันที่ทั้งหมด</button>
+      <button class="btn ghost" id="btnNextShopee">🛍️ คิวลง SHOPEE VDO</button>
+    </div>
+    <div id="queueList"></div>
+  </section>
+
+  <!-- ============ PROGRESS (กรอกความคืบหน้าเข้า ⚡️Progress เอง) ============ -->
+  <section id="tab-progress" style="display:none">
+    <div class="toolbar">
+      <input id="pq" placeholder="🔍 พิมพ์ไอดี (เช่น 131 หรือ ITM_131) หรือชื่อสินค้า…">
+      <button class="btn" id="btnSaveProgress" disabled>💾 บันทึกการแก้ไข</button>
+    </div>
+    <div id="progressInfo" class="empty" style="padding:10px"></div>
+    <div class="tablewrap">
+      <table class="progtable">
+        <thead><tr><th>สินค้า</th><th>Scripts</th><th>Sounds</th><th>Footage</th><th>Draft</th><th>Final</th></tr></thead>
+        <tbody id="progressBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="tab-settings" style="display:none">
+    <div class="panel settings">
+      <h3>⚙️ เชื่อมต่อ Apps Script (เพื่อเพิ่ม/แก้ข้อมูลจากเว็บ)</h3>
+      <p>1. เปิด <a id="sheetLink" target="_blank" style="color:var(--cyan)">Google Sheet ของพี่แยม</a> → Extensions → Apps Script<br>
+         2. วางโค้ดจากไฟล์ <b>apps-script.gs</b> → รันฟังก์ชัน <b>setup</b> หนึ่งครั้ง (สร้างชีตให้อัตโนมัติ)<br>
+         3. Deploy → New deployment → Web app → Execute as <b>Me</b> / Access <b>Anyone</b><br>
+         4. คัดลอก Web app URL มาวางด้านล่าง (ดูละเอียดใน README.md)</p>
+      <label>Apps Script Web App URL</label>
+      <input id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="btnSaveUrl">💾 บันทึก</button>
+        <button class="btn ghost" id="btnTestUrl">🔌 ทดสอบการเชื่อมต่อ</button>
+      </div>
+      <p id="testResult"></p>
+
+      <h3 style="margin-top:24px">📅 คิวคลิป (ชีต TODOLIST เดือนนี้)</h3>
+      <p>พิมพ์หรือเลือกชื่อชีต TODOLIST ของเดือนปัจจุบัน เพื่อให้แท็บ "📅 คิวคลิป" ดึงรายการมาแสดง — กด "โหลดรายชื่อชีต" เพื่อดึงชื่อชีตทั้งหมดมาช่วยเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
+      <label>ชื่อชีต TODOLIST</label>
+      <input id="todolistSheet" list="sheetNameList" placeholder="เช่น 7️⃣ 📝 TODOLIST-JULY26">
+      <datalist id="sheetNameList"></datalist>
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="btnSaveTodolist">💾 บันทึก</button>
+        <button class="btn ghost" id="btnLoadSheetList">🔄 โหลดรายชื่อชีต</button>
+      </div>
+
+      <h3 style="margin-top:24px">🏷️ ข้อความแฮชแท็ก Shopee (ปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม แท็บคิวคลิป)</h3>
+      <p>ข้อความที่จะถูกคัดลอกเวลากดปุ่ม "#SHOPEE" ในป็อปอัพที่เปิดจากไอคอน 📋 ข้างชื่อไอเทม แท็บ 📅 คิวคลิป</p>
+      <label>ข้อความแฮชแท็ก</label>
+      <textarea id="shopeeCopyTextInput" rows="3" placeholder="#..."></textarea>
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="btnSaveShopeeCopyText">💾 บันทึก</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ PRODUCT MODAL ============ -->
+<dialog id="dlgProd">
+  <h3 id="dlgProdTitle">เพิ่มสินค้า</h3>
+  <form method="dialog" id="formProd">
+    <label>SKU (เช่น ITM_240)</label><input name="SKU" required pattern="ITM_\d+" placeholder="ITM_XXX">
+    <label>ชื่อสินค้า</label><input name="ชื่อสินค้า" required>
+    <label>หมวดหมู่</label>
+    <select name="หมวดหมู่"><option>เมาส์</option><option>คีย์บอร์ด</option><option>หัวชาร์จ</option><option>ยูเอสบี ฮับ</option><option>อุปกรณ์เสริม</option><option>อื่นๆ</option></select>
+    <label>ราคา (บาท)</label><input name="ราคา" type="number" step="0.01" min="0">
+    <label>ค่าคอม %</label><input name="ค่าคอม %" type="number" step="0.1" min="0">
+    <label>Link สินค้า</label><input name="Link สินค้า" type="url" placeholder="https://…">
+    <label>จำนวน EP</label><input name="จำนวน EP" type="number" min="0" value="0">
+    <label>สถานะ</label>
+    <select name="สถานะ"><option>กำลังขาย</option><option>หมดสต็อก</option><option>เลิกขาย</option></select>
+    <div class="actions">
+      <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
+      <button class="btn" value="ok" id="btnProdSave">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ SALE MODAL ============ -->
+<dialog id="dlgSale">
+  <h3>บันทึกยอดขาย</h3>
+  <form method="dialog" id="formSale">
+    <label>วันที่</label><input name="วันที่" type="date" required>
+    <label>สินค้า (SKU)</label><select name="SKU" id="saleSku" required></select>
+    <label>จำนวนชิ้น</label><input name="จำนวนชิ้น" type="number" min="1" value="1" required>
+    <label>ยอดขาย (บาท)</label><input name="ยอดขาย" type="number" step="0.01" min="0" required id="saleAmt">
+    <label>ค่าคอม (บาท) — คำนวณให้อัตโนมัติ แก้ได้</label><input name="ค่าคอม" type="number" step="0.01" min="0" required id="saleCom">
+    <label>EP (ถ้ารู้ว่าคลิปไหนทำยอด)</label><input name="EP" placeholder="EP1">
+    <div class="actions">
+      <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
+      <button class="btn pink" value="ok">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ POST LINK MODAL (ก่อนติ๊กลง TikTok/Shopee ในคิวคลิป) ============ -->
+<dialog id="dlgPostLink">
+  <h3 id="postLinkTitle">ลิงก์</h3>
+  <form method="dialog" id="formPostLink">
+    <label id="postLinkLabel">วางลิงก์ที่ลงแล้ว</label>
+    <input name="link" type="url" required placeholder="https://...">
+    <div class="actions" style="flex-wrap:wrap">
+      <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
+      <button class="btn ghost" value="nolink" formnovalidate id="btnNoLink" style="display:none;color:var(--muted)">ไม่มีลิงก์</button>
+      <button class="btn ghost" value="draft" formnovalidate id="btnDraft" style="display:none">ร่าง</button>
+      <button class="btn pink" value="ok">ยืนยัน</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ ITEM INFO POPUP (กดไอคอน 📋 ข้างชื่อไอเทม ในคิวคลิป — การ์ดแบบเดียวกับหน้า 🔍 ค้นหา) ============ -->
+<dialog id="dlgItemInfo">
+  <div id="itemInfoBody"></div>
+  <form method="dialog" style="margin-top:14px"><div class="actions">
+    <button type="button" class="btn orange" id="btnCopyShopeeTags">#SHOPEE</button>
+    <button class="btn pink" value="ok">ปิด</button>
+  </div></form>
+</dialog>
+
+<!-- ============ NEXT SHOPEE-VDO QUEUE MODAL (ปุ่ม "คิวลง SHOPEE VDO" ในคิวคลิป) ============ -->
+<dialog id="dlgNextShopee">
+  <h3>🛍️ คิวลง Shopee VDO ตัวถัดไป</h3>
+  <div id="nextShopeeInfo" style="margin:16px 0;font-size:1.05rem;line-height:1.6"></div>
+  <form method="dialog"><div class="actions"><button class="btn pink" value="ok">ปิด</button></div></form>
+</dialog>
+
+<!-- ============ EDIT/UNMARK LINK MODAL (กดที่ป้าย 🔗ลิงก์ ในคิวคลิป) ============ -->
+<dialog id="dlgEditLink">
+  <h3 id="editLinkTitle">ลิงก์</h3>
+  <form method="dialog" id="formEditLink">
+    <label>ลิงก์</label>
+    <input name="link" type="url" required>
+    <div class="actions" style="flex-wrap:wrap">
+      <button class="btn ghost" value="cancel" formnovalidate>ปิด</button>
+      <button class="btn ghost" value="open" formnovalidate>🔗 เปิดลิงก์</button>
+      <button class="btn ghost" value="unmark" formnovalidate id="btnUnmarkLink" style="color:#f87171">ยังไม่ได้ลงคลิป</button>
+      <button class="btn pink" value="save">บันทึกลิงก์</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+/* ================== CONFIG ================== */
+const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
+const SHEET_PRODUCTS = 'สินค้า';
+const SHEET_SALES = 'ยอดขาย';
+const SHEET_DESC = '📝#คำอธิบาย';
+const SHEET_LINKS = '🍊🔗ShopeeLink';
+const SHEET_PROGRESS = '⚡️Progress';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+
+/* ================== STATE ================== */
+let products = [], sales = [], catalog = [], range = 'all';
+let sortKey = 'SKU', sortDir = 1;
+let charts = {};
+const $ = (s) => document.querySelector(s);
+const num = (v) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
+const baht = (v) => num(v).toLocaleString('th-TH', { maximumFractionDigits: 0 });
+const apiUrl = () => localStorage.getItem('appsScriptUrl') || '';
+const todolistSheet = () => localStorage.getItem('todolistSheet') || '';
+const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
+// ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
+const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
+const shopeeCopyText = () => localStorage.getItem('shopeeCopyText') || SHOPEE_TAGS_DEFAULT;
+
+/* ================== DATA LOADING ================== */
+const csvUrl = (name) =>
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+
+async function loadCsv(name) {
+  const res = await fetch(csvUrl(name));
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('SHEET_NOT_SHARED');
+  return Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+}
+
+// อ่านแบบไม่มี header (ชีตคำอธิบาย/ลิงก์ไม่มีหัวคอลัมน์มาตรฐาน)
+async function loadCsvRaw(name) {
+  const res = await fetch(csvUrl(name));
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('SHEET_NOT_SHARED');
+  return Papa.parse(text, { header: false, skipEmptyLines: true }).data;
+}
+
+async function loadApi(name) {
+  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}`);
+  const j = await res.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+
+async function loadApiRaw(name) {
+  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&raw=1`);
+  const j = await res.json();
+  if (!j.ok || !j.rows) throw new Error(j.error || 'OLD_SCRIPT_VERSION');
+  return j.rows;
+}
+
+// gviz JSONP — โหลดผ่าน <script> tag เลยไม่ติด CORS แม้เปิดเว็บแบบ file://
+function gvizFetch(name) {
+  return new Promise((resolve, reject) => {
+    const cb = 'gv_' + Math.random().toString(36).slice(2);
+    const s = document.createElement('script');
+    const cleanup = () => { delete window[cb]; s.remove(); };
+    const timer = setTimeout(() => { cleanup(); reject(new Error('GVIZ_TIMEOUT')); }, 15000);
+    window[cb] = (resp) => {
+      clearTimeout(timer); cleanup();
+      (resp && resp.status !== 'error' && resp.table) ? resolve(resp.table) : reject(new Error('GVIZ_ERROR'));
+    };
+    s.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('GVIZ_LOAD')); };
+    s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&headers=0&sheet=${encodeURIComponent(name)}`;
+    document.head.appendChild(s);
+  });
+}
+const cellStr = (c) => (c == null) ? '' : String(c.f ?? c.v ?? '');
+async function loadJsonpRaw(name) {
+  const t = await gvizFetch(name);
+  return (t.rows || []).map(r => (r.c || []).map(cellStr));
+}
+
+// ชีตดิบ (คำอธิบาย/ลิงก์): JSONP ก่อน (ชัวร์สุด) → Apps Script raw → CSV
+async function loadRaw(name) {
+  try { return await loadJsonpRaw(name); } catch (e) {}
+  if (apiUrl()) { try { return await loadApiRaw(name); } catch (e) {} }
+  return loadCsvRaw(name);
+}
+
+async function loadAll() {
+  $('#status').textContent = 'กำลังโหลด…';
+  try {
+    const loader = apiUrl() ? loadApi : loadCsv;
+    let descRows, linkRows;
+    [products, sales, descRows, linkRows] = await Promise.all([
+      loader(SHEET_PRODUCTS).catch(() => []),
+      loader(SHEET_SALES).catch(() => []),
+      loadRaw(SHEET_DESC).catch(() => []),
+      loadRaw(SHEET_LINKS).catch(() => []),
+      loadProgress(), // โหลด ⚡️Progress ไว้ล่วงหน้าด้วย ใช้โชว์ในแท็บค้นหา (มี try/catch ในตัวอยู่แล้ว)
+    ]);
+    products = products.filter(p => p.SKU);
+    sales = sales.filter(s => s.SKU);
+    catalog = buildCatalog(descRows, linkRows);
+    $('#status').textContent = `✅ อัปเดต ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'})} น.`;
+  } catch (e) {
+    $('#status').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet (Anyone with link – Viewer)';
+  }
+  renderAll();
+}
+
+/* ================== WRITE ================== */
+async function saveToSheet(payload) {
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return false; }
+  try {
+    const res = await fetch(apiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    const j = await res.json();
+    if (!j.ok) { toast(`บันทึกไม่สำเร็จ: ${j.error || 'ไม่ทราบสาเหตุ'} — ลองเช็คว่า Deploy โค้ด Apps Script เวอร์ชันล่าสุดหรือยัง`); return false; }
+    toast('บันทึกแล้ว ✓ กำลังรีเฟรชข้อมูล…');
+    setTimeout(loadAll, 1500);
+    return true;
+  } catch (e) { toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้งครับ'); return false; }
+}
+
+/* ================== DASHBOARD ================== */
+function inRange(dateStr) {
+  if (range === 'all') return true;
+  const d = new Date(dateStr); if (isNaN(d)) return false;
+  const now = new Date();
+  if (range === 'month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  const cut = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  return d >= cut;
+}
+
+function renderDash() {
+  const fs = sales.filter(s => inRange(s['วันที่']));
+  const sumCom = fs.reduce((a, s) => a + num(s['ค่าคอม']), 0);
+  const sumSale = fs.reduce((a, s) => a + num(s['ยอดขาย']), 0);
+  $('#sumCom').textContent = baht(sumCom) + ' ฿';
+  $('#sumSale').textContent = baht(sumSale) + ' ฿';
+  $('#cntProd').textContent = products.length;
+  $('#cntEp').textContent = products.reduce((a, p) => a + num(p['จำนวน EP']), 0);
+
+  // monthly commissions
+  const byMonth = {};
+  fs.forEach(s => { const m = String(s['วันที่']).slice(0, 7); if (m) byMonth[m] = (byMonth[m] || 0) + num(s['ค่าคอม']); });
+  const months = Object.keys(byMonth).sort();
+  drawChart('chartMonthly', 'bar', months, months.map(m => byMonth[m]), '#25F4EE');
+
+  // by category
+  const catOf = Object.fromEntries(products.map(p => [p.SKU, p['หมวดหมู่'] || 'อื่นๆ']));
+  const byCat = {};
+  fs.forEach(s => { const c = catOf[s.SKU] || 'อื่นๆ'; byCat[c] = (byCat[c] || 0) + num(s['ค่าคอม']); });
+  drawDoughnut('chartCat', Object.keys(byCat), Object.values(byCat));
+
+  // top 5
+  const bySku = {};
+  fs.forEach(s => bySku[s.SKU] = (bySku[s.SKU] || 0) + num(s['ค่าคอม']));
+  const nameOf = Object.fromEntries(products.map(p => [p.SKU, p['ชื่อสินค้า']]));
+  const top = Object.entries(bySku).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  $('#top5').innerHTML = top.length
+    ? top.map(([sku, v], i) => `<li><span>${['🥇','🥈','🥉','4.','5.'][i]} ${sku} ${nameOf[sku] ? '— ' + esc(nameOf[sku]) : ''}</span><span class="amt">${baht(v)} ฿</span></li>`).join('')
+    : '<li class="empty" style="justify-content:center">ยังไม่มีข้อมูลยอดขายครับ</li>';
+}
+
+function drawChart(id, type, labels, data, color) {
+  charts[id]?.destroy();
+  charts[id] = new Chart($('#' + id), {
+    type, data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6 }] },
+    options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9a9aad' }, grid: { color: '#2e2e3a' } }, y: { ticks: { color: '#9a9aad' }, grid: { color: '#2e2e3a' } } } }
+  });
+}
+function drawDoughnut(id, labels, data) {
+  charts[id]?.destroy();
+  charts[id] = new Chart($('#' + id), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: ['#25F4EE','#FE2C55','#facc15','#4ade80','#a78bfa','#fb923c'], borderColor: '#1a1a22' }] },
+    options: { plugins: { legend: { position: 'bottom', labels: { color: '#f2f2f5' } } } }
+  });
+}
+
+/* ================== SEARCH: คำอธิบาย + ShopeeLink ================== */
+// คอลัมน์แรก = "ITM_XXX ชื่อสินค้า" → แยก id กับชื่อ
+function parseItm(cell) {
+  const m = String(cell || '').trim().match(/^(ITM[_\s]?\d+)\s*(.*)$/i);
+  if (!m) return null;
+  return { id: m[1].toUpperCase().replace(/\s/g, ''), name: m[2].replace(/^\[|\]$/g, '').trim() };
+}
+
+// เดาประเภทจากชื่อ/คำอธิบาย — ใช้เฉพาะตอนที่ยังไม่ได้กรอกคอลัมน์ "ประเภทสินค้า" ใน Sheet
+function guessCat(text) {
+  const t = String(text || '').toLowerCase();
+  const has = (re) => re.test(t);
+  if (has(/คีย์แคป|keycap/)) return 'คีย์แคป';
+  if (has(/แผ่นรองเมาส์|แผ่นรองข้อมือ|ที่รองข้อมือ|ที่รองเมาส์|ที่รองคีย์บอร์ด/)) return 'แผ่นรองเมาส์';
+  if (has(/คีย์บอร์ด|keyboard|แป้นพิม|แป้นน้ำแข็ง/)) return 'คีย์บอร์ด';
+  if (has(/เมาส์|mouse/)) return 'เมาส์';
+  if (has(/ชุดชาร์จ/)) return 'ชุดชาร์จ';
+  if (has(/หัวชาร์จ|อะแดปเตอร์ชาร์จ/)) return 'หัวชาร์จ';
+  if (has(/สายชาร์จ|สายไทป์/)) return 'สายชาร์จ';
+  if (has(/พาวเวอร์แบงค์|powerbank/)) return 'พาวเวอร์แบงค์';
+  if (has(/usb ?hub|ยูเอสบี|ฮับ|การ์ดรีดเดอร์/)) return 'ยูเอสบี ฮับ';
+  if (has(/พัดลม/)) return 'พัดลม';
+  if (has(/กระเป๋า/) && has(/ไอแพด|โน๊ตบุ๊|โน้ตบุ๊|แล็ปท็อป|แล็บท็อป|macbook/)) return 'กระเป๋าใส่ไอแพด';
+  if (has(/โน๊ตบุ๊|โน้ตบุ๊/) && has(/แท่น|ที่วาง|ขาตั้ง/)) return 'แท่นวางโน๊ตบุ๊ค';
+  if (has(/หูฟัง|ลำโพง|ปากกา|สไตลัส|ขาตั้ง|แท่นวาง|ที่วาง|เคส|สมาร์ทวอ|นาฬิกา|ไม้เซลฟี่|วงแหวน|ไฟ|ปลั๊ก/)) return 'อุปกรณ์เสริม';
+  return 'อื่นๆ';
+}
+
+function buildCatalog(descRows, linkRows) {
+  const map = new Map();
+  const get = (p) => {
+    if (!map.has(p.id)) map.set(p.id, { id: p.id, name: p.name, descs: [], links: [], cat: '' });
+    const it = map.get(p.id);
+    if (p.name && p.name.length > (it.name || '').length) it.name = p.name;
+    return it;
+  };
+  descRows.forEach(r => {
+    const p = parseItm(r[0]); if (!p) return;
+    const d = String(r[1] || '').trim();
+    if (d) get(p).descs.push(d);
+  });
+  // หา index คอลัมน์ "ประเภทสินค้า" จากแถว header ของชีตลิงก์ (แถวที่คอลัมน์แรกไม่ใช่ ITM_XXX)
+  let catIdx = -1;
+  for (const r of linkRows) {
+    if (parseItm(r[0])) continue;
+    const i = r.findIndex(c => /ประเภท/.test(String(c || '')));
+    if (i >= 0) { catIdx = i; break; }
+  }
+  linkRows.forEach(r => {
+    const p = parseItm(r[0]); if (!p) return;
+    const it = get(p);
+    if (catIdx >= 0) {
+      const c = String(r[catIdx] || '').trim();
+      if (c && !/^https?:/i.test(c)) it.cat = c;
+    }
+    r.slice(1).forEach((c, i) => {
+      if (i + 1 === catIdx) return; // ข้ามคอลัมน์ประเภท
+      const u = String(c || '').trim();
+      if (/^https?:\/\//i.test(u) && !it.links.includes(u)) it.links.push(u);
+    });
+  });
+  const items = [...map.values()];
+  items.forEach(it => { if (!it.cat) it.cat = guessCat(it.name + ' ' + it.descs.join(' ')); });
+  // เรียงตามเลขไอดี
+  return items.sort((a, b) => num(a.id.replace(/\D/g, '')) - num(b.id.replace(/\D/g, '')));
+}
+
+function linkBadge(u) {
+  return /tiktok\.com/i.test(u)
+    ? '<span class="badge tt">TikTok</span>'
+    : /shopee/i.test(u) ? '<span class="badge sp">Shopee</span>' : '<span class="badge sp">Link</span>';
+}
+
+// โชว์ความคืบหน้าจาก ⚡️Progress (Scripts/Sounds/Footages/Draft/Final) ในการ์ดค้นหา — ไม่มีข้อมูลก็ไม่ต้องโชว์แถวนี้
+function progressLine(id) {
+  const p = progressItems.find(x => x.id === id);
+  if (!p) return '';
+  const v = (x) => x === '' ? '—' : x;
+  return `<div class="linkrow" data-goto-progress="${esc(id)}" style="flex-wrap:wrap;cursor:pointer" title="คลิกเพื่อไปแก้ที่หน้า Progress">
+    <span class="tag pscript">Scripts ${v(p.scripts)}</span>
+    <span class="tag psound">Sounds ${v(p.sounds)}</span>
+    <span class="tag pfootage">Footage ${v(p.footage)}</span>
+    <span class="tag spdone">Draft ${v(p.draft)}</span>
+    <span class="tag on">Final ${v(p.final)}</span>
+  </div>`;
+}
+
+// การ์ดข้อมูลไอเทม 1 ตัว (ชื่อ+หมวดหมู่, Progress, คำอธิบาย+ปุ่มก๊อป, ลิงก์+ปุ่มก๊อป)
+// ใช้ร่วมกันทั้งแท็บ 🔍 ค้นหา (renderSearch) และ pop-up ที่เปิดจากไอคอน 📋 ในแท็บ 📅 คิวคลิป (dlgItemInfo)
+function catalogCard(it) {
+  return `
+    <div class="head"><span class="sku">${esc(it.id)}</span><span class="name">${esc(it.name || '')}</span>${it.cat ? `<span class="tag cat">${esc(it.cat)}</span>` : ''}</div>
+    ${progressLine(it.id)}
+    ${it.descs.map(d => `
+      <div class="desc-row">
+        <div class="desc">${esc(d)}</div>
+        <button class="copybtn" data-copy="${esc(d)}">📋 ก๊อป</button>
+      </div>`).join('')}
+    ${it.links.length ? it.links.map(u => `
+      <div class="linkrow">${linkBadge(u)}<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>
+        <button class="copybtn" data-copy="${esc(u)}">📋</button>
+      </div>`).join('') : '<div class="nolinks">— ไม่มีลิงก์บันทึกไว้ —</div>'}`;
+}
+
+function renderSearch() {
+  const q = $('#sq').value.trim().toLowerCase();
+  const f = $('#sFilter').value;
+  const qNum = q.replace(/\D/g, '');
+  const matches = (it) => {
+    if (!q) return true;
+    if (it.id.toLowerCase().includes(q)) return true;
+    if (qNum && /^[\d\s]+$/.test(q) && String(num(it.id.replace(/\D/g, ''))) === String(num(qNum))) return true;
+    if ((it.name || '').toLowerCase().includes(q)) return true;
+    return it.descs.some(d => d.toLowerCase().includes(q));
+  };
+  const cat = $('#sCat').value;
+  let rows = catalog.filter(it => matches(it) && (!cat || it.cat === cat) &&
+    (f !== 'desc' || it.descs.length) && (f !== 'link' || it.links.length));
+  fillOptions('#sCat', [...new Set(catalog.map(x => x.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th')), 'ทุกประเภท');
+  const shown = rows.slice(0, 50);
+  $('#searchInfo').textContent = catalog.length === 0
+    ? 'ยังโหลดข้อมูลไม่ได้ครับ — ถ้าเชื่อม Apps Script แล้ว ให้อัปเดตโค้ด apps-script.gs เวอร์ชั่นล่าสุด แล้วกด Deploy → Manage deployments → Edit → New version'
+    : `พบ ${rows.length} รายการ${rows.length > 50 ? ' (แสดง 50 รายการแรก — พิมพ์ค้นหาให้แคบลง)' : ''}`;
+  $('#searchResults').innerHTML = shown.map(it => `<div class="item">${catalogCard(it)}</div>`).join('');
+}
+
+async function copyText(text, btn) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else { // fallback สำหรับเปิดแบบ file://
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    const old = btn.textContent; btn.textContent = '✅'; setTimeout(() => btn.textContent = old, 1200);
+  } catch (e) { toast('ก๊อปไม่สำเร็จ ลองกดค้างที่ข้อความแล้วคัดลอกเองครับ'); }
+}
+$('#itemInfoBody').addEventListener('click', (e) => {
+  const goProg = e.target.closest('[data-goto-progress]');
+  if (goProg) {
+    $('#dlgItemInfo').close();
+    $('#pq').value = goProg.dataset.gotoProgress;
+    switchTab('progress');
+    renderProgressTable(); // โชว์ผลกรองทันทีจากข้อมูลที่มีอยู่แล้ว ระหว่างรอ loadProgress() รีเฟรชข้อมูลล่าสุด
+    return;
+  }
+  const b = e.target.closest('[data-copy]');
+  if (b) copyText(b.dataset.copy, b);
+});
+$('#searchResults').addEventListener('click', (e) => {
+  const goProg = e.target.closest('[data-goto-progress]');
+  if (goProg) {
+    $('#pq').value = goProg.dataset.gotoProgress;
+    switchTab('progress');
+    renderProgressTable(); // โชว์ผลกรองทันทีจากข้อมูลที่มีอยู่แล้ว ระหว่างรอ loadProgress() รีเฟรชข้อมูลล่าสุด
+    return;
+  }
+  const b = e.target.closest('[data-copy]');
+  if (b) copyText(b.dataset.copy, b);
+});
+['#sq', '#sCat', '#sFilter'].forEach(s => $(s).addEventListener('input', renderSearch));
+
+/* ================== PRODUCTS TABLE ================== */
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderProducts() {
+  const q = $('#q').value.toLowerCase(), cat = $('#fCat').value, st = $('#fStatus').value;
+  let rows = products.filter(p =>
+    (!q || String(p.SKU).toLowerCase().includes(q) || String(p['ชื่อสินค้า']).toLowerCase().includes(q)) &&
+    (!cat || p['หมวดหมู่'] === cat) && (!st || p['สถานะ'] === st));
+  rows.sort((a, b) => {
+    const x = a[sortKey] ?? '', y = b[sortKey] ?? '';
+    const nx = num(x), ny = num(y);
+    const cmp = (String(x).match(/^[\d,.]+$/) && String(y).match(/^[\d,.]+$/)) ? nx - ny : String(x).localeCompare(String(y), 'th');
+    return cmp * sortDir;
+  });
+  const tagCls = (s) => s === 'กำลังขาย' ? 'on' : s === 'หมดสต็อก' ? 'mid' : 'off';
+  $('#prodTable tbody').innerHTML = rows.map(p => `<tr>
+    <td><b>${esc(p.SKU)}</b></td><td>${esc(p['ชื่อสินค้า'])}</td><td>${esc(p['หมวดหมู่'])}</td>
+    <td>${p['ราคา'] ? baht(p['ราคา']) : '–'}</td><td>${esc(p['ค่าคอม %'] || '–')}</td><td>${esc(p['จำนวน EP'] || '0')}</td>
+    <td><span class="tag ${tagCls(p['สถานะ'])}">${esc(p['สถานะ'] || '–')}</span></td>
+    <td>${p['Link สินค้า'] ? `<a href="${esc(p['Link สินค้า'])}" target="_blank">🔗</a>` : ''}
+        <a href="#" data-edit="${esc(p.SKU)}">✏️</a></td>
+  </tr>`).join('');
+  $('#prodEmpty').style.display = rows.length ? 'none' : 'block';
+
+  // filter options
+  fillOptions('#fCat', [...new Set(products.map(p => p['หมวดหมู่']).filter(Boolean))], 'ทุกหมวด');
+  fillOptions('#fStatus', [...new Set(products.map(p => p['สถานะ']).filter(Boolean))], 'ทุกสถานะ');
+}
+function fillOptions(sel, vals, first) {
+  const el = $(sel), cur = el.value;
+  el.innerHTML = `<option value="">${first}</option>` + vals.map(v => `<option${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+}
+
+/* ================== MODALS ================== */
+let editingSku = null;
+function openProdModal(sku) {
+  editingSku = sku || null;
+  const f = $('#formProd'); f.reset();
+  $('#dlgProdTitle').textContent = sku ? `แก้ไข ${sku}` : 'เพิ่มสินค้า';
+  f.SKU.readOnly = !!sku;
+  if (sku) {
+    const p = products.find(x => x.SKU === sku) || {};
+    [...f.elements].forEach(el => { if (el.name && p[el.name] !== undefined) el.value = p[el.name]; });
+  }
+  $('#dlgProd').showModal();
+}
+$('#formProd').addEventListener('submit', (e) => {
+  if (e.submitter?.value !== 'ok') return;
+  const data = Object.fromEntries(new FormData($('#formProd')));
+  saveToSheet(editingSku
+    ? { sheet: SHEET_PRODUCTS, action: 'update', keyColumn: 'SKU', key: editingSku, data }
+    : { sheet: SHEET_PRODUCTS, action: 'add', data });
+});
+
+function openSaleModal() {
+  const f = $('#formSale'); f.reset();
+  f['วันที่'].value = new Date().toISOString().slice(0, 10);
+  $('#saleSku').innerHTML = products.filter(p => p['สถานะ'] !== 'เลิกขาย')
+    .map(p => `<option value="${esc(p.SKU)}">${esc(p.SKU)} — ${esc(p['ชื่อสินค้า'])}</option>`).join('');
+  $('#dlgSale').showModal();
+}
+function autoCom() {
+  const p = products.find(x => x.SKU === $('#saleSku').value);
+  const pct = num(p?.['ค่าคอม %']);
+  if (pct) $('#saleCom').value = (num($('#saleAmt').value) * pct / 100).toFixed(2);
+}
+$('#saleAmt').addEventListener('input', autoCom);
+$('#saleSku').addEventListener('change', autoCom);
+$('#formSale').addEventListener('submit', (e) => {
+  if (e.submitter?.value !== 'ok') return;
+  saveToSheet({ sheet: SHEET_SALES, action: 'add', data: Object.fromEntries(new FormData($('#formSale'))) });
+});
+
+/* ================== UI WIRING ================== */
+function switchTab(name) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  ['dash', 'search', 'products', 'queue', 'progress', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  if (name === 'queue') loadQueue();
+  if (name === 'progress') loadProgress();
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+$('#rangeChips').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-range]'); if (!b) return;
+  range = b.dataset.range;
+  document.querySelectorAll('#rangeChips button[data-range]').forEach(x => x.classList.toggle('active', x === b));
+  renderDash();
+});
+$('#btnAddProd').onclick = () => apiUrl() ? openProdModal() : (switchTab('settings'), toast('เชื่อม Apps Script ก่อนครับ หรือกรอกใน Google Sheet โดยตรง'));
+$('#btnAddSale').onclick = () => apiUrl() ? openSaleModal() : (switchTab('settings'), toast('เชื่อม Apps Script ก่อนครับ หรือกรอกใน Google Sheet โดยตรง'));
+$('#prodTable').addEventListener('click', (e) => {
+  const ed = e.target.closest('[data-edit]');
+  if (ed) { e.preventDefault(); apiUrl() ? openProdModal(ed.dataset.edit) : window.open(SHEET_URL); }
+  const th = e.target.closest('th[data-k]');
+  if (th) { sortDir = sortKey === th.dataset.k ? -sortDir : 1; sortKey = th.dataset.k; renderProducts(); }
+});
+['#q', '#fCat', '#fStatus'].forEach(s => $(s).addEventListener('input', renderProducts));
+
+/* settings */
+$('#apiUrl').value = apiUrl();
+$('#sheetLink').href = $('#bannerSheetLink').href = SHEET_URL;
+$('#btnSaveUrl').onclick = () => {
+  localStorage.setItem('appsScriptUrl', $('#apiUrl').value.trim());
+  toast('บันทึก URL แล้ว ✓'); renderBanner(); loadAll();
+};
+$('#btnTestUrl').onclick = async () => {
+  const r = $('#testResult'); r.textContent = 'กำลังทดสอบ…';
+  try {
+    const res = await fetch(`${$('#apiUrl').value.trim()}?sheet=${encodeURIComponent(SHEET_PRODUCTS)}`);
+    const j = await res.json();
+    r.textContent = j.ok ? `✅ เชื่อมต่อสำเร็จ! อ่านข้อมูลได้ ${j.data.length} แถว` : `⚠️ เชื่อมได้แต่มีปัญหา: ${j.error}`;
+  } catch (e) { r.textContent = '❌ เชื่อมต่อไม่ได้ — เช็คว่า Deploy แบบ Anyone และ copy URL ที่ลงท้าย /exec'; }
+};
+
+$('#todolistSheet').value = todolistSheet();
+$('#btnSaveTodolist').onclick = () => {
+  localStorage.setItem('todolistSheet', $('#todolistSheet').value.trim());
+  toast('บันทึกชื่อชีตแล้ว ✓'); loadQueue();
+};
+$('#shopeeCopyTextInput').value = shopeeCopyText();
+$('#btnSaveShopeeCopyText').onclick = () => {
+  localStorage.setItem('shopeeCopyText', $('#shopeeCopyTextInput').value.trim());
+  $('#shopeeCopyTextInput').value = shopeeCopyText();
+  toast('บันทึกข้อความแฮชแท็กแล้ว ✓');
+};
+$('#btnLoadSheetList').onclick = async () => {
+  if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
+  try {
+    const res = await fetch(`${apiUrl()}?list=1`);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    $('#sheetNameList').innerHTML = j.sheets.filter(s => s.includes('TODOLIST')).map(s => `<option value="${esc(s)}">`).join('');
+    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่อง "ชื่อชีต TODOLIST" ได้เลย');
+  } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
+};
+function renderBanner() { $('#banner').style.display = apiUrl() ? 'none' : ''; }
+
+/* ================== QUEUE: คิวคลิปจากชีต TODOLIST ================== */
+const queueGoalKey = () => 'queueGoal:' + todolistSheet();
+const queueGroupOpenKey = () => 'queueGroupOpen:' + todolistSheet();
+let queueDone = 0, queueTotal = 0;
+let queueItems = []; // รายการล่าสุดที่ renderQueue() แปลงมาแล้ว ไว้ให้ปุ่ม "คิวลง SHOPEE VDO" ค้นหาตัวถัดไปได้
+let queueGroupOpen = {}; // จำสถานะยุบ/กางที่พี่แยมเปิดเองไว้ต่อวันที่ (key = g.date) — เก็บลง localStorage ต่อชีต กันเปิดเว็บใหม่แล้วต้องกดใหม่
+
+function updateStageToggleBtn() {
+  $('#btnToggleStages').textContent = queueStagesCollapsed()
+    ? '▶ แสดง Tesk งาน'
+    : '🔽 ซ่อน Tesk งาน';
+}
+updateStageToggleBtn();
+$('#btnToggleStages').onclick = () => {
+  localStorage.setItem('queueStagesCollapsed', queueStagesCollapsed() ? '' : '1');
+  updateStageToggleBtn();
+  $('#queueList .qtable')?.classList.toggle('stages-collapsed', queueStagesCollapsed());
+};
+
+// ปุ่มเดียวกาง/ยุบวันที่ทั้งหมดพร้อมกัน — สลับสถานะโดยจำลองคลิกปุ่มลูกศรของแต่ละวันที่ยังไม่ตรงเป้า
+// (ใช้ตัว handler เดิมของ .qtoggle เลย จะได้อัปเดตทั้ง DOM และ queueGroupOpen ให้ครบในทีเดียว)
+$('#btnToggleAllGroups').onclick = () => {
+  const btn = $('#btnToggleAllGroups');
+  const expand = btn.textContent.includes('กางวันที่ทั้งหมด');
+  document.querySelectorAll('.qtoggle').forEach(t => {
+    const isOpenNow = t.textContent.trim() === '▼';
+    if (isOpenNow !== expand) t.click();
+  });
+  btn.textContent = expand ? '📁 ยุบวันที่ทั้งหมด' : '📂 กางวันที่ทั้งหมด';
+};
+
+// หาไอเทม "ตัวถัดไป" ที่ต้องลง Shopee — ไล่ตามลำดับแถวในตาราง (เรียงตามวันที่อยู่แล้ว)
+// ข้ามแถวที่ติ๊ก Shopee ไปแล้ว (sp==='TRUE') และแถว "ไม่มีลิงก์" (sp==='') แต่แถว "ร่าง" (sp ยังเป็น FALSE) นับเป็นตัวถัดไปด้วย
+$('#btnNextShopee').onclick = () => {
+  const next = queueItems.find(it => it.sp !== 'TRUE' && it.sp !== '');
+  if (!next) {
+    $('#nextShopeeInfo').innerHTML = '🎉 ไม่มีคิวที่ต้องลง Shopee แล้วตอนนี้ครับ';
+  } else {
+    const m = String(next.item).match(/^(ITM[_\s]?\d+)\s*(.*)$/i);
+    const code = m ? m[1].toUpperCase().replace(/\s/g, '_') : '';
+    const name = m ? m[2] : next.item;
+    $('#nextShopeeInfo').innerHTML = `<span class="sku">${esc(code)}</span><div style="font-size:1.25rem;font-weight:700;margin:6px 0">${esc(name)}</div><div style="color:var(--muted)">${esc(next.ep)}</div>`;
+  }
+  $('#dlgNextShopee').showModal();
+};
+
+$('#btnCopyShopeeTags').onclick = () => copyText(shopeeCopyText(), $('#btnCopyShopeeTags'));
+
+async function loadQueue() {
+  const name = todolistSheet();
+  if (!name) {
+    $('#queueInfo').textContent = 'ยังไม่ได้เลือกชีต TODOLIST — ไปที่แท็บ ⚙️ ตั้งค่า เพื่อเลือกก่อนครับ';
+    $('#queueList').innerHTML = '';
+    $('#queueStats').style.display = 'none';
+    return;
+  }
+  $('#qGoal').value = localStorage.getItem(queueGoalKey()) || '';
+  try { queueGroupOpen = JSON.parse(localStorage.getItem(queueGroupOpenKey()) || '{}'); } catch (e) { queueGroupOpen = {}; }
+  $('#queueInfo').textContent = 'กำลังโหลด…';
+  try {
+    const rows = await loadRaw(name);
+    renderQueue(rows);
+  } catch (e) {
+    $('#queueInfo').textContent = '⚠️ โหลดคิวคลิปไม่ได้ — เช็คชื่อชีตหรือการแชร์ Sheet';
+    $('#queueList').innerHTML = '';
+    $('#queueStats').style.display = 'none';
+  }
+}
+
+// จำนวนวันที่เหลือในเดือนปัจจุบัน (นับวันนี้ด้วย)
+function daysLeftInMonth() {
+  const now = new Date();
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  return lastDay - now.getDate() + 1;
+}
+
+function renderQueueStats() {
+  $('#queueStats').style.display = queueTotal ? '' : 'none';
+  if (!queueTotal) return;
+  $('#qDone').textContent = `${queueDone} / ${queueTotal} คลิป`;
+  const daysLeft = daysLeftInMonth();
+  $('#qDaysLeft').textContent = daysLeft + ' วัน';
+  const goal = num($('#qGoal').value);
+  const remaining = goal - queueDone;
+  $('#qAvgPerDay').textContent = !goal
+    ? '– ใส่เป้าหมายก่อน'
+    : remaining <= 0 ? '🎉 ถึงเป้าแล้ว'
+    : daysLeft > 0 ? (remaining / daysLeft).toFixed(1) + ' คลิป/วัน'
+    : `เหลือ ${remaining} คลิป (หมดเดือนแล้ว)`;
+}
+
+$('#qGoal').addEventListener('input', () => {
+  localStorage.setItem(queueGoalKey(), $('#qGoal').value);
+  renderQueueStats();
+});
+
+// วันที่ผ่านมาแล้ว → ยุบ (details ปิด), วันนี้/วันถัดไป → กางไว้ — คลิกหัวข้อ toggle เปิด/ปิดได้เสมอ
+function dateCategory(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return 'today';
+  const now = new Date();
+  const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const nOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (dOnly < nOnly) return 'past';
+  if (dOnly.getTime() === nOnly.getTime()) return 'today';
+  return 'future';
+}
+
+function renderQueue(rows) {
+  // แถวหัว (วันที่ลง/จน.คลิปที่ต้องถ่าย) มาจาก CSV/Apps Script raw เท่านั้น
+  // ฝั่ง gviz JSONP จะตัดแถวหัวออกให้เองแล้ว ต้องเช็คก่อนตัดซ้ำ ไม่งั้นเลขแถวเพี้ยน
+  const hasHeader = rows.length && rows[0][0] === 'วันที่ลง';
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  const items = dataRows
+    .map((r, i) => ({
+      row: i + 2, date: r[0], item: r[2], ep: r[3], tier: r[4],
+      scripts: r[5], sounds: r[6], footage: r[7], final: r[8], tiktok: r[9], sp: r[10], upspace: r[13],
+      tiktokLink: r[14], spLink: r[15],
+    }))
+    .filter(it => it.item);
+  queueItems = items;
+  $('#queueInfo').textContent = items.length ? '' : 'ยังไม่มีรายการในคิวคลิปเดือนนี้ครับ';
+  queueDone = items.filter(it => it.tiktok === 'TRUE').length;
+  queueTotal = items.length;
+  renderQueueStats();
+
+  // แถวที่ไม่มีวันที่ = คลิปต่อของวันก่อนหน้า → เอาวันที่ล่าสุดมาใส่ให้ แล้วจัดกลุ่มตามวันที่
+  let lastDate = '';
+  const groups = [];
+  items.forEach(it => {
+    if (it.date) lastDate = it.date;
+    let g = groups[groups.length - 1];
+    if (!g || g.date !== lastDate) { g = { date: lastDate, items: [] }; groups.push(g); }
+    g.items.push(it);
+  });
+
+  // วันที่ผ่านมาแล้ว → พับแถวไว้ (โชว์แค่แถวหัวที่มีปุ่มลูกศร), วันนี้/วันถัดไป → กางไว้ — คลิกลูกศร toggle เปิด/ปิดได้เสมอ
+  const rowsHtml = groups.map(g => {
+    const gid = 'qg' + (g.items[0] ? g.items[0].row : Math.random().toString(36).slice(2));
+    const isOpen = queueGroupOpen.hasOwnProperty(g.date) ? queueGroupOpen[g.date] : (dateCategory(g.date) !== 'past');
+    const doneCount = g.items.filter(it => it.tiktok === 'TRUE').length;
+    return g.items.map((it, i) => renderQueueRow(it, gid, isOpen, i === 0 ? { date: g.date, doneCount, total: g.items.length } : null)).join('');
+  }).join('');
+
+  $('#queueList').innerHTML = `<div class="tablewrap"><table class="qtable${queueStagesCollapsed() ? ' stages-collapsed' : ''}">
+    <thead><tr>
+      <th>วันที่</th><th>ชื่อไอเทม</th><th>EP</th><th>Tier</th>
+      <th class="center stagecol">Scripts</th><th class="center stagecol">Sounds</th><th class="center stagecol">Footage</th><th class="center stagecol">Final</th>
+      <th class="center">TikTok</th><th class="center">Shopee</th><th class="center">Backup</th>
+    </tr></thead>
+    <tbody>${rowsHtml}</tbody>
+  </table></div>`;
+}
+
+// tiktok มีลิงก์+sync EP ครบ, sp (Shopee) มีแค่ลิงก์ ไม่ sync อะไรเลย (ดู markPosted ฝั่ง apps-script.gs)
+// groupHead ไม่ว่าง = แถวแรกของวันนั้น → ใส่ปุ่มลูกศร toggle + วันที่ + สรุปจำนวนไว้ในเซลล์เดียวกัน
+function renderQueueRow(it, gid, isOpen, groupHead) {
+  const m = String(it.item).match(/^(ITM[_\s]?\d+)\s*(.*)$/i);
+  const code = m ? m[1].toUpperCase().replace(/\s/g, '_') : '';
+  const name = m ? m[2] : it.item;
+  const cat = catalog.find(c => c.id === code);
+  const desc = cat && cat.descs.length ? cat.descs.join('\n\n') : '';
+  const dateCell = groupHead
+    ? `<button class="qtoggle" data-group="${gid}" data-date="${esc(groupHead.date)}">${isOpen ? '▼' : '▶'}</button>${esc(groupHead.date || 'ไม่ระบุวันที่')} <span class="qcount">${groupHead.doneCount}/${groupHead.total}</span>`
+    : '';
+  const hidden = (!groupHead && !isOpen) ? ' qrow-hidden' : '';
+  return `<tr class="qrow${hidden}" data-group="${gid}">
+    <td>${dateCell}</td>
+    <td>${desc
+        ? `<span class="itemname clickable" data-copy="${esc(desc)}" data-show-info="${esc(code)}" title="คัดลอกคำอธิบาย + ดูรายละเอียด"><span class="sku">${esc(code)}</span> ${esc(name)}</span>`
+        : `<span class="sku">${esc(code)}</span> ${esc(name)}`}</td>
+    <td>${esc(it.ep)}</td>
+    <td>${tierTag(it.tier)}</td>
+    <td class="center stagecol">${stageCheck(it, 'scripts', code)}</td>
+    <td class="center stagecol">${stageCheck(it, 'sounds', code)}</td>
+    <td class="center stagecol">${stageCheck(it, 'footage', code)}</td>
+    <td class="center stagecol">${stageCheck(it, 'final', code)}</td>
+    <td class="center">${platformBtn(it, 'tiktok', 'TikTok', code)}</td>
+    <td class="center">${platformBtn(it, 'sp', 'Shopee', code)}</td>
+    <td class="center">${stageCheck(it, 'upspace', code)}</td>
+  </tr>`;
+}
+
+// data-itm/data-ep ไว้ให้ backend หาแถวจริงสดๆ ตอนบันทึก ไม่เชื่อ data-row เพียวๆ
+// (กันกรณีพี่แยมแทรก/ลบแถวใน TODOLIST ระหว่างเปิดหน้าเว็บค้างไว้ — เจอบั๊กจากเรื่องนี้มาแล้วฝั่ง Progress)
+function stageCheck(it, stage, itmCode) {
+  return `<input type="checkbox" class="stagecheck" data-row="${it.row}" data-stage="${stage}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" ${it[stage] === 'TRUE' ? 'checked' : ''}>`;
+}
+
+// A เขียว, B เหลือง (รวม B2/Bต), C ฟ้า (รวม Cต)
+function tierTag(tier) {
+  const cls = /^A/i.test(tier) ? 'tierA' : /^B/i.test(tier) ? 'tierB' : /^C/i.test(tier) ? 'tierC' : 'cat';
+  return `<span class="tag ${cls}">${esc(tier)}</span>`;
+}
+
+function platformBtn(it, platform, label, itmCode) {
+  // ในชีตบางแถวคอลัมน์ sp(K) ไม่มีช่องให้ติ๊กเลย (ว่างจริงๆ ไม่ใช่ FALSE) — ไม่ว่าจะเป็นช่องว่างเดิม
+  // หรือกด "ไม่มีลิงก์" เอง ก็ยังกดเปิด modal ใหม่ได้ (เผื่ออยากใส่ลิงก์จริงทีหลัง) ใช้ .markbtn ตัวเดิมเลย
+  if (it[platform] === '') {
+    return `<button class="btn ghost markbtn" data-row="${it.row}" data-platform="${platform}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" data-isdraft="false" data-nolink="true"><span style="color:var(--muted)">ไม่มีลิงก์</span></button>`;
+  }
+  const posted = it[platform] === 'TRUE';
+  const url = it[platform + 'Link'];
+  if (posted && url) {
+    // มีลิงก์ → โชว์แค่ 🔗ลิงก์ (กดแล้วเปิด popup แก้ลิงก์/ยกเลิกการลงได้ ไม่พาเด้งออกไปตรงๆ แล้ว)
+    const doneCls = platform === 'sp' ? 'tag spdone' : 'tag on';
+    return `<button class="${doneCls} linkbtn" data-row="${it.row}" data-platform="${platform}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" data-link="${esc(url)}">🔗 ลิงก์</button>`;
+  }
+  // Shopee ที่ยังไม่ติ๊ก sp แต่กดปุ่ม "ร่าง" ไว้ = ช่อง Link Shopee มีคำว่า "ร่าง" ค้างอยู่ (สีส้มจาง)
+  // sp เองยังเป็น FALSE จนกว่าจะยืนยันด้วยลิงก์จริง — กดเปิด modal ได้อีกเพื่อใส่ลิงก์จริง หรือกดปุ่ม "ร่าง" สลับกลับเป็นยังไม่ลง
+  const isDraft = platform === 'sp' && !posted && it.spLink === 'ร่าง';
+  const btnCls = isDraft ? 'btn ghost markbtn draft' : 'btn ghost markbtn';
+  const textStyle = isDraft ? 'color:#ff7a30' : 'color:var(--muted)';
+  return `<button class="${btnCls}" data-row="${it.row}" data-platform="${platform}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" data-isdraft="${isDraft}"><span style="${textStyle}">✓${label}</span></button>`;
+}
+
+let pendingMarkBtn = null;
+let pendingLinkBtn = null;
+
+$('#queueList').addEventListener('click', async (e) => {
+  const toggleBtn = e.target.closest('.qtoggle');
+  if (toggleBtn) {
+    const willOpen = toggleBtn.textContent.trim() === '▶';
+    toggleBtn.textContent = willOpen ? '▼' : '▶';
+    document.querySelectorAll(`tr.qrow[data-group="${CSS.escape(toggleBtn.dataset.group)}"]`).forEach((tr, i) => {
+      if (i === 0) return; // แถวหัว (มีปุ่มลูกศร) โชว์เสมอ
+      tr.classList.toggle('qrow-hidden', !willOpen);
+    });
+    queueGroupOpen[toggleBtn.dataset.date] = willOpen; // จำไว้ กันรีเฟรชรอบหน้าแล้วยุบกลับ
+    localStorage.setItem(queueGroupOpenKey(), JSON.stringify(queueGroupOpen)); // เก็บลง localStorage กันเปิดเว็บใหม่แล้วต้องกดใหม่
+    return;
+  }
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) {
+    copyText(copyBtn.dataset.copy, copyBtn);
+    // ไอคอน 📋 ข้างชื่อไอเทม (มี data-show-info ด้วย) — เปิด pop-up โชว์การ์ดข้อมูลเต็มแบบหน้า 🔍 ค้นหา ไปพร้อมกับก๊อป
+    if (copyBtn.dataset.showInfo) {
+      const it = catalog.find(c => c.id === copyBtn.dataset.showInfo);
+      if (it) { $('#itemInfoBody').innerHTML = catalogCard(it); $('#dlgItemInfo').showModal(); }
+    }
+    return;
+  }
+  const linkBtn = e.target.closest('.linkbtn');
+  if (linkBtn) {
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    const isTiktok = linkBtn.dataset.platform === 'tiktok';
+    $('#editLinkTitle').textContent = isTiktok ? 'ลิงก์ TikTok' : 'ลิงก์ Shopee';
+    $('#dlgEditLink input[name=link]').value = linkBtn.dataset.link;
+    $('#btnUnmarkLink').textContent = isTiktok ? 'ยังไม่ได้ลงคลิป (ลด EP ลง 1)' : 'ยังไม่ได้ลงคลิป';
+    pendingLinkBtn = linkBtn;
+    $('#dlgEditLink').showModal();
+    return;
+  }
+  const b = e.target.closest('.markbtn'); if (!b) return;
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  // ลง TikTok/Shopee ต้องกรอกลิงก์ก่อนเสมอ (เว้นแต่กด "ร่าง") — เปิด modal แล้วรอผลจาก formPostLink
+  const isTiktok = b.dataset.platform === 'tiktok';
+  $('#postLinkTitle').textContent = isTiktok ? 'ลิงก์ TikTok' : 'ลิงก์ Shopee';
+  $('#postLinkLabel').textContent = isTiktok ? 'วางลิงก์คลิปที่ลง TikTok แล้ว' : 'วางลิงก์สินค้า/โพสต์ที่ลง Shopee แล้ว';
+  $('#dlgPostLink input[name=link]').placeholder = isTiktok ? 'https://www.tiktok.com/@...' : 'https://shopee.co.th/...';
+  $('#btnDraft').style.display = isTiktok ? 'none' : ''; // ปุ่มร่างมีแค่ฝั่ง Shopee
+  $('#btnNoLink').style.display = isTiktok ? 'none' : ''; // ปุ่มไม่มีลิงก์มีแค่ฝั่ง Shopee เหมือนกัน
+  // ไอเทมที่กด "ไม่มีลิงก์" ไปแล้ว (K ไม่มี checkbox) — สลับปุ่มเดิมให้กลายเป็น "ยกเลิกไม่มีลิงก์" แทน
+  const isNoLinkState = b.dataset.nolink === 'true';
+  $('#btnNoLink').textContent = isNoLinkState ? 'ยกเลิกไม่มีลิงก์' : 'ไม่มีลิงก์';
+  $('#btnNoLink').value = isNoLinkState ? 'cancelnolink' : 'nolink';
+  pendingMarkBtn = b;
+  $('#formPostLink').reset();
+  $('#dlgPostLink').showModal();
+});
+
+$('#formPostLink').addEventListener('submit', async (e) => {
+  const b = pendingMarkBtn; pendingMarkBtn = null;
+  if (!b) return;
+  const original = b.innerHTML;
+
+  if (e.submitter?.value === 'draft') {
+    // สลับสถานะร่าง: ยังไม่ติ๊ก → ติ๊กไว้ก่อนแบบไม่มีลิงก์ (ปุ่มส้มจาง) / ติ๊กร่างอยู่แล้ว → เลิกร่าง กลับเป็นสีเทา
+    const wasDraft = b.dataset.isdraft === 'true';
+    b.disabled = true;
+    const ok = await saveToSheet({
+      sheet: todolistSheet(), action: 'toggleShopeeDraft', row: Number(b.dataset.row),
+      itmCode: b.dataset.itm, epText: b.dataset.ep, currentlyDraft: wasDraft,
+    });
+    if (ok) setTimeout(loadQueue, 1500); else { b.disabled = false; b.innerHTML = original; }
+    return;
+  }
+  if (e.submitter?.value === 'nolink') {
+    // ไอเทมนี้ไม่ได้ขายบน Shopee เลย — เคลียร์ K ให้ว่างจริงๆ ไม่มี checkbox แล้วโชว์เป็นข้อความเฉยๆ ในตาราง
+    b.disabled = true;
+    const ok = await saveToSheet({
+      sheet: todolistSheet(), action: 'markNoShopeeLink', row: Number(b.dataset.row),
+      itmCode: b.dataset.itm, epText: b.dataset.ep,
+    });
+    if (ok) setTimeout(loadQueue, 1500); else { b.disabled = false; b.innerHTML = original; }
+    return;
+  }
+  if (e.submitter?.value === 'cancelnolink') {
+    // ยกเลิกสถานะ "ไม่มีลิงก์" — คืน checkbox กลับไปที่ K เหมือนแถวปกติ (ยังไม่ติ๊ก)
+    b.disabled = true;
+    const ok = await saveToSheet({
+      sheet: todolistSheet(), action: 'restoreShopeeCheckbox', row: Number(b.dataset.row),
+      itmCode: b.dataset.itm, epText: b.dataset.ep,
+    });
+    if (ok) setTimeout(loadQueue, 1500); else { b.disabled = false; b.innerHTML = original; }
+    return;
+  }
+  if (e.submitter?.value !== 'ok') return;
+
+  const link = new FormData($('#formPostLink')).get('link');
+  b.disabled = true; b.textContent = 'กำลังบันทึก…';
+  const ok = await saveToSheet({ sheet: todolistSheet(), action: 'markPosted', row: Number(b.dataset.row), itmCode: b.dataset.itm, epText: b.dataset.ep, platform: b.dataset.platform, link });
+  if (ok) setTimeout(loadQueue, 1500); else { b.disabled = false; b.innerHTML = original; }
+});
+
+$('#formEditLink').addEventListener('submit', async (e) => {
+  const b = pendingLinkBtn; pendingLinkBtn = null;
+  if (!b) return;
+  const val = e.submitter?.value;
+
+  if (val === 'open') { window.open(b.dataset.link, '_blank', 'noopener'); return; }
+  if (val !== 'save' && val !== 'unmark') return;
+
+  const base = { sheet: todolistSheet(), row: Number(b.dataset.row), itmCode: b.dataset.itm, epText: b.dataset.ep, platform: b.dataset.platform };
+  b.disabled = true;
+  const ok = val === 'unmark'
+    ? await saveToSheet({ ...base, action: 'unmarkPosted' })
+    : await saveToSheet({ ...base, action: 'updatePostLink', link: new FormData($('#formEditLink')).get('link') });
+  if (ok) setTimeout(loadQueue, 1500); else b.disabled = false;
+});
+
+$('#queueList').addEventListener('change', async (e) => {
+  const cb = e.target.closest('.stagecheck'); if (!cb) return;
+  if (!apiUrl()) { cb.checked = !cb.checked; switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  const value = cb.checked;
+  cb.disabled = true;
+  const ok = await saveToSheet({ sheet: todolistSheet(), action: 'setStage', row: Number(cb.dataset.row), itmCode: cb.dataset.itm, epText: cb.dataset.ep, stage: cb.dataset.stage, value });
+  cb.disabled = false;
+  if (!ok) cb.checked = !value; // บันทึกไม่สำเร็จ → ย้อนสถานะกลับ
+});
+
+/* ================== PROGRESS: กรอกความคืบหน้าเข้า ⚡️Progress เอง ================== */
+let progressItems = [];
+let progressPending = {}; // key: `${row}:${stage}` -> ค่าใหม่ที่ยังไม่ได้บันทึก (string จาก select.value)
+const epNumOf = (v) => { const n = parseFloat(String(v || '').replace(/EP\.?/i, '').trim()); return isNaN(n) ? '' : n; };
+
+async function loadProgress() {
+  $('#progressInfo').textContent = 'กำลังโหลด…';
+  progressPending = {};
+  try {
+    const rows = await loadRaw(SHEET_PROGRESS);
+    // แถวหัว (ว่าง, Scripts, Sounds, Footages, Final) มาจาก CSV/Apps Script raw เท่านั้น เหมือนกรณี TODOLIST
+    const hasHeader = rows.length && rows[0][1] === 'Scripts';
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    progressItems = dataRows.map((r, i) => {
+      const p = parseItm(r[0]); if (!p) return null;
+      return {
+        row: i + (hasHeader ? 2 : 1), id: p.id, name: p.name,
+        scripts: epNumOf(r[1]), sounds: epNumOf(r[2]), footage: epNumOf(r[3]), draft: epNumOf(r[4]), final: epNumOf(r[5]),
+      };
+    }).filter(Boolean);
+  } catch (e) {
+    $('#progressInfo').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet';
+    progressItems = [];
+  }
+  updateSaveProgressBtn();
+  renderProgressTable();
+}
+
+function renderProgressTable() {
+  const q = $('#pq').value.trim().toLowerCase();
+  const rows = progressItems.filter(it => !q || it.id.toLowerCase().includes(q) || (it.name || '').toLowerCase().includes(q));
+  $('#progressInfo').textContent = progressItems.length === 0 ? 'ยังโหลดข้อมูลไม่ได้ครับ' : `พบ ${rows.length} รายการ`;
+  $('#progressBody').innerHTML = rows.map(it => `
+    <tr>
+      <td><span class="sku">${esc(it.id)}</span> ${esc(it.name)}</td>
+      <td>${progInput(it, 'scripts')}</td>
+      <td>${progInput(it, 'sounds')}</td>
+      <td>${progInput(it, 'footage')}</td>
+      <td>${progInput(it, 'draft')}</td>
+      <td class="readonly">${it.final !== '' ? 'EP.' + it.final : '—'}</td>
+    </tr>`).join('');
+}
+
+// dropdown ให้เลือกตั้งแต่ 1 ถึง (ค่าที่บันทึกจริงของช่องนั้น + 10) ต่อสินค้า
+// ถ้ามีค่าที่แก้ค้างไว้ยังไม่บันทึก (progressPending) ให้โชว์ค่านั้นแทน กันหายตอนกรองค้นหาใหม่
+function progInput(it, stage) {
+  const key = `${it.row}:${stage}`;
+  const saved = it[stage]; // เลข หรือ '' ถ้ายังไม่มีค่า
+  const cur = progressPending.hasOwnProperty(key) ? progressPending[key] : (saved === '' ? '' : String(saved));
+  // ช่วง dropdown อิงจาก EP สูงสุดของ "ทั้งไอเทม" ไม่ใช่แค่ช่องนี้ช่องเดียว — กันเคส Draft ยังว่างอยู่
+  // แต่ Scripts/Sounds ไปไกลแล้ว (เช่น EP.49) ทำให้เลือกเลขที่ต้องการจริงไม่ได้เพราะช่วงเริ่มจาก 0+10
+  const itemMax = Math.max(0, ...['scripts', 'sounds', 'footage', 'draft', 'final'].map(s => it[s] === '' ? 0 : it[s]));
+  const max = Math.max(itemMax + 10, 100);
+  let opts = `<option value=""${cur === '' ? ' selected' : ''}>—</option>`;
+  for (let n = 1; n <= max; n++) opts += `<option value="${n}"${String(n) === cur ? ' selected' : ''}>${n}</option>`;
+  return `<select class="proginput" data-row="${it.row}" data-stage="${stage}">${opts}</select>`;
+}
+
+function updateSaveProgressBtn() {
+  $('#btnSaveProgress').disabled = Object.keys(progressPending).length === 0;
+}
+
+$('#pq').addEventListener('input', renderProgressTable);
+
+// แก้ในช่องได้อิสระหลายแถว ไม่บันทึกจนกว่าจะกดปุ่มเดียวด้านบน — ปุ่มกดได้เฉพาะตอนมีอะไรแก้ค้างอยู่จริง
+$('#progressBody').addEventListener('change', (e) => {
+  const sel = e.target.closest('.proginput'); if (!sel) return;
+  const key = `${sel.dataset.row}:${sel.dataset.stage}`;
+  const item = progressItems.find(it => it.row === Number(sel.dataset.row));
+  const saved = item ? item[sel.dataset.stage] : '';
+  const savedStr = saved === '' ? '' : String(saved);
+  if (sel.value === savedStr) delete progressPending[key]; else progressPending[key] = sel.value;
+  updateSaveProgressBtn();
+});
+
+$('#btnSaveProgress').onclick = async () => {
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  // จัดกลุ่ม pending ตามแถว เพราะ 1 แถวแก้ได้หลายช่อง อยากส่งรวมทีเดียวต่อแถว
+  const byRow = {};
+  Object.keys(progressPending).forEach(key => {
+    const [row, stage] = key.split(':');
+    const item = progressItems.find(it => it.row === Number(row));
+    if (!item) return;
+    (byRow[row] || (byRow[row] = { itmCode: item.id }))[stage] = progressPending[key];
+  });
+  if (!Object.keys(byRow).length) return;
+
+  const btn = $('#btnSaveProgress');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+
+  const results = await Promise.all(Object.entries(byRow).map(([row, payload]) =>
+    saveToSheet({ sheet: SHEET_PROGRESS, action: 'setProgress', ...payload }).then(ok => ({ row: Number(row), ok, payload }))
+  ));
+
+  results.forEach(({ row, ok, payload }) => {
+    if (!ok) return;
+    const item = progressItems.find(it => it.row === row);
+    ['scripts', 'sounds', 'footage', 'draft'].forEach(stage => {
+      if (payload[stage] === undefined) return;
+      delete progressPending[`${row}:${stage}`];
+      if (item) item[stage] = payload[stage] === '' ? '' : Number(payload[stage]);
+    });
+  });
+
+  btn.textContent = original;
+  updateSaveProgressBtn();
+  renderProgressTable(); // แสดงค่าที่บันทึกจริงล่าสุด ไม่มี pending ค้างแล้ว
+};
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3000);
+}
+function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBanner(); }
+
+loadAll();
+</script>
+</body>
+</html>
