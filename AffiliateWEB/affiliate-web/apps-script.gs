@@ -163,6 +163,16 @@ function markPosted(sheet, p) {
       const itmCode = itmMatch[0].toUpperCase().replace(/\s/g, '_');
       syncEpToListItme(itmCode, epNum);
       syncProgress(itmCode, 'final', epNum);
+      // ลง TikTok EP.X แปลว่างานสเตจก่อนหน้ามาแล้วอย่างน้อยถึง EP.X — ถ้าสเตจไหนยังตามหลังอยู่ ให้ปรับตามทันที
+      // ⚡️Progress ปรับครบ Scripts/Sounds/Footage/Draft (syncProgress เดินหน้าอย่างเดียวอยู่แล้ว)
+      // 🗂️ ListITME มีแค่คอลัมน์ Footage/Draft เท่านั้น (ไม่มี Scripts/Sounds ในชีตนี้) จึงปรับแค่ 2 ตัวนี้ (guard เพิ่มไม่ให้ถอยหลัง)
+      // ตั้งใจไม่ผูกกับ unmarkPosted — ยกเลิกลงคลิปแล้วไม่ปรับสเตจเหล่านี้ย้อนกลับ
+      syncProgress(itmCode, 'scripts', epNum);
+      syncProgress(itmCode, 'sounds', epNum);
+      syncProgress(itmCode, 'footage', epNum);
+      syncProgress(itmCode, 'draft', epNum);
+      syncListItmeStageIfBehind(itmCode, 'footage', epNum);
+      syncListItmeStageIfBehind(itmCode, 'draft', epNum);
     }
   } else if (p.platform === 'sp') {
     if (p.link) sheet.getRange(rowNum, TODOLIST_SP_LINK_COL).setValue(p.link);
@@ -437,6 +447,24 @@ function syncListItmeStage(itmCode, stage, epNum) {
     const cellText = String(values[r][LISTITME_NAME_COL - 1] || '').toUpperCase().replace(/\s/g, '_');
     if (cellText.indexOf(itmCode) === -1) continue;
     listSheet.getRange(r + 1, col).setValue('EP.' + epNum); // เขียนเป็น "EP.X" ให้ตรงรูปแบบเดียวกับ ⚡️Progress
+    return;
+  }
+}
+
+// ---- เหมือน syncListItmeStage แต่เดินหน้าอย่างเดียว (ไม่เขียนทับด้วยเลขน้อยกว่าค่าเดิม) ----
+// ใช้ตอนลง TikTok เพื่อดัน Footage/Draft ตามให้ทัน EP ที่เพิ่งลง โดยไม่ทำลายค่าที่พี่แยมกรอกเองไว้ล่วงหน้าแล้ว (เช่น กรอก Footage ไว้ล่วงหน้าเกิน EP ที่ลงจริง)
+function syncListItmeStageIfBehind(itmCode, stage, epNum) {
+  const col = LISTITME_STAGE_COLS[stage];
+  if (!col) return;
+  const listSheet = SS.getSheetByName(LISTITME_SHEET);
+  if (!listSheet) return;
+  const values = listSheet.getDataRange().getValues();
+  for (let r = 0; r < values.length; r++) {
+    const cellText = String(values[r][LISTITME_NAME_COL - 1] || '').toUpperCase().replace(/\s/g, '_');
+    if (cellText.indexOf(itmCode) === -1) continue;
+    const cell = listSheet.getRange(r + 1, col);
+    const cur = parseFloat(String(cell.getValue() || '').replace(/EP\.?/i, '').trim());
+    if (isNaN(cur) || epNum >= cur) cell.setValue('EP.' + epNum);
     return;
   }
 }

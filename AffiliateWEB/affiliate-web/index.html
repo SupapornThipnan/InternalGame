@@ -153,6 +153,47 @@
       <div class="panel"><h3>สัดส่วนค่าคอมตามหมวดหมู่</h3><canvas id="chartCat"></canvas></div>
     </div>
     <div class="panel"><h3>🏆 Top 5 สินค้าทำเงิน</h3><ul class="top5" id="top5"></ul></div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>📱 TikTok Affiliate Report</h3>
+      <div class="toolbar" style="margin-bottom:10px">
+        <select id="tiktokMonthSelect"><option value="">— เลือกเดือน —</option></select>
+        <button class="btn ghost" id="btnTiktokAddMonth">➕ โหลดเดือนใหม่</button>
+        <button class="btn ghost" id="btnTiktokReload" style="display:none">🔄 รีโหลดเดือนนี้</button>
+      </div>
+      <div id="tiktokAddRow" class="toolbar" style="display:none">
+        <input id="tiktokSheetInput" list="tiktokSheetList" placeholder="เช่น ยอดขายเดือน 1-2026">
+        <datalist id="tiktokSheetList"></datalist>
+        <button class="btn ghost" id="btnTiktokLoadSheetList">🔄 โหลดรายชื่อชีต</button>
+        <button class="btn" id="btnTiktokConfirmLoad">โหลด</button>
+      </div>
+      <div id="tiktokInfo" class="empty" style="padding:10px"></div>
+      <div class="cards" id="tiktokStats" style="display:none">
+        <div class="card"><div class="label">จำนวนรายการ</div><div class="value" id="tkOrders">–</div></div>
+        <div class="card"><div class="label">GMV รวม</div><div class="value cyan" id="tkGmv">–</div></div>
+        <div class="card"><div class="label">ค่าคอมมิชชั่นมาตรฐาน</div><div class="value" id="tkStandard">–</div></div>
+        <div class="card"><div class="label">ค่าคอมมิชชั่นโฆษณาร้านค้า</div><div class="value" id="tkAds">–</div></div>
+        <div class="card"><div class="label">ค่าคอมรวม (ยอดรายได้รวมสุดท้าย)</div><div class="value pink" id="tkCommission">–</div></div>
+      </div>
+      <div class="tablewrap" id="tiktokDayWrap" style="display:none;margin-top:14px">
+        <table class="qtable">
+          <thead><tr>
+            <th>วันที่</th><th class="center">จำนวนรายการ</th><th class="center">GMV</th>
+            <th class="center">ค่าคอมมิชชั่นมาตรฐาน</th><th class="center">ค่าคอมมิชชั่นโฆษณาร้านค้า</th><th class="center">ค่าคอมรวม</th>
+          </tr></thead>
+          <tbody id="tiktokDayBody"></tbody>
+        </table>
+      </div>
+      <div class="tablewrap" id="tiktokProductWrap" style="display:none;margin-top:14px">
+        <table class="qtable">
+          <thead><tr>
+            <th>รหัสสินค้า</th><th>สินค้า</th><th class="center">จำนวนที่ขายได้</th><th class="center">GMV</th>
+            <th class="center">ค่าคอมมิชชั่นมาตรฐาน</th><th class="center">ค่าคอมมิชชั่นโฆษณาร้านค้า</th><th class="center">ค่าคอมรวม</th>
+          </tr></thead>
+          <tbody id="tiktokProductBody"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <!-- ============ SEARCH (คำอธิบาย + ShopeeLink) ============ -->
@@ -291,6 +332,14 @@
       <div class="actions" style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" id="btnSaveShopeeCopyText">💾 บันทึก</button>
       </div>
+
+      <h3 style="margin-top:24px">📱 ไฟล์ยอดขาย TikTok (ถ้าแยกไฟล์ต่างหาก)</h3>
+      <p>เว็บฝัง Sheet ID ของไฟล์ยอดขาย TikTok ไว้เป็นค่าเริ่มต้นให้แล้ว (เปิดเครื่อง/เบราว์เซอร์ไหนก็ใช้ได้ทันทีไม่ต้องกรอกใหม่ เหมือนไฟล์หลัก) ถ้าพี่ย้ายไปไฟล์อื่นอีกทีในอนาคต แก้ Sheet ID ตรงนี้แทนได้เลย (ดูจาก URL ส่วนที่อยู่ระหว่าง /d/ กับ /edit ของไฟล์นั้น ต้องแชร์ "Anyone with link – Viewer" ด้วยเหมือนไฟล์หลัก)</p>
+      <label>Sheet ID ไฟล์ยอดขาย TikTok</label>
+      <input id="tiktokSheetIdInput" placeholder="เช่น 1AbCdEfGhIjKlmNoPQRstuVWxyz...">
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="btnSaveTiktokSheetId">💾 บันทึก</button>
+      </div>
     </div>
   </section>
 </main>
@@ -403,6 +452,7 @@ const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 // ชื่อชีต TODOLIST เปลี่ยนทุกเดือน ต้องมาแก้เลขนี้ในโค้ดเองด้วยตอนขึ้นเดือนใหม่ ถ้าไม่อยากกรอกในหน้าเว็บทุกเครื่อง
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxssiQazWkQnC20Wtv03ledew7nRrNpaFbxrlQWfKlpBYwP71hsUibfvZxY0UxrXv7X6A/exec';
 const DEFAULT_TODOLIST_SHEET = '7️⃣ 📝 TODOLIST-JULY26';
+const DEFAULT_TIKTOK_SHEET_ID = '1jyBUyofpn1s0Eesh_w0pHdE7eE7iXuANK7qjtSZ8Ts0'; // ไฟล์ยอดขาย TikTok แยกไฟล์ กันไฟล์หลักหนัก
 
 /* ================== STATE ================== */
 let products = [], sales = [], catalog = [], range = 'all';
@@ -413,14 +463,16 @@ const num = (v) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
 const baht = (v) => num(v).toLocaleString('th-TH', { maximumFractionDigits: 0 });
 const apiUrl = () => localStorage.getItem('appsScriptUrl') || DEFAULT_API_URL;
 const todolistSheet = () => localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
+// ถ้าพี่ย้ายชีตยอดขาย TikTok ไปไว้ Google Sheet ไฟล์อื่น (กันไฟล์หลักหนัก) ใส่ Sheet ID ไฟล์นั้นไว้ตรงนี้ — ว่างไว้ = ดึงจากไฟล์หลักเหมือนเดิม
+const tiktokSheetId = () => localStorage.getItem('tiktokSheetId') || DEFAULT_TIKTOK_SHEET_ID;
 const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
 // ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
 const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
 const shopeeCopyText = () => localStorage.getItem('shopeeCopyText') || SHOPEE_TAGS_DEFAULT;
 
 /* ================== DATA LOADING ================== */
-const csvUrl = (name) =>
-  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+const csvUrl = (name, sheetId = SHEET_ID) =>
+  `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
 
 async function loadCsv(name) {
   const res = await fetch(csvUrl(name));
@@ -430,8 +482,8 @@ async function loadCsv(name) {
 }
 
 // อ่านแบบไม่มี header (ชีตคำอธิบาย/ลิงก์ไม่มีหัวคอลัมน์มาตรฐาน)
-async function loadCsvRaw(name) {
-  const res = await fetch(csvUrl(name));
+async function loadCsvRaw(name, sheetId = SHEET_ID) {
+  const res = await fetch(csvUrl(name, sheetId));
   const text = await res.text();
   if (text.trim().startsWith('<')) throw new Error('SHEET_NOT_SHARED');
   return Papa.parse(text, { header: false, skipEmptyLines: true }).data;
@@ -452,7 +504,7 @@ async function loadApiRaw(name) {
 }
 
 // gviz JSONP — โหลดผ่าน <script> tag เลยไม่ติด CORS แม้เปิดเว็บแบบ file://
-function gvizFetch(name) {
+function gvizFetch(name, sheetId = SHEET_ID) {
   return new Promise((resolve, reject) => {
     const cb = 'gv_' + Math.random().toString(36).slice(2);
     const s = document.createElement('script');
@@ -463,21 +515,23 @@ function gvizFetch(name) {
       (resp && resp.status !== 'error' && resp.table) ? resolve(resp.table) : reject(new Error('GVIZ_ERROR'));
     };
     s.onerror = () => { clearTimeout(timer); cleanup(); reject(new Error('GVIZ_LOAD')); };
-    s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;responseHandler:${cb}&headers=0&sheet=${encodeURIComponent(name)}`;
+    s.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;responseHandler:${cb}&headers=0&sheet=${encodeURIComponent(name)}`;
     document.head.appendChild(s);
   });
 }
 const cellStr = (c) => (c == null) ? '' : String(c.f ?? c.v ?? '');
-async function loadJsonpRaw(name) {
-  const t = await gvizFetch(name);
+async function loadJsonpRaw(name, sheetId = SHEET_ID) {
+  const t = await gvizFetch(name, sheetId);
   return (t.rows || []).map(r => (r.c || []).map(cellStr));
 }
 
 // ชีตดิบ (คำอธิบาย/ลิงก์): JSONP ก่อน (ชัวร์สุด) → Apps Script raw → CSV
-async function loadRaw(name) {
-  try { return await loadJsonpRaw(name); } catch (e) {}
-  if (apiUrl()) { try { return await loadApiRaw(name); } catch (e) {} }
-  return loadCsvRaw(name);
+// sheetId ระบุมาเอง (เช่น ไฟล์ยอดขาย TikTok แยกไฟล์) → ข้าม Apps Script เพราะผูกกับไฟล์หลักเท่านั้น ใช้ได้แค่ JSONP/CSV
+async function loadRaw(name, sheetId) {
+  const sid = sheetId || SHEET_ID;
+  try { return await loadJsonpRaw(name, sid); } catch (e) {}
+  if (!sheetId && apiUrl()) { try { return await loadApiRaw(name); } catch (e) {} }
+  return loadCsvRaw(name, sid);
 }
 
 async function loadAll() {
@@ -862,6 +916,11 @@ $('#btnSaveShopeeCopyText').onclick = () => {
   localStorage.setItem('shopeeCopyText', $('#shopeeCopyTextInput').value.trim());
   $('#shopeeCopyTextInput').value = shopeeCopyText();
   toast('บันทึกข้อความแฮชแท็กแล้ว ✓');
+};
+$('#tiktokSheetIdInput').value = tiktokSheetId();
+$('#btnSaveTiktokSheetId').onclick = () => {
+  localStorage.setItem('tiktokSheetId', $('#tiktokSheetIdInput').value.trim());
+  toast('บันทึก Sheet ID แล้ว ✓ — โหลดเดือนใหม่/รีโหลดครั้งถัดไปจะดึงจากไฟล์นี้');
 };
 $('#btnLoadSheetList').onclick = async () => {
   if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
@@ -1406,6 +1465,194 @@ function renderListItmeTable() {
   </tr>`).join('') : '<tr><td colspan="5" class="empty">ไม่มีรายการ Tier นี้</td></tr>';
 }
 $('#listTierFilter').addEventListener('change', renderListItmeTable);
+
+/* ================== TIKTOK AFFILIATE REPORT: สรุปยอดรายเดือน cache ผ่าน IndexedDB ================== */
+// โหลดครั้งแรกจากชีต (ช้า, ~500+ แถว) แล้ว cache สรุปไว้ใน IndexedDB — ครั้งต่อไปเลือกเดือนเดิมโชว์จาก cache ทันที ไม่ต้องโหลดซ้ำ
+// ข้ามยอดขายที่กรอกมือ (สินค้า/ยอดขาย) เด็ดขาด — คนละก้อนข้อมูลกันตามที่ตกลงไว้
+const TIKTOK_DB_NAME = 'deetaoAffiliateDB';
+const TIKTOK_DB_STORE = 'tiktokMonths';
+let tiktokDbPromise = null;
+function openTiktokDb() {
+  if (tiktokDbPromise) return tiktokDbPromise;
+  tiktokDbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(TIKTOK_DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(TIKTOK_DB_STORE, { keyPath: 'sheetName' }); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return tiktokDbPromise;
+}
+async function tiktokDbPut(record) {
+  const db = await openTiktokDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TIKTOK_DB_STORE, 'readwrite');
+    tx.objectStore(TIKTOK_DB_STORE).put(record);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function tiktokDbGetAll() {
+  const db = await openTiktokDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(TIKTOK_DB_STORE, 'readonly');
+    const req = tx.objectStore(TIKTOK_DB_STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// คอลัมน์ตามรายงาน TikTok Shop Affiliate:
+// idx23=GMV(24), idx35=ค่าคอมมิชชั่นมาตรฐาน(36), idx36=ค่าคอมมิชชั่นโฆษณาร้านค้า(37), idx44=ยอดรายได้รวมสุดท้าย(45), idx45=วันที่สั่งซื้อ(46)
+// นับทุกแถว ทุกสถานะ ตามที่ตกลงไว้ (ไม่กรอง "สถานะการชำระคำสั่งซื้อ")
+function parseTiktokDateKey(v) {
+  const m = String(v || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return '';
+  const [, d, mo, y] = m;
+  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+async function fetchTiktokMonthSummary(sheetName) {
+  const rows = await loadRaw(sheetName, tiktokSheetId());
+  const hasHeader = rows.length && rows[0][0] === 'หมายเลขคำสั่งซื้อ';
+  const dataRows = hasHeader ? rows.slice(1) : rows;
+  let orders = 0, gmv = 0, standardCommission = 0, adsCommission = 0, commission = 0;
+  const byDay = {};
+  const byProduct = {}; // key = รหัสสินค้า(idx3) กันชื่อเพี้ยนแยกกลุ่ม, โชว์ชื่อจาก ชื่อสินค้า(idx2)
+  dataRows.forEach(r => {
+    if (!r[0]) return;
+    const rowGmv = num(r[23]), rowStd = num(r[35]), rowAds = num(r[36]), rowFinal = num(r[44]), rowQty = num(r[5]);
+    orders++; gmv += rowGmv; standardCommission += rowStd; adsCommission += rowAds; commission += rowFinal;
+
+    const dateKey = parseTiktokDateKey(r[45]);
+    if (dateKey) {
+      if (!byDay[dateKey]) byDay[dateKey] = { orders: 0, gmv: 0, standardCommission: 0, adsCommission: 0, commission: 0 };
+      const d = byDay[dateKey];
+      d.orders++; d.gmv += rowGmv; d.standardCommission += rowStd; d.adsCommission += rowAds; d.commission += rowFinal;
+    }
+
+    // จับกลุ่มด้วย "รหัสสินค้า" (idx3) ไว้ให้พี่เอาไปแมปกับ SKU ITM_xxx เองได้
+    const skuId = String(r[3] || '').trim();
+    if (skuId) {
+      if (!byProduct[skuId]) byProduct[skuId] = { skuId, name: String(r[2] || '').trim(), orders: 0, qty: 0, gmv: 0, standardCommission: 0, adsCommission: 0, commission: 0 };
+      const p = byProduct[skuId];
+      p.orders++; p.qty += rowQty; p.gmv += rowGmv; p.standardCommission += rowStd; p.adsCommission += rowAds; p.commission += rowFinal;
+    }
+  });
+  return { sheetName, orders, gmv, standardCommission, adsCommission, commission, byDay, byProduct, loadedAt: Date.now() };
+}
+
+function renderTiktokStats(rec) {
+  $('#btnTiktokReload').style.display = rec ? '' : 'none';
+  if (!rec) {
+    $('#tiktokInfo').textContent = 'ยังไม่มีเดือนที่โหลดไว้ — กด "➕ โหลดเดือนใหม่" เพื่อเริ่มค่ะ';
+    $('#tiktokStats').style.display = 'none';
+    $('#tiktokDayWrap').style.display = 'none';
+    $('#tiktokProductWrap').style.display = 'none';
+    return;
+  }
+  $('#tiktokInfo').textContent = `📦 cache ไว้ในเครื่อง — อัปเดตล่าสุด ${new Date(rec.loadedAt).toLocaleString('th-TH')}`
+    + (rec.byProduct ? '' : ' — ⚠️ เดือนนี้โหลดไว้ก่อนมีตัวเลขรายวัน/รายสินค้า กด "🔄 รีโหลดเดือนนี้" เพื่ออัปเดต');
+  $('#tiktokStats').style.display = '';
+  $('#tkOrders').textContent = rec.orders.toLocaleString('th-TH');
+  $('#tkGmv').textContent = baht(rec.gmv) + ' ฿';
+  $('#tkStandard').textContent = baht(rec.standardCommission || 0) + ' ฿';
+  $('#tkAds').textContent = baht(rec.adsCommission || 0) + ' ฿';
+  $('#tkCommission').textContent = baht(rec.commission) + ' ฿';
+
+  const byDay = rec.byDay || {};
+  const days = Object.keys(byDay).sort();
+  $('#tiktokDayWrap').style.display = days.length ? '' : 'none';
+  $('#tiktokDayBody').innerHTML = days.map(k => {
+    const d = byDay[k]; const [y, mo, da] = k.split('-');
+    return `<tr>
+      <td>${da}/${mo}/${y}</td>
+      <td class="center">${d.orders}</td>
+      <td class="center">${baht(d.gmv)}</td>
+      <td class="center">${baht(d.standardCommission)}</td>
+      <td class="center">${baht(d.adsCommission)}</td>
+      <td class="center">${baht(d.commission)}</td>
+    </tr>`;
+  }).join('');
+
+  const byProduct = rec.byProduct || {};
+  const products = Object.values(byProduct).sort((a, b) => b.gmv - a.gmv); // GMV มากไปน้อย
+  $('#tiktokProductWrap').style.display = products.length ? '' : 'none';
+  $('#tiktokProductBody').innerHTML = products.map(p => `<tr>
+      <td class="sku">${esc(p.skuId || '—')}</td>
+      <td>${esc(p.name || '(ไม่มีชื่อ)')}</td>
+      <td class="center">${p.qty.toLocaleString('th-TH')}</td>
+      <td class="center">${baht(p.gmv)}</td>
+      <td class="center">${baht(p.standardCommission)}</td>
+      <td class="center">${baht(p.adsCommission)}</td>
+      <td class="center">${baht(p.commission)}</td>
+    </tr>`).join('');
+}
+
+async function refreshTiktokMonthOptions(selectName) {
+  const all = await tiktokDbGetAll();
+  all.sort((a, b) => a.sheetName.localeCompare(b.sheetName, 'th'));
+  const sel = $('#tiktokMonthSelect');
+  const want = selectName !== undefined ? selectName : sel.value;
+  sel.innerHTML = '<option value="">— เลือกเดือน —</option>' + all.map(m => `<option value="${esc(m.sheetName)}">${esc(m.sheetName)}</option>`).join('');
+  sel.value = all.some(m => m.sheetName === want) ? want : '';
+  localStorage.setItem('tiktokSelectedMonth', sel.value);
+  renderTiktokStats(all.find(m => m.sheetName === sel.value));
+}
+
+$('#tiktokMonthSelect').addEventListener('change', async () => {
+  const all = await tiktokDbGetAll();
+  localStorage.setItem('tiktokSelectedMonth', $('#tiktokMonthSelect').value);
+  renderTiktokStats(all.find(m => m.sheetName === $('#tiktokMonthSelect').value));
+});
+
+$('#btnTiktokAddMonth').onclick = () => {
+  $('#tiktokAddRow').style.display = $('#tiktokAddRow').style.display === 'none' ? 'flex' : 'none';
+};
+
+$('#btnTiktokLoadSheetList').onclick = async () => {
+  if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
+  try {
+    const res = await fetch(`${apiUrl()}?list=1`);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    $('#tiktokSheetList').innerHTML = j.sheets.filter(s => s.includes('ยอดขายเดือน')).map(s => `<option value="${esc(s)}">`).join('');
+    toast('โหลดรายชื่อชีตแล้ว ✓');
+  } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
+};
+
+$('#btnTiktokConfirmLoad').onclick = async () => {
+  const name = $('#tiktokSheetInput').value.trim();
+  if (!name) { toast('พิมพ์ชื่อชีตก่อนครับ'); return; }
+  const btn = $('#btnTiktokConfirmLoad'); btn.disabled = true; btn.textContent = 'กำลังโหลด…';
+  try {
+    const rec = await fetchTiktokMonthSummary(name);
+    await tiktokDbPut(rec);
+    $('#tiktokAddRow').style.display = 'none';
+    $('#tiktokSheetInput').value = '';
+    await refreshTiktokMonthOptions(name);
+    toast(`โหลด "${name}" สำเร็จ ✓`);
+  } catch (e) {
+    toast('โหลดไม่สำเร็จ เช็คชื่อชีตหรือการแชร์ Sheet');
+  } finally {
+    btn.disabled = false; btn.textContent = 'โหลด';
+  }
+};
+
+$('#btnTiktokReload').onclick = async () => {
+  const name = $('#tiktokMonthSelect').value;
+  if (!name) return;
+  const btn = $('#btnTiktokReload'); btn.disabled = true; btn.textContent = 'กำลังโหลด…';
+  try {
+    const rec = await fetchTiktokMonthSummary(name);
+    await tiktokDbPut(rec);
+    await refreshTiktokMonthOptions(name);
+    toast('รีโหลดสำเร็จ ✓');
+  } catch (e) { toast('รีโหลดไม่สำเร็จ'); }
+  finally { btn.disabled = false; btn.textContent = '🔄 รีโหลดเดือนนี้'; }
+};
+
+// เริ่มต้น: ดึงรายชื่อเดือนที่ cache ไว้ใน IndexedDB มาโชว์ก่อนเลย ไม่ต้องรอ fetch จาก Sheet
+refreshTiktokMonthOptions(localStorage.getItem('tiktokSelectedMonth') || '').catch(() => {});
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';

@@ -2618,6 +2618,513 @@
     micro grid alone (confirmed independent of the fine grid, matching
     v3.111's own independence from the main grid); re-ran the full
     terrain-decal regression suite — unaffected, still passes.
+
+  v3.113 (2026-07-16) — Added "แม่แบบ Foundation/Furniture": a runtime
+    "clone an existing object type into a brand-new type" tool, per พี่แยม's
+    request: "พี่อยากสร้าง แม่แบบ Foundation เช่นพี่จะสร้างรั้ว พี่ก็จะก้อปปี้
+    ฟังก์ชั่น บล๊อก1x1x1 มาและใส่รูป ใส่ไอดี ใส่ชื่อ แม่แบบ Furniture ก็เช่นกัน"
+    (I want to make a "Foundation template" — e.g. to make a Fence, I'd copy
+    the Block 1x1x1 function and add an image/ID/name; same for Furniture) —
+    previously the ONLY way to add a new object type was hand-editing this
+    file in 4-5 separate places (OBJECT_TYPES entry, static palette HTML,
+    FOUNDATION_TYPES membership, a drawXXX switch-case, VISUAL_HEIGHT).
+    Sent a full outline (button placement mockup + form fields + "what
+    happens after สร้าง" + 3 explicit scope questions) and got every
+    question answered before writing any code, per the standing no-
+    exceptions outline-first rule.
+
+    Design, confirmed via outline: a "+ เพิ่มชนิดใหม่จากแม่แบบ" button at the
+    end of each palette group (Foundation/Furniture) opens a small modal —
+    pick a แม่แบบต้นทาง (template), type an ไอดี (internal key) + ชื่อ
+    (display name), optionally upload a รูป right there. The new type
+    inherits 100% of its template's behavior (blocking/footprint/facing-
+    cycle/table-topper-eligibility) and only differs in key/label/image —
+    exactly the "copy Block's function, swap image/id/name" workflow พี่แยม
+    described, not a general new-behavior authoring tool.
+
+    Deliberately restricted แม่แบบต้นทาง to a whitelist (CLONABLE_BASE_TYPES:
+    Foundation = box/block/tree/rock/barrel, Furniture = tableSmall/vase/
+    giftBox/npc) instead of every OBJECT_TYPES key — wall/wallbox/wallbox5/
+    door/chest/lever/frame/frameSmall/coin/gem/table all carry literal
+    `type === '...'` behavior elsewhere (wall paint, door/chest/lever state,
+    wallHost mount slots, table topper slots, collectible scoring) that a
+    same-named clone would silently NOT inherit, since defaultState()/
+    drawObject() key off the literal string in those cases, not a generic
+    OBJECT_TYPES flag. The whitelist is exactly the set of types whose
+    entire behavior already lives in generic, flag-driven code paths, so a
+    clone of any of these is genuinely feature-complete rather than a
+    partial imitation — noted as an explicit "ขอบเขตที่ไม่ทำ" in the outline
+    plus 3 confirmed follow-up questions: custom types CAN be deleted
+    (blocked with an alert if any instance is still placed on the current
+    board — same "block, don't just warn" data-loss-prevention pattern the
+    map-resize/terrain-erase features already established), get a small
+    "กำหนดเอง" badge on their palette card so they're visually distinct from
+    built-ins, and are bundled into the existing รูปที่บันทึกไว้ Export/Import
+    (.json) flow (bumped to version 2; a version-1 file just has 0 custom
+    types to restore) so opening a saved map on a different browser/machine
+    that never created a given custom type doesn't silently render it
+    invisible.
+
+    Implementation: registerCustomType(def) is the single function that
+    makes a clone "real" — spreads the template's OBJECT_TYPES flags onto
+    the new key, mirrors FACING_CYCLE_TYPES/TABLE_TOPPER_TYPES Set
+    membership when the template has it, and copies VISUAL_HEIGHT. drawObject()
+    now resolves a `drawType` (clone → its baseType) before the no-image
+    procedural-fallback switch/WALLBOX_TYPES lookup/table-topper fallback,
+    so an un-imaged clone renders identically to its template; each clone
+    still gets its own independent image upload slot (never shares the
+    template's). getObjectSpriteMaxW/getImageMaxH check a per-clone {w,h}
+    stored right on its customTypes registry entry (adjustable later via its
+    own auto-generated "🧩 ชนิดที่สร้างเอง" settings-tab card), the same
+    contain-fit-box idea table/vase/tableSmall/giftBox's own dedicated `let`
+    overrides already used, just without needing a named global per type.
+    Palette-item and choose/clear-image-button click wiring — previously
+    page-load-only `querySelectorAll(...).forEach(...)` loops — refactored
+    into reusable wireUpPalItem/wireUpChooseImgBtn/wireUpClearImgBtn
+    functions so a dynamically-created custom-type card can wire itself
+    identically after load. Registry persists as one JSON blob in IndexedDB
+    (saveSettingToStorage('customTypesRegistry', ...)) and rebuilds every
+    custom type's DOM + re-registers it on page load (restoreCustomTypes()),
+    same restore-on-load pattern every uploaded image already uses.
+
+    Verified with a headless Playwright run (Chromium + WebKit): whitelist
+    options match CLONABLE_BASE_TYPES exactly in both groups; duplicate-ID
+    and bad-ID-format both correctly rejected with an inline error instead
+    of silently failing; a cloned Foundation type ("fence" from block)
+    placed on the board round-trips correctly through save-map JSON
+    (`type:"fence"`); deleting a still-placed custom type is blocked with
+    the exact usage-count alert, while a never-placed one deletes cleanly
+    (palette item + settings card both removed); a cloned Furniture type
+    survives a full page reload (palette item + settings card both restored
+    via restoreCustomTypes()) while a deleted one correctly does not;
+    Export produces a version-2 bundle containing both created custom
+    types; zero console/page errors in either engine across the whole flow;
+    re-ran the existing grid-toggle regression check — unaffected.
+
+    Known v1 scope simplification (documented, not yet requested by
+    พี่แยม): a custom type's settings card only exposes a front-image row
+    (no back-image row / no adjustable Ground Offset row, unlike table/npc/
+    tableSmall/giftBox's own dedicated controls) — right-click facing-cycle
+    still works correctly for a clone of a FACING_CYCLE_TYPES template, it
+    just falls back to the front image for its "back" state until a back-
+    upload UI is added, identical to how any of those built-in types
+    behaves today before its own back image has been uploaded.
+
+  v3.114 (2026-07-16) — Fixed: couldn't backspace/delete text inside ANY
+    text input on the page. พี่แยม tried typing an ไอดี into the new
+    "เพิ่มชนิดใหม่จากแม่แบบ" modal (v3.113), noticed Backspace didn't
+    remove characters, and reported it right away with a screenshot.
+
+    Root cause: the "hover an object on the map, press Backspace/Delete to
+    remove it" listener (v1.0-era feature) is attached to `window`, not the
+    canvas, and always called e.preventDefault() on Backspace/Delete with
+    no check for whether a text input was currently focused — so the
+    browser's own "erase a character" behavior never got a chance to run
+    in ANY input on the page. Pre-dates v3.113 entirely (would have hit the
+    existing table/vase/tableSmall/giftBox/grass1-9 ID/ชื่อ fields, map-size
+    inputs, image-size inputs too) — only surfaced now because typing a
+    fresh custom-type ID from scratch was the first time พี่แยม needed to
+    backspace inside a text field enough to notice it was broken.
+
+    Fix: added one guard at the top of the listener — if
+    document.activeElement is an INPUT/TEXTAREA/SELECT, return immediately
+    before touching preventDefault or the hovered-object-deletion logic.
+    Verified with Playwright (Chromium + WebKit): backspacing inside the
+    new custom-type ID field now edits normally; backspacing inside the
+    pre-existing table ชื่อ field now edits normally too; the original
+    hover-a-map-object-then-Backspace-deletes-it behavior still works
+    exactly as before when no input is focused (regression-checked, not
+    just assumed) — zero console/page errors either way.
+
+  v3.115 (2026-07-16) — Added a "รูปหลัง" (back-image) upload row to a
+    custom (cloned) type's settings-tab card, per พี่แยม's follow-up after
+    finding the existing card: "แต่พี่อยากให้เพิ่มอีกรูปเอาไว้ Filp ด้านหลัง"
+    (I want another image slot for the flip/back side). v3.113 deliberately
+    shipped without this row (documented as a known v1 simplification) —
+    right-click facing-cycle already worked for a Furniture-clone (falling
+    back to the front image for its "back" state), there just wasn't a UI
+    to upload a distinct one yet.
+
+    Only shown for a clone whose baseType is in FACING_CYCLE_TYPES —
+    currently every Furniture-whitelist template (tableSmall/vase/giftBox/
+    npc), matching how those types' own built-in cards already have a
+    รูปหลัง row. A Foundation-whitelist clone (box/block/tree/rock/barrel)
+    never joins FACING_CYCLE_TYPES (those templates only plain-flip, no
+    front/back concept), so the row is skipped for them entirely rather
+    than shown-but-inert. Also renamed the existing front row's label from
+    generic "รูป" to "รูปหน้า" to read correctly now that a "รูปหลัง" row
+    can sit next to it, matching table/vase's own card wording. No new
+    data structures needed — reuses the exact same generic (kind, type)
+    image-upload/restore/export pipeline every other image slot already
+    uses; restoreCustomTypes() now also calls
+    restoreOrMigrateImage('object-back', ...) for FACING_CYCLE_TYPES clones
+    on page load.
+
+    Verified with Playwright (Chromium + WebKit): a Foundation-clone card
+    has no back-image row; a Furniture-clone card does, with its
+    choose/clear buttons correctly wired to the real key (not the
+    template's); re-ran the full v3.113/v3.114 regression suite —
+    unaffected, zero console/page errors in either engine.
+
+  v3.116 (2026-07-16) — Broadened v3.115's "รูปหลัง" row to EVERY custom
+    type, not just Furniture-whitelist clones — พี่แยม tried it on "รั้ว"
+    (a Foundation-whitelist clone, from block) and couldn't find the row,
+    then clarified the actual want: "หลักการเดียวกับ NPC เลยจ้า ซ้ายขวา
+    Filp ข้างหลังเปลี่ยนรูป" (same principle as NPC — left-right flip, and
+    flipping to the back changes the image). v3.115's condition
+    (FACING_CYCLE_TYPES.has(def.baseType)) mirrored what a type's own
+    TEMPLATE supports, but พี่แยม wants every custom type to get this
+    regardless of its template — a custom type is now deliberately MORE
+    capable than the built-in it was cloned from in this one specific
+    respect (block itself still only plain-flips a single image; "รั้ว"
+    cloned from it now gets the full front/back swap + flip cycle NPC has).
+
+    registerCustomType() now unconditionally adds every new custom type's
+    key to FACING_CYCLE_TYPES (was: only when its baseType was already a
+    member) — cycleFacingFlip/getActiveObjectImage/defaultState all already
+    key off FACING_CYCLE_TYPES generically (no hardcoded type lists), so
+    this was a pure membership-rule change, zero new plumbing.
+    buildCustomSettingsCard()'s "รูปหลัง" row and restoreCustomTypes()'s
+    restoreOrMigrateImage('object-back', ...) call both dropped their
+    v3.115 baseType condition to match — always present now.
+
+    Verified with Playwright (Chromium + WebKit): a Foundation-clone card
+    (block-based) now DOES have a working back-image row wired to the
+    right key; re-ran the full v3.113–v3.115 regression suite — unaffected,
+    zero console/page errors in either engine.
+
+  v3.117 (2026-07-16) — Added "📏 เส้นแนวตั้ง": a FOURTH, independently-
+    toggleable overlay button, per พี่แยม's "อยากให้เพิ่มปุ่มสำหรับเส้น
+    แนวตั้งด้วยจ้า" (want a button for vertical lines too). Took 2 rounds
+    of clarification to land on the right geometry: first guess (matching
+    the 3 existing grid buttons' pattern) was "just one of the diamond
+    grid's 2 diagonal axes" — sent an outline/mockup, พี่แยม said "ไม่ใช่จ้า
+    เป็นเส้นแนวตั้งๆ" (no, it's straight-up-and-down lines), then confirmed
+    via a follow-up question that this means literal screen-vertical lines
+    (not tilted to the isometric angle at all) for comparing object
+    heights/vertical alignment while placing things — a genuinely different
+    overlay SHAPE from the other 3 (which are all finer ground-plane
+    diamonds at the same isometric tilt, just denser spacing).
+
+    Design confirmed via a second outline + 2 follow-up questions: draws a
+    flat 150px-tall vertical line up from every MAIN grid vertex (the col/
+    row integer lattice where 4 tiles' corners meet — anchored to the main
+    grid specifically, not the finer fine/micro grids) — 150px chosen as
+    roughly this game's tallest built-in object (wallbox, 192px) without
+    being so tall it clutters a full board. A flat constant height, not
+    derived from any actually-placed object — a general eyeballing ruler,
+    not a per-object measurement tool.
+
+    Implementation: new drawVerticalLines() function, structurally
+    different from drawFineSubGrid/drawMicroSubGrid (which run per-tile-
+    center inside drawTile()'s existing per-tile loop) — this one is its
+    own whole-board loop over every (col,row) vertex from 0..COLS/0..ROWS,
+    called once per frame (not per-tile), drawn LAST in render() (after
+    every object/guide layer) so the ruler stays visible even standing
+    right next to a tall placed object. New verticalLinesVisible flag +
+    toggleVerticalLinesBtn button, same fully-independent on/off pattern as
+    gridLinesVisible/fineGridVisible/microGridVisible — not part of
+    disarmAllSpecialModes()'s mutual-exclusion group, purely a view
+    preference.
+
+    Verified with Playwright (Chromium + WebKit): button toggles correctly
+    and independently of the other 3 grid buttons; screenshotted with only
+    this overlay on (main grid off) — lines render straight up from every
+    vertex at the expected length, genuinely NOT tilted to the isometric
+    angle; re-ran the terrain-decal snap-test regression with this overlay
+    on and the main grid off — placement still lands on the exact same
+    quadrant as always (purely visual, confirmed not to affect snapping);
+    re-ran the full v3.113–v3.116 custom-type/backspace-fix regression
+    suite — unaffected, zero console/page errors in either engine.
+
+  v3.118 (2026-07-16) — "🔷 Export กริด Isometric" now exports ONLY
+    whichever grid overlay(s) พี่แยม currently has ticked in Build mode
+    (เส้น Grid / เส้น Grid ครึ่ง / เส้น Grid 0.5×0.5 / เส้นแนวตั้ง), instead
+    of always drawing a fixed main-border + dashed-sub-grid combo — per
+    "อยากให้สามารถ export ได้ตามที่ติ๊กไว้ เพื่อที่พี่จะเอาไปทาบวาดรูป"
+    (want to export whatever's ticked, to trace/draw over in an external
+    art tool). Confirmed via a quick check that exporting with NOTHING
+    ticked should warn instead of silently downloading a blank image.
+
+    Each exported layer's geometry is a faithful re-expression of its live
+    drawXXX counterpart, just computed in exportIsoGridReference's own
+    local offscreen-canvas coordinate system (ox/oy/hw/hh) instead of
+    calling the live functions directly — those are hard-wired to the live
+    canvas's `ctx`, not swappable to an offscreen one without a larger
+    refactor that felt disproportionate to this request. Main border ↔
+    drawGrid's per-tile diamond; the dashed quadrant cross ↔ drawFineSubGrid
+    (already proven geometrically identical back in v3.111); a finer dashed
+    cross nested inside each of the 4 quadrants ↔ drawMicroSubGrid one
+    level down; vertical lines ↔ drawVerticalLines, one per (col,row)
+    VERTEX rather than tile center. The offscreen canvas's height/origin
+    now also grow by VERTICAL_LINE_HEIGHT (150px) whenever vertical lines
+    are included, since they reach above tile (0,0)'s own top vertex — the
+    prior "zero extra padding" bounding box only ever accounted for the
+    diamond grid itself, so without this the topmost lines would clip.
+
+    Verified with Playwright (Chromium + WebKit): exporting with every
+    overlay off correctly shows an alert and fires no download; exporting
+    with only "เส้นแนวตั้ง" ticked produces just the vertical-line pattern
+    (visually confirmed, no diamond grid at all); exporting with all 4
+    ticked produces the full combined pattern (visually confirmed — main
+    border + fine cross + micro cross + vertical lines all present
+    together, canvas correctly taller to fit the vertical lines); re-ran
+    the full v3.113–v3.117 regression suite — unaffected, zero console/
+    page errors in either engine.
+
+  v3.119 (2026-07-16) — Collapsed the 4 grid-toggle buttons (เส้น Grid /
+    เส้น Grid ครึ่ง / เส้น Grid 0.5×0.5 / เส้นแนวตั้ง) into a single
+    collapsed-by-default accordion — "🔲 เส้น Grid (4 ปุ่ม)" — per พี่แยม's
+    "ยุบให้พี่หน่อยจ้า" after the panel grew to 4 full-width buttons stacked
+    at the very top. Same `<details class="acc">` pattern already used for
+    "🌱 หญ้าหลากแบบ (9 แบบ)" elsewhere in this panel — purely a markup
+    wrapper (the buttons themselves, their IDs, and every click listener
+    are completely untouched), so nothing about how any of the 4 overlays
+    actually work changed, just where they live visually.
+
+    Regression note: this broke 3 of the session's own Playwright test
+    scripts (verify_custom_types/verify_vertical_lines/verify_export_grid),
+    since they clicked these buttons directly and the buttons are now
+    hidden until the accordion is expanded — confirmed this is correct
+    NEW behavior (a real user would click the summary to expand it, same
+    as the existing grass-variants accordion), not a bug, and updated the
+    test scripts to open the accordion first rather than changing any game
+    code to work around it.
+
+    Verified with Playwright (Chromium + WebKit): accordion starts closed
+    on page load; all 4 buttons still toggle correctly once expanded;
+    re-ran the full v3.113–v3.118 regression suite (with the accordion-
+    open fix applied to the 3 affected scripts) — unaffected, zero
+    console/page errors in either engine.
+
+  v3.120 (2026-07-16) — Added a small color swatch to the left of each of
+    the 4 grid-toggle buttons, per "ขอสามารถเปลี่ยนสีเส้นได้ด้วยจ้า เอาไว้
+    ปุ่มเล็กๆข้างต่อทางด้านซ้าย ของแต่ก็เส้นก็ได้" (want to be able to
+    change line color too, small button to the left of each line). Sent an
+    outline first (mockup of the row layout + 2 scoping questions) —
+    confirmed: the swatch only changes hue (a plain `<input type="color">`
+    can't pick alpha anyway), each line's own opacity hierarchy stays
+    exactly as designed in v3.111/v3.112 (main grid boldest, 0.5×0.5
+    faintest, so denser overlays still don't clutter); and the "🔷 Export
+    กริด Isometric" PNG (v3.118) does NOT follow these colors — it stays
+    black/translucent by design, meant for tracing under external art
+    regardless of what's shown on-screen.
+
+    Implementation: 4 new `let` variables (gridLineColor/fineGridLineColor/
+    microGridLineColor/verticalLineColor), each a full rgba() string so
+    every existing draw call site (drawTile's 2 branches + the decal
+    touch-up re-stroke in drawGrid, drawFineSubGrid, drawMicroSubGrid,
+    drawVerticalLines) could swap its one hardcoded strokeStyle literal for
+    the variable with no other logic changes. A new hexToRgba(hex, alpha)
+    helper combines a swatch's hex value with that line's own FIXED alpha
+    constant on every 'input' event — applies immediately (render() already
+    loops every frame, so no manual redraw needed) and persists via
+    saveSettingToStorage, restored on page load the same way every other
+    IndexedDB-backed setting is. Defaults are these lines' exact pre-v3.120
+    colors (white ×3, orange for vertical), so nothing visually changes
+    until พี่แยม actually picks a new color.
+
+    Verified with Playwright (Chromium + WebKit): changing the main grid
+    swatch to red visibly recolors only the main border stroke (the
+    pre-existing dashed gold sub-grid — an unrelated, un-colorable overlay
+    — stays its own color, confirming no cross-contamination); the chosen
+    color survives a full page reload; re-ran the full v3.113–v3.119
+    regression suite — unaffected, zero console/page errors in either
+    engine.
+
+  v3.121 (2026-07-16) — Added "🧊 Export เทมเพลตบล็อก (64×64)": a
+    downloadable transparent-background PNG tracing บล็อก (1x1x1)'s REAL 3D
+    silhouette (top diamond + 2 side faces — the same hexagon prismFaces/
+    drawBlock actually renders), per พี่แยม's follow-up after discovering
+    the getImageMaxH('block') sizing bug (see this changelog's earlier
+    entry today): a fence sprite drawn to fit the old "contain-fit" box's
+    2:1 proportions (64×32) came out visibly squished once placed in-game,
+    because the block's true rendered shape is a roughly SQUARE 64×64 cube,
+    not a flat rectangle — confirmed by screenshot comparison. Rather than
+    handing พี่แยม raw corrected numbers to calculate by hand a second time,
+    this exports an actual template image to trace against directly.
+
+    Design confirmed via a quick clarifying question (raw 64×64 file with
+    clear boundary lines, vs. a wider reference-grid crop) before building.
+    The template draws a BOLD outer hexagon (the true silhouette boundary —
+    where the artwork's own outline should sit) plus lighter dashed
+    internal guides (the front-face vertical seam + the roof diamond's own
+    2 back edges) so พี่แยม can align each face's shading/perspective too,
+    not just the outer edge. Geometry is a direct re-derivation of
+    prismFaces(x, y, BLOCK_HEIGHT, ..., BLOCK_FOOTPRINT_SCALE)'s own vertex
+    math (hw=32, hh=16, height=32), with the ground-anchor origin shifted
+    to canvas point (32,48) so the full 64-tall silhouette fits with zero
+    wasted margin — same "derive the bounding box exactly, don't guess
+    padding" approach exportIsoGridReference (v3.118) already uses.
+
+    Scope note: this does NOT fix getImageMaxH('block') itself, or the
+    likely-related box/wallbox/wallbox5 versions of the same formula bug
+    (all use the same prismFaces geometry) — that's still a separate,
+    not-yet-confirmed follow-up พี่แยม hasn't given the go-ahead for yet.
+    This template is a practical workaround for right now, not the
+    underlying fix.
+
+    Verified with Playwright (Chromium + WebKit): export produces a valid
+    PNG in both engines; visually confirmed (base64-embedded preview) the
+    rendered shape is a clean isometric cube outline matching drawBlock's
+    real proportions exactly, not the old flat rectangle; re-ran the grid-
+    color-swatch regression check (v3.120, closest neighboring change) —
+    unaffected; this feature is fully additive (one new standalone function
+    + one new button, touches nothing else), zero console/page errors in
+    either engine.
+
+  v3.122 (2026-07-16) — Fixed: a custom (cloned) type's yellow hover-
+    outline could render visibly TALLER than its own baseType once an
+    uploaded image was involved — e.g. "รั้ว" (cloned from block) looked
+    noticeably taller than บล็อกเอง once พี่แยม uploaded the v3.121 block
+    template as its front image. Root-caused through several rounds of
+    screenshot comparison with พี่แยม (initially suspected a sizing-formula
+    issue with the uploaded image itself, then the template file being
+    uploaded in place of finished art, before finally isolating it to the
+    outline math specifically).
+
+    Actual cause: getVisualHeight() returns two DIFFERENT things depending
+    on whether an image is uploaded — for the no-image (procedural)
+    branch, it returns just the WALL height (e.g. BLOCK_HEIGHT), and
+    getSilhouettePolygon() then adds the roof's own height (hh) on top to
+    complete the hexagon. For the image-uploaded branch, it instead
+    returns the uploaded image's FULL rendered height (naturalHeight ×
+    contain-fit scale) — which, for an image drawn to fill its whole
+    silhouette (like พี่แยม's exported cube-tracing template), ALREADY
+    includes what would be the roof portion. getSilhouettePolygon adds hh
+    on top regardless of which branch produced the height, so the image
+    case ends up with the roof height double-counted, inflating the
+    outline by an extra hh (16px) beyond what the un-imaged original shows.
+
+    Fix: extended the exact same "lock the yellow select outline to the
+    object's actual footprint, ignore whatever gets uploaded" precedent
+    tableSmall/giftBox already established (v3.49/v3.63) to cover every
+    custom type too — getVisualHeight() now returns a custom type's fixed,
+    baseType-derived VISUAL_HEIGHT unconditionally (bypassing the image
+    branch entirely), so its outline is always pixel-identical to its
+    baseType's, no matter what image ends up uploaded. Deliberately scoped
+    to ONLY customTypes[type] — table/vase/npc/box/wall and every other
+    built-in type's existing image-branch behavior is completely untouched,
+    since those have years of separately-calibrated MAX_W/MAX_H tuning
+    this fix must not put at any regression risk.
+
+    Verified with Playwright (Chromium + WebKit): uploaded the v3.121
+    block-template PNG as "รั้ว"'s front image, measured its hover-outline's
+    actual rendered pixel bounding box (via canvas pixel-scan of a
+    screenshot, isolating the gold outline color) — 65×65px, a clean 1:1
+    square matching the un-imaged block's own true ~64×64 proportions
+    exactly (previously stretched noticeably taller); re-ran the full
+    v3.113–v3.121 regression suite — unaffected, zero console/page errors
+    in either engine.
+
+  v3.123 (2026-07-16) — Added "Offset พื้น (px)" (-200 to 200) to every
+    custom (cloned) type's settings card, per พี่แยม's "พี่อยากตั้ง offset
+    ของรูปที่ใส่เข้ามาได้ด้วยจ้า" — same adjustable ground-anchor nudge
+    NPC/tableSmall/giftBox already have, now available for any custom type
+    too, right after clarifying (per พี่แยม's own question) that กว้าง/สูง
+    only ever controlled the uploaded image's own contain-fit box, never
+    the object's real footprint/collision/outline on the board.
+
+    Implementation: def.groundOffset (new field on the customTypes
+    registry entry) defaults to TILE_H*0.3 — drawSprite's own built-in
+    default — so a freshly-created type's image doesn't visually jump
+    until พี่แยม actually adjusts the new input; a def saved before this
+    version (no groundOffset field yet) gets backfilled with the same
+    default the first time its card is built, so existing custom types
+    don't silently reset to 0. drawObject()'s existing objGroundOffset
+    ternary (npc/tableSmall/giftBox) gained one more branch for
+    customTypes[objType].groundOffset — reuses the same clampOffset(-200,
+    200) helper and "บันทึก" button flow the size fields already use, so
+    saving name/size/offset all happen together in one click, same as
+    every built-in furniture card's pattern.
+
+    Verified with Playwright (Chromium + WebKit): a fresh custom type's
+    offset input starts at ~19px (TILE_H*0.3) as expected; setting -50 and
+    saving updates it; setting an out-of-range 9999 clamps to 200 on save;
+    the saved value survives a full page reload; re-ran the full
+    v3.113–v3.122 regression suite — unaffected, zero console/page errors
+    in either engine.
+
+  v3.124 (2026-07-16) — "🧊 Export เทมเพลตบล็อก (64×64)" now also traces
+    เส้น Grid 0.5×0.5 / เส้นแนวตั้ง onto the template WHEN they're currently
+    ticked in Build mode, per "ตัวบล๊อกที่ export ออกมาถ้าติ๊ก 0.5 กับ
+    แนวตั้ง ก็ให้ export ออกมาด้วย" — extends the same "export follows
+    what's ticked" principle exportIsoGridReference (v3.118) already has
+    to this template too. Sent an outline first since both overlays are
+    normally whole-board ground-plane concepts with no obvious 1:1 mapping
+    onto a single 1×1 object's own template — got 2 concrete answers before
+    implementing: (1) include the 0.5×0.5 grid, and (2) clip เส้นแนวตั้ง
+    exactly to the 64px canvas edge rather than any fixed length.
+
+    เส้น Grid 0.5×0.5: this block's only ground-plane-facing surface is its
+    own roof (top) diamond — already traced as part of the outer
+    silhouette — so it's subdivided the exact same recursive way
+    drawMicroSubGrid does (quadrant, then sub-quadrant of that quadrant),
+    just re-expressed against this roof diamond's own 64×32 size instead of
+    a live tile's, reproducing what 0.5×0.5 would actually look like for
+    this exact footprint if it were sitting on the real board.
+
+    เส้นแนวตั้ง: rises from this block's 3 visible ground/footprint corners
+    (leftBottom/front/rightBottom — the same "grid vertex" concept
+    drawVerticalLines anchors to on the live board, not the roof's own
+    corners, which sit at y=0 already and would produce degenerate
+    zero-length lines if used instead) up to the canvas's own y=0 top edge
+    exactly, rather than the live overlay's fixed 150px length — this
+    template's whole canvas is only 64px tall to begin with.
+
+    Both overlays use the same fixed black/translucent palette every line
+    in this export already uses, NOT the customizable gridLineColor/etc.
+    swatches from v3.120 — same reasoning v3.120 itself documented for
+    exportIsoGridReference: this PNG sits under external art on a light
+    canvas, unrelated to whatever accent looks good in the game's own dark
+    UI.
+
+    Verified with Playwright (Chromium + WebKit): ticked both overlays,
+    exported, visually confirmed (base64-embedded preview) — the 0.5×0.5
+    grid correctly tiles just the roof face, the 3 vertical lines correctly
+    terminate exactly at the canvas's top edge (the front line spans the
+    full 64px height, the two side lines shorter, matching their higher
+    ground-corner y position); re-ran the full v3.113–v3.123 regression
+    suite — unaffected, zero console/page errors in either engine.
+
+  v3.125 (2026-07-16) — "🧊 Export เทมเพลตบล็อก" now exports at 4x pixel
+    density (256×256 physical pixels, same logical 64×64 "true size" as
+    before) instead of a literal 64×64 file. พี่แยม had ticked "เส้น Grid
+    0.5×0.5" correctly (confirmed directly) but the 16 tiny diamonds
+    packed into the roof's own 64×32px area blurred into an indistinct
+    smudge once opened in a normal image viewer — "Grid 0.5×0.5 จะเป็นช่อง
+    แบบนี้จ้า ตามแมพเลย" (want it to look like distinct boxes, matching the
+    real map) with a comparison screenshot showing the actual in-game grid
+    (crisp) next to the exported one (blurred). Root cause: each diamond
+    edge segment was only 1-2 native pixels wide at 64×64, well below what
+    typical smooth-interpolation image-viewer zoom can render distinctly.
+
+    Fix: EXPORT_SCALE=4 + a single ctx.scale(4,4) call right after creating
+    the offscreen canvas — every coordinate and line-width in
+    exportBlockTemplate() is still written in the exact same 64×64 logical
+    space as v3.121–v3.124 left it (still represents the same true 1x1x1
+    size), so this was the ONLY line that needed changing; the canvas
+    transform automatically renders 4x denser, keeping every existing
+    stroke proportionally thicker in absolute pixels too, without touching
+    any of the geometry logic those versions already established. Bumped
+    line widths were NOT hand-tuned separately — the scale transform alone
+    was enough to fix the legibility problem, confirmed visually before
+    considering any manual width increase.
+
+    Verified with Playwright (Chromium + WebKit): exported file confirmed
+    256×256px; rendered with normal (non-pixelated) smooth image scaling —
+    matching how a real image viewer would display it — and the 0.5×0.5
+    grid is now clearly a distinct 4×4 diamond pattern, no longer a blur;
+    re-ran the full v3.113–v3.124 regression suite — unaffected, zero
+    console/page errors in either engine.
+
+  v3.126 (2026-07-16) — Fixed a stale label: the "🧊 Export เทมเพลตบล็อก"
+    button still said "(64×64)" even though v3.125 changed the actual
+    exported file to 256×256px (4x pixel density, same logical 64×64 true
+    size) — พี่แยม caught the mismatch from the button's own text. Updated
+    both the visible label and its title tooltip to say "(256×256)" and
+    spell out that this is 4x the true 64×64 size, not a change to what
+    size the artwork actually represents. Text-only fix, no logic touched.
 -->
 
 
@@ -2779,6 +3286,86 @@
      mode armed (click-to-place-repeatedly), same accent color the paint
      swatches already use for their own "armed" state */
   .pal-item.stamp-active{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent);}
+  /* v3.113: "+ เพิ่มชนิดใหม่จากแม่แบบ" — spans the full grid width so it
+     always sits as its own row at the end of a pal-grid, visually distinct
+     (dashed accent border) from the solid built-in item cards around it */
+  .pal-item.add-type-item{
+    grid-column:1/-1;
+    background:rgba(95,211,188,.08);
+    border:1px dashed var(--accent);
+    color:var(--accent);
+    cursor:pointer;
+    box-shadow:none;
+  }
+  .pal-item.add-type-item:hover{background:rgba(95,211,188,.16);}
+  /* small "กำหนดเอง" pill on any custom (cloned) type's palette card, so it
+     stays visually distinguishable from built-in types at a glance */
+  .pal-item.custom-type-item{border-color:var(--accent);}
+  .pal-item.custom-type-item::after{
+    content:'กำหนดเอง';
+    position:absolute;
+    top:-7px;
+    right:-4px;
+    background:var(--accent);
+    color:#12151d;
+    font-size:8.5px;
+    font-weight:700;
+    padding:2px 5px;
+    border-radius:6px;
+    text-shadow:none;
+  }
+  /* v3.113: "เพิ่มชนิดใหม่จากแม่แบบ" modal — a plain fixed-position overlay,
+     consistent with the rest of the panel's dark card look (reuses --panel/
+     --accent/.field-row) rather than introducing a separate visual style */
+  .type-modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(10,12,18,.55);
+    z-index:50;
+    align-items:center;
+    justify-content:center;
+  }
+  .type-modal-overlay.show{display:flex;}
+  .type-modal{
+    width:min(360px, 90vw);
+    max-height:86vh;
+    overflow-y:auto;
+    background:var(--panel);
+    border:1px solid var(--accent);
+    border-radius:12px;
+    padding:18px;
+    box-shadow:0 16px 40px rgba(0,0,0,.4);
+  }
+  .type-modal h3{font-size:14.5px; margin:0 0 4px; color:var(--text);}
+  .type-modal .type-modal-sub{font-size:11.5px; color:var(--muted); margin:0 0 14px; line-height:1.6;}
+  .type-modal select{
+    width:100%;
+    background:#343c52;
+    border:1px solid #414a63;
+    border-radius:6px;
+    color:var(--text);
+    padding:6px 8px;
+    font-size:13px;
+  }
+  .type-modal .field{margin-bottom:10px;}
+  .type-modal .field label{display:block; font-size:11.5px; color:var(--text); margin-bottom:3px;}
+  .type-modal .field-hint{font-size:10.5px; color:var(--muted); margin:4px 0 0; line-height:1.5;}
+  .type-modal .type-modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:14px;}
+  .type-modal .type-modal-actions button{
+    border-radius:7px; padding:7px 14px; font-size:12.5px; cursor:pointer; border:1px solid #414a63;
+    background:#343c52; color:var(--text);
+  }
+  .type-modal .type-modal-actions .primary{background:var(--accent); color:#0d1119; border-color:var(--accent); font-weight:700;}
+  .type-modal .type-modal-error{color:#e05a5a; font-size:11.5px; margin:0 0 10px; display:none;}
+  .type-modal .type-modal-error.show{display:block;}
+  /* delete button living inside a dynamically-built custom-type settings
+     card (buildCustomSettingsCard) — reuses the same visual weight as the
+     erase-terrain-btn's danger styling elsewhere in this panel */
+  .delete-custom-type-btn{
+    background:#3a2430; border:1px solid #8a4a55; color:#e8a8b0;
+    border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; margin-top:6px;
+  }
+  .delete-custom-type-btn:hover{background:#4a2c3a;}
 
   .mode-switch{display:flex; gap:6px; margin-bottom:16px;}
   .mode-btn{
@@ -3094,6 +3681,19 @@
   .grid-toggle-btn{margin-bottom:8px;}
   .grid-toggle-btn.active{background:#7d8fdb; color:#161a2e;}
   .grid-toggle-btn.active:hover{background:#6c7ec9;}
+  /* v3.120: color swatch sits to the left of its matching grid-toggle-btn,
+     per พี่แยม's "ปุ่มเล็กๆข้างต่อทางด้านซ้าย ของแต่ก็เส้นก็ได้" — the row
+     wrapper replaces grid-toggle-btn's own margin-bottom with the row's
+     own, so button+swatch stay vertically aligned as one unit */
+  .grid-toggle-row{display:flex; gap:6px; align-items:stretch; margin-bottom:8px;}
+  .grid-toggle-row .grid-toggle-btn{flex:1; margin-bottom:0;}
+  .grid-line-color-input{
+    width:34px; flex-shrink:0; padding:0; border:1px solid #414a63; border-radius:8px;
+    background:transparent; cursor:pointer;
+  }
+  .grid-line-color-input::-webkit-color-swatch-wrapper{padding:3px;}
+  .grid-line-color-input::-webkit-color-swatch{border:none; border-radius:5px;}
+  .grid-line-color-input::-moz-color-swatch{border:none; border-radius:5px;}
   .stats{
     margin-top:12px;
     font-size:12px;
@@ -3188,7 +3788,7 @@
 <div>
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.112: เพิ่มปุ่ม เส้น Grid 0.5x0.5 (แสดงผลอย่างเดียว) — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.112</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.126: แก้ label ปุ่ม Export เทมเพลตบล็อกให้ตรงกับขนาดไฟล์จริง — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.126</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -3199,9 +3799,27 @@
       </div>
 
       <div id="buildPanel">
-      <button id="toggleGridBtn" class="grid-toggle-btn active">🔲 เส้น Grid</button>
-      <button id="toggleFineGridBtn" class="grid-toggle-btn" title="เส้น Grid ละเอียดขึ้น (แบ่งแต่ละช่องเป็น 4 ส่วนต่อเนื่องทั้งกระดาน) — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">🔳 เส้น Grid ครึ่ง</button>
-      <button id="toggleMicroGridBtn" class="grid-toggle-btn" title="เส้น Grid ละเอียดขึ้นอีกชั้น (แบ่งแต่ละควอดรันต์เป็น 4 ส่วนย่อยต่อเนื่องทั้งกระดาน) — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">🔳 เส้น Grid 0.5×0.5</button>
+      <details class="acc grid-toggle-acc">
+        <summary title="ปุ่มเปิด/ปิดเส้น Grid อ้างอิง 4 แบบ — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">🔲 เส้น Grid (4 ปุ่ม)</summary>
+        <div class="acc-body">
+          <div class="grid-toggle-row">
+            <input type="color" class="grid-line-color-input" id="gridColorInput" value="#ffffff" title="สีเส้น Grid">
+            <button id="toggleGridBtn" class="grid-toggle-btn active">🔲 เส้น Grid</button>
+          </div>
+          <div class="grid-toggle-row">
+            <input type="color" class="grid-line-color-input" id="fineGridColorInput" value="#ffffff" title="สีเส้น Grid ครึ่ง">
+            <button id="toggleFineGridBtn" class="grid-toggle-btn" title="เส้น Grid ละเอียดขึ้น (แบ่งแต่ละช่องเป็น 4 ส่วนต่อเนื่องทั้งกระดาน) — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">🔳 เส้น Grid ครึ่ง</button>
+          </div>
+          <div class="grid-toggle-row">
+            <input type="color" class="grid-line-color-input" id="microGridColorInput" value="#ffffff" title="สีเส้น Grid 0.5×0.5">
+            <button id="toggleMicroGridBtn" class="grid-toggle-btn" title="เส้น Grid ละเอียดขึ้นอีกชั้น (แบ่งแต่ละควอดรันต์เป็น 4 ส่วนย่อยต่อเนื่องทั้งกระดาน) — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">🔳 เส้น Grid 0.5×0.5</button>
+          </div>
+          <div class="grid-toggle-row">
+            <input type="color" class="grid-line-color-input" id="verticalLineColorInput" value="#ffb454" title="สีเส้นแนวตั้ง">
+            <button id="toggleVerticalLinesBtn" class="grid-toggle-btn" title="เส้นตรงขึ้น-ลงจริงๆ บนจอ (ไม่เอียงตามมุม Isometric) จากทุกจุดตัดของ Grid หลัก ช่วยเทียบความสูง/แนวตั้งของวัตถุ — แสดงผลอย่างเดียว ไม่มีผลต่อการสแนป">📏 เส้นแนวตั้ง</button>
+          </div>
+        </div>
+      </details>
       <div class="submode-switch" id="submodeSwitch">
         <button class="submode-btn active" data-submode="foundation">🏗️ Foundation</button>
         <button class="submode-btn" data-submode="furniture">🪑 Furniture</button>
@@ -3226,6 +3844,7 @@
             <div class="pal-item" data-kind="object" data-type="block" draggable="true"><span class="pal-emoji">🧊</span><span class="pal-label">บล็อก (1x1x1)</span></div>
             <div class="pal-item" data-kind="object" data-type="wallbox" draggable="true"><span class="pal-emoji">🧱</span><span class="pal-label">กำแพงกล่อง (1x2x6)</span></div>
             <div class="pal-item" data-kind="object" data-type="wallbox5" draggable="true"><span class="pal-emoji">🧱</span><span class="pal-label">กำแพงกล่อง (1x2x5)</span></div>
+            <div class="pal-item add-type-item" id="addFoundationTypeBtn" data-add-group="foundation">+ เพิ่มชนิดใหม่จากแม่แบบ</div>
           </div>
         </div>
 
@@ -3255,6 +3874,7 @@
             <div class="pal-item" data-kind="object" data-type="giftBox" draggable="true"><span class="pal-emoji">🎁</span><span class="pal-label">กล่องของขวัญ</span></div>
             <div class="pal-item" data-kind="object" data-type="frame" draggable="true"><span class="pal-emoji">🖼️</span><span class="pal-label">กรอบรูป (ติดผนัง)</span></div>
             <div class="pal-item" data-kind="object" data-type="frameSmall" draggable="true"><span class="pal-emoji">🖼️</span><span class="pal-label">กรอบรูปเล็ก (1 ช่องย่อย)</span></div>
+            <div class="pal-item add-type-item" id="addFurnitureTypeBtn" data-add-group="furniture">+ เพิ่มชนิดใหม่จากแม่แบบ</div>
           </div>
         </div>
 
@@ -3824,6 +4444,10 @@
             <button id="applyMapSizeBtn">ปรับขนาดแผนที่</button>
           </div>
         </details>
+        <details class="acc" id="customTypesAcc" style="display:none;">
+          <summary title="ชนิดที่พี่แยมสร้างเองจากแม่แบบ (ปุ่ม + เพิ่มชนิดใหม่จากแม่แบบ ในแท็บวางวัตถุ)">🧩 ชนิดที่สร้างเอง (Custom)</summary>
+          <div class="acc-body" id="customTypesAccBody"></div>
+        </details>
       </div>
 
       <div class="tab-panel" id="tab-save" style="display:none;">
@@ -3836,7 +4460,8 @@
           <div class="field"><label for="gridExportSpacingInput">ระยะห่างเส้น (px)</label><input type="number" id="gridExportSpacingInput" min="1" max="2048" step="1" value="64"></div>
         </div>
         <button id="exportGridBtn">📐 Export กริด PNG</button>
-        <button id="exportIsoGridBtn">🔷 Export กริด Isometric (ตามแมพ)</button>
+        <button id="exportIsoGridBtn" title="Export เฉพาะเส้น Grid ที่เปิด (ติ๊ก) อยู่ตอนนี้ในแท็บวางวัตถุ — 🔲/🔳/🔳/📏">🔷 Export กริด Isometric (ตามเส้น Grid ที่เปิดอยู่)</button>
+        <button id="exportBlockTemplateBtn" title="ไฟล์ PNG 256×256 (ความละเอียด 4 เท่าของขนาดจริง 64×64) พื้นหลังโปร่งใส มีเส้นขอบเขตทรงลูกบาศก์จริงของบล็อก (1x1x1) ไว้ทาบวาดรูปให้สัดส่วนตรง">🧊 Export เทมเพลตบล็อก (256×256)</button>
         <div class="divider"></div>
         <p class="section-label">บันทึก / นำเข้า</p>
         <button id="saveImageCleanBtn">🖼️ บันทึกรูปภาพ (จัดกึ่งกลาง)</button>
@@ -3920,6 +4545,46 @@
      พี่แยม's request for visible feedback that a save actually happened.
      position:fixed so it doesn't care where in the DOM it lives. -->
 <div id="toast" class="toast"></div>
+
+<!-- v3.113: "เพิ่มชนิดใหม่จากแม่แบบ" modal — ยืมพฤติกรรมทั้งหมดจากแม่แบบ
+     ต้นทาง เปลี่ยนแค่ไอดี/ชื่อ/รูป ดู outline ที่พี่แยมยืนยันแล้วก่อน
+     implement (ตาม feedback_always_outline_first) -->
+<div class="type-modal-overlay" id="addTypeModalOverlay">
+  <div class="type-modal">
+    <h3 id="addTypeModalTitle">เพิ่มชนิดใหม่จากแม่แบบ</h3>
+    <p class="type-modal-sub">ของใหม่จะได้พฤติกรรม (บล็อกทาง/ขนาดช่อง/การชน) เหมือนแม่แบบทุกอย่าง เปลี่ยนแค่รูป/ไอดี/ชื่อ</p>
+    <p class="type-modal-error" id="addTypeModalError"></p>
+    <div class="field">
+      <label for="addTypeBaseSelect">แม่แบบต้นทาง</label>
+      <select id="addTypeBaseSelect"></select>
+    </div>
+    <div class="field">
+      <label for="addTypeIdInput">ไอดี (คีย์ภายใน — a-z, A-Z, 0-9, _ เท่านั้น ห้ามซ้ำ)</label>
+      <input type="text" id="addTypeIdInput" placeholder="เช่น fence">
+      <p class="field-hint">ใช้อ้างอิงในไฟล์เซฟแผนที่ — ตั้งแล้วเปลี่ยนทีหลังไม่ได้ (อยากเปลี่ยนต้องสร้างใหม่)</p>
+    </div>
+    <div class="field">
+      <label for="addTypeNameInput">ชื่อ (โชว์ในพาเลท)</label>
+      <input type="text" id="addTypeNameInput" placeholder="เช่น รั้ว">
+    </div>
+    <div class="field">
+      <label>รูปภาพ (ไม่ใส่ก็ได้ — ใส่ทีหลังได้ที่แท็บ "ตั้งค่า")</label>
+      <div class="img-row" id="addTypeImgRow" data-kind="object" data-type="__pendingNewType__">
+        <div class="img-thumb" id="thumb-object-__pendingNewType__"><span class="pal-emoji">🖼️</span></div>
+        <div class="img-row-label">รูป</div>
+        <div class="img-row-actions">
+          <button type="button" id="addTypeChooseImgBtn">เลือกรูป</button>
+          <button type="button" id="addTypeClearImgBtn">ล้าง</button>
+        </div>
+      </div>
+      <p class="field-hint">ถ้ายังไม่ใส่รูป จะโชว์เป็นรูปทรงเดียวกับแม่แบบไปก่อน จนกว่าจะอัปโหลดรูปของตัวเอง</p>
+    </div>
+    <div class="type-modal-actions">
+      <button type="button" id="addTypeCancelBtn">ยกเลิก</button>
+      <button type="button" class="primary" id="addTypeCreateBtn">สร้าง</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -4284,6 +4949,13 @@
   // arbitrary uploaded art. Defaults below match the old generic formula's
   // output exactly, so nothing changes until พี่แยม actually adjusts them.
   function getObjectSpriteMaxW(type){
+    // v3.113: a custom (cloned) type gets its own independently-adjustable
+    // w/h, stored right on its customTypes registry entry (see
+    // buildCustomSettingsCard's "บันทึก" button) — same contain-fit-box idea
+    // as table/vase/tableSmall/giftBox's own dedicated overrides below, just
+    // stored per-instance instead of as separate named `let` globals, since
+    // there's no fixed list of custom types to declare globals for upfront
+    if (customTypes[type]) return customTypes[type].w;
     if (type === 'table') return TABLE_IMAGE_MAX_W;
     if (type === 'vase') return VASE_IMAGE_MAX_W;
     if (type === 'tableSmall') return TABLE_SMALL_IMAGE_MAX_W;
@@ -4359,6 +5031,8 @@
   // constant exactly as before (this is the height half of the same
   // contain-fit box getObjectSpriteMaxW provides the width half of)
   function getImageMaxH(type){
+    // v3.113: see getObjectSpriteMaxW's matching comment above
+    if (customTypes[type]) return customTypes[type].h;
     if (type === 'table') return TABLE_IMAGE_MAX_H;
     if (type === 'vase') return VASE_IMAGE_MAX_H;
     if (type === 'tableSmall') return TABLE_SMALL_IMAGE_MAX_H;
@@ -4386,6 +5060,29 @@
   function getVisualHeight(type, forHitTest){
     if (type === 'tableSmall') return TABLE_SMALL_HEIGHT;
     if (type === 'giftBox') return GIFTBOX_HEIGHT;
+    // v3.122: a custom (cloned) type's outline is ALWAYS pinned to its
+    // baseType's own fixed VISUAL_HEIGHT — same "lock the yellow select
+    // outline to the object's actual footprint, ignore whatever gets
+    // uploaded" precedent tableSmall/giftBox already established above
+    // (v3.49/v3.63), extended to every custom type instead of just those
+    // two. Root cause this fixes: getSilhouettePolygon always adds an
+    // extra "roof" allowance (hh) on top of whatever this function
+    // returns, which is only correct when the returned value means
+    // "wall-only height" (the no-image branch below, e.g. BLOCK_HEIGHT for
+    // block) — but the image branch a few lines down returns the
+    // uploaded image's FULL rendered height instead, which already
+    // implicitly includes its own "roof" if the art was drawn to fill the
+    // whole silhouette (e.g. พี่แยม's exported block-template tracing,
+    // which fills all 64px). Feeding that full height through the same
+    // "+hh for the roof" formula double-counts the roof and inflates the
+    // outline taller than the un-imaged original ("รั้ว" ended up visibly
+    // taller than บล็อกเอง — พี่แยม caught this by direct comparison).
+    // Bypassing the image branch entirely for custom types — same as
+    // tableSmall/giftBox already do for a different reason — sidesteps the
+    // mismatch completely without touching the shared image-branch math
+    // that table/vase/box/wall (and any other already-calibrated built-in
+    // type) still rely on, so none of those are put at any regression risk.
+    if (customTypes[type]) return VISUAL_HEIGHT[type] || TILE_H;
     // npc/table/vase have a front/back image pair — use whichever is
     // uploaded for sizing (they're expected to share the same intended
     // sprite box, so it doesn't matter which one drives the contain-fit
@@ -4569,6 +5266,34 @@
     return FOUNDATION_TYPES.has(type) ? 'foundation' : 'furniture';
   }
   let buildSubmode = 'foundation';
+  // ---- Custom object types (v3.113) ----
+  // พี่แยม's "แม่แบบ Foundation/Furniture" request: a runtime "clone an
+  // existing type's behavior into a brand-new type key" tool, so adding
+  // something like a รั้ว (fence) no longer means hand-editing this file
+  // (copy Block's OBJECT_TYPES entry + palette button + draw-fallback
+  // case — the exact manual workflow พี่แยม described). A custom type
+  // ALWAYS behaves 100% like its baseType (blocking/footprint/facing/
+  // topper-eligibility all copied via registerCustomType, below the image-
+  // upload helpers) — only its key/label/uploaded image differ.
+  //
+  // Deliberately restricted to a whitelist of "simple" base types instead
+  // of every OBJECT_TYPES key: wall/wallbox/wallbox5/door/chest/lever/
+  // frame/frameSmall/coin/gem/table all carry literal `type === '...'`
+  // behavior elsewhere (wall painting, door open/close state, wallHost
+  // mount slots, table topper slots, collectible scoring) that a same-
+  // named CLONE would NOT inherit — defaultState()/drawObject() key off
+  // the literal string in those cases, not a generic OBJECT_TYPES flag —
+  // so cloning one of those would silently produce a type that looks
+  // identical to its base but is missing a real mechanic. This whitelist
+  // is exactly the set of types whose entire behavior already lives in
+  // generic, OBJECT_TYPES-flag-driven code paths (isSmallFootprint/
+  // isWallMountFootprint/VISUAL_HEIGHT/drawObject's switch), so a clone of
+  // any of these is genuinely feature-complete, not a partial imitation.
+  const CLONABLE_BASE_TYPES = {
+    foundation: ['box', 'block', 'tree', 'rock', 'barrel'],
+    furniture: ['tableSmall', 'vase', 'giftBox', 'npc']
+  };
+  let customTypes = {}; // key -> { key, baseType, group, label }
   // v3.94: lets พี่แยม hide the tile-border/sub-grid lines drawTile() draws
   // in Build mode (a pure editing aid, see showGridLines's own comment) for
   // a cleaner look while arranging a scene — purely a view preference, so
@@ -4604,6 +5329,44 @@
   // multi-state-cycle interaction style. Defaults OFF, same reasoning as
   // fineGridVisible (optional extra reference aid, not needed by default).
   let microGridVisible = false;
+  // v3.117: a FOURTH, independently-toggleable overlay — but unlike the 3
+  // above (which are all ground-plane isometric diamonds, just at finer
+  // spacing), this one is genuinely different geometry: พี่แยม's "อยากให้
+  // เพิ่มปุ่มสำหรับเส้นแนวตั้งด้วยจ้า" turned out (after 2 rounds of
+  // clarification — first guess was "just one diagonal axis of the
+  // diamond grid", corrected to "เส้นแนวตั้งจริงๆ ตรงขึ้น-ลงบนจอ ไม่เอียง
+  // ตามมุม Isometric") to mean literal screen-vertical (straight up)
+  // reference lines, for comparing object heights/vertical alignment while
+  // placing things — NOT another ground-plane grid variant. Draws a fixed-
+  // length vertical line up from every main grid's vertex point (see
+  // drawVerticalLines below) — confirmed via outline+2 follow-up questions
+  // (line length 150px ≈ this game's tallest object; anchored to the main
+  // grid's own intersections, not the finer fine/micro grids). Defaults
+  // OFF, same reasoning as the other 3 overlays.
+  let verticalLinesVisible = false;
+  // v3.120: per-line customizable colors — พี่แยม's "ขอสามารถเปลี่ยนสีเส้น
+  // ได้ด้วยจ้า เอาไว้ปุ่มเล็กๆข้างต่อทางด้านซ้าย ของแต่ก็เส้นก็ได้" (want to
+  // be able to change line color too, put a small swatch button to the
+  // left of each line's button). Each is a FULL rgba() string (not just a
+  // hue) so every draw call site can keep using it as a drop-in
+  // strokeStyle value with zero other changes — hexToRgba() (below,
+  // defined right after these) combines a <input type="color">'s hex
+  // value with the line's own FIXED alpha (color inputs can't pick alpha)
+  // whenever the swatch changes, preserving each line's original relative
+  // opacity (main grid boldest, 0.5×0.5 faintest — that hierarchy was a
+  // deliberate v3.111/v3.112 design choice, not incidental, so it survives
+  // a hue change). Defaults are these lines' exact pre-v3.120 colors, so
+  // nothing visually changes until พี่แยม actually picks a new color.
+  let gridLineColor = 'rgba(255,255,255,0.4)';
+  let fineGridLineColor = 'rgba(255,255,255,0.18)';
+  let microGridLineColor = 'rgba(255,255,255,0.14)';
+  let verticalLineColor = 'rgba(255,180,84,0.55)';
+  function hexToRgba(hex, alpha){
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+    if (!m) return `rgba(255,255,255,${alpha})`;
+    const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
   // gates every existing-object lookup used for editing (hover/pickup/
   // paint/toggle/right-click) — only active in Build mode, so Play mode's
   // door/chest/lever click-to-use is completely unaffected
@@ -5124,7 +5887,7 @@
   // overlay, so there's no antialiasing-seam class of bug to worry about.
   function drawFineSubGrid(x, y){
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.strokeStyle = fineGridLineColor;
     ctx.lineWidth = 1;
     for (const sub of QUADRANT_KEYS){
       const off = getQuadrantOffset(sub);
@@ -5146,7 +5909,7 @@
   // level, since this is the denser of the two overlays.
   function drawMicroSubGrid(x, y){
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.strokeStyle = microGridLineColor;
     ctx.lineWidth = 0.75;
     for (const sub of QUADRANT_KEYS){
       const off = getQuadrantOffset(sub);
@@ -5154,6 +5917,35 @@
       for (const sub2 of QUADRANT_KEYS){
         const off2 = getQuadrantOffset(sub2);
         drawDiamond(qx + off2.dx/2, qy + off2.dy/2, TILE_W/4, TILE_H/4);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  // v3.117: fixed-length vertical (screen-up) reference line from every
+  // MAIN grid vertex (the col/row integer lattice where 4 tiles' corners
+  // meet — a whole-board loop of its own, unlike drawFineSubGrid/
+  // drawMicroSubGrid above which run per-tile-center inside drawTile()'s
+  // loop) — per พี่แยม's "เส้นแนวตั้งจริงๆ (ตรงขึ้น-ลงบนจอ ไม่เอียงตามมุม
+  // Isometric)...ช่วยเทียบความสูง/แนวตั้งของวัตถุ" (a genuinely different
+  // overlay shape from the other 3, which are all finer ground-plane
+  // diamonds). Height is a flat constant, not derived from any placed
+  // object's real height — it's a general eyeballing ruler, not a
+  // per-object measurement tool. 150px ≈ this game's tallest built-in
+  // object (wallbox, 192px) without being so tall it clutters a full
+  // board — confirmed via outline before implementing.
+  const VERTICAL_LINE_HEIGHT = 150;
+  function drawVerticalLines(){
+    ctx.save();
+    ctx.strokeStyle = verticalLineColor;
+    ctx.lineWidth = 1;
+    for (let row = 0; row <= ROWS; row++){
+      for (let col = 0; col <= COLS; col++){
+        const { x, y } = gridToScreen(col, row);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y - VERTICAL_LINE_HEIGHT);
         ctx.stroke();
       }
     }
@@ -5400,7 +6192,7 @@
       ctx.drawImage(customImg, x - tileBleed.w/2, y - tileBleed.h/2, tileBleed.w, tileBleed.h);
       ctx.restore();
       if (showGridLines){
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.strokeStyle = gridLineColor;
         ctx.lineWidth = 2.5;
         drawDiamond(x, y, TILE_W, TILE_H);
         ctx.stroke();
@@ -5418,7 +6210,7 @@
     ctx.fillStyle = terrainColors.get(key(col, row)) || TERRAIN_COLORS[terrainType];
     ctx.fill();
     if (showGridLines){
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.strokeStyle = gridLineColor;
       ctx.lineWidth = 2.5;
       drawDiamond(x, y, TILE_W, TILE_H);
       ctx.stroke();
@@ -5490,7 +6282,7 @@
         const { c, r } = parseKey(ck);
         const { x, y } = gridToScreen(c, r);
         if (gridLinesVisible){
-          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          ctx.strokeStyle = gridLineColor;
           ctx.lineWidth = 2.5;
           drawDiamond(x, y, TILE_W, TILE_H);
           ctx.stroke();
@@ -6364,27 +7156,46 @@
   }
 
   // downloads a transparent-background PNG of the actual isometric diamond
-  // grid used by the map (all COLS×ROWS tiles, borders + dashed sub-grid
-  // quadrant lines — no terrain fill, no objects, no UI), per พี่แยม's
-  // follow-up request for a grid that matches the real map instead of the
-  // plain ruler grid above. Self-contained like exportGridReference/
-  // exportNpcImage: draws on its own offscreen canvas with its own local
-  // origin, completely independent of the live canvas's current pan/zoom,
-  // so the export is always the full board at a true 1:1 TILE_W×TILE_H
-  // scale. The canvas is sized to exactly the grid's screen-space bounding
-  // box (no wasted margin) — derived the same way gridToScreen's own
-  // (col-row)/(col+row) diamond math would bound itself: the leftmost tile
-  // point is ROWS tiles' worth of half-width left of tile (0,0)'s center,
-  // and the topmost point is exactly hh above (0,0)'s center, so offsetting
-  // by (ROWS*hw, hh) instead of gridToScreen's live originX/originY moves
-  // every tile into positive canvas space with zero padding. Lines are
-  // black/translucent (not the in-game white/gold) since this is meant to
-  // sit under artwork on a typically light-colored external canvas.
+  // grid used by the map (all COLS×ROWS tiles — no terrain fill, no
+  // objects, no UI), per พี่แยม's follow-up request for a grid that matches
+  // the real map instead of the plain ruler grid above. Self-contained
+  // like exportGridReference/exportNpcImage: draws on its own offscreen
+  // canvas with its own local origin, completely independent of the live
+  // canvas's current pan/zoom, so the export is always the full board at a
+  // true 1:1 TILE_W×TILE_H scale. Lines are black/translucent (not the
+  // in-game white/gold) since this is meant to sit under artwork on a
+  // typically light-colored external canvas.
+  //
+  // v3.118: EXPORTS ONLY WHATEVER OVERLAYS พี่แยม CURRENTLY HAS TICKED IN
+  // BUILD MODE (gridLinesVisible/fineGridVisible/microGridVisible/
+  // verticalLinesVisible) — per "อยากให้สามารถ export ได้ตามที่ติ๊กไว้
+  // เพื่อที่พี่จะเอาไปทาบวาดรูป" (want to export whatever's ticked, to trace/
+  // draw over). Previously this ALWAYS drew a fixed main-border + dashed-
+  // sub-grid combo regardless of what was toggled on-screen — confirmed via
+  // a quick check that a "nothing ticked" export should warn instead of
+  // silently downloading a blank image. Each layer's geometry matches its
+  // live drawXXX counterpart exactly (main border ≈ drawGrid's per-tile
+  // diamond; the dashed quadrant cross ≈ drawFineSubGrid — these two were
+  // already proven geometrically identical back in v3.111; the finer dashed
+  // cross nested inside each quadrant ≈ drawMicroSubGrid one level down;
+  // vertical lines ≈ drawVerticalLines, one per (col,row) VERTEX not tile
+  // center) — just re-expressed in this function's own local ox/oy/hw/hh
+  // coordinate system instead of calling the live functions directly, since
+  // those are hard-wired to the live canvas's `ctx`, not this offscreen one.
   function exportIsoGridReference(){
+    if (!gridLinesVisible && !fineGridVisible && !microGridVisible && !verticalLinesVisible){
+      alert('เลือกเปิดเส้น Grid อย่างน้อย 1 ปุ่มก่อน Export (🔲 เส้น Grid / 🔳 เส้น Grid ครึ่ง / 🔳 เส้น Grid 0.5×0.5 / 📏 เส้นแนวตั้ง)');
+      return;
+    }
     const hw = TILE_W / 2, hh = TILE_H / 2;
+    // vertical lines reach above tile (0,0)'s own top vertex — the
+    // "zero-padding" bounding box below only accounts for the diamond grid
+    // itself, so add extra top margin equal to the line height whenever
+    // that overlay is included, or the topmost lines would get clipped
+    const topMargin = verticalLinesVisible ? VERTICAL_LINE_HEIGHT : 0;
     const w = (COLS + ROWS) * hw;
-    const h = (COLS + ROWS) * hh;
-    const ox = ROWS * hw, oy = hh;
+    const h = (COLS + ROWS) * hh + topMargin;
+    const ox = ROWS * hw, oy = hh + topMargin;
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
     const offCtx = off.getContext('2d');
@@ -6392,34 +7203,230 @@
       for (let col = 0; col < COLS; col++){
         const x = ox + (col - row) * hw;
         const y = oy + (col + row) * hh;
-        offCtx.strokeStyle = 'rgba(0,0,0,0.5)';
-        offCtx.lineWidth = 1.5;
-        offCtx.setLineDash([]);
-        offCtx.beginPath();
-        offCtx.moveTo(x, y - hh);
-        offCtx.lineTo(x + hw, y);
-        offCtx.lineTo(x, y + hh);
-        offCtx.lineTo(x - hw, y);
-        offCtx.closePath();
-        offCtx.stroke();
 
-        offCtx.strokeStyle = 'rgba(0,0,0,0.3)';
-        offCtx.lineWidth = 1;
-        offCtx.setLineDash([4, 3]);
-        offCtx.beginPath();
-        offCtx.moveTo(x + hw/2, y - hh/2);
-        offCtx.lineTo(x - hw/2, y + hh/2);
-        offCtx.stroke();
-        offCtx.beginPath();
-        offCtx.moveTo(x + hw/2, y + hh/2);
-        offCtx.lineTo(x - hw/2, y - hh/2);
-        offCtx.stroke();
-        offCtx.setLineDash([]);
+        if (gridLinesVisible){
+          offCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+          offCtx.lineWidth = 1.5;
+          offCtx.setLineDash([]);
+          offCtx.beginPath();
+          offCtx.moveTo(x, y - hh);
+          offCtx.lineTo(x + hw, y);
+          offCtx.lineTo(x, y + hh);
+          offCtx.lineTo(x - hw, y);
+          offCtx.closePath();
+          offCtx.stroke();
+        }
+
+        if (fineGridVisible){
+          offCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+          offCtx.lineWidth = 1;
+          offCtx.setLineDash([4, 3]);
+          offCtx.beginPath();
+          offCtx.moveTo(x + hw/2, y - hh/2);
+          offCtx.lineTo(x - hw/2, y + hh/2);
+          offCtx.stroke();
+          offCtx.beginPath();
+          offCtx.moveTo(x + hw/2, y + hh/2);
+          offCtx.lineTo(x - hw/2, y - hh/2);
+          offCtx.stroke();
+          offCtx.setLineDash([]);
+        }
+
+        if (microGridVisible){
+          // same 4-quadrant-center construction drawMicroSubGrid uses
+          // (getQuadrantOffset), re-expressed with this function's own hw/hh
+          const quadCenters = [
+            { qx: x, qy: y - hh/2 },       // top
+            { qx: x + hw/2, qy: y },       // right
+            { qx: x, qy: y + hh/2 },       // bottom
+            { qx: x - hw/2, qy: y },       // left
+          ];
+          offCtx.strokeStyle = 'rgba(0,0,0,0.2)';
+          offCtx.lineWidth = 0.75;
+          offCtx.setLineDash([2, 2]);
+          quadCenters.forEach(({ qx, qy })=>{
+            const qhw = hw/2, qhh = hh/2;
+            offCtx.beginPath();
+            offCtx.moveTo(qx + qhw/2, qy - qhh/2);
+            offCtx.lineTo(qx - qhw/2, qy + qhh/2);
+            offCtx.stroke();
+            offCtx.beginPath();
+            offCtx.moveTo(qx + qhw/2, qy + qhh/2);
+            offCtx.lineTo(qx - qhw/2, qy - qhh/2);
+            offCtx.stroke();
+          });
+          offCtx.setLineDash([]);
+        }
       }
     }
+
+    if (verticalLinesVisible){
+      offCtx.strokeStyle = 'rgba(0,0,0,0.4)';
+      offCtx.lineWidth = 1;
+      offCtx.setLineDash([]);
+      for (let row = 0; row <= ROWS; row++){
+        for (let col = 0; col <= COLS; col++){
+          const vx = ox + (col - row) * hw;
+          const vy = oy + (col + row) * hh;
+          offCtx.beginPath();
+          offCtx.moveTo(vx, vy);
+          offCtx.lineTo(vx, vy - VERTICAL_LINE_HEIGHT);
+          offCtx.stroke();
+        }
+      }
+    }
+
     const a = document.createElement('a');
     a.href = off.toDataURL('image/png');
     a.download = 'iso_grid_reference.png';
+    a.click();
+  }
+
+  // v3.121: downloads a transparent 64×64 PNG tracing the block (1x1x1)'s
+  // REAL 3D silhouette (top diamond + 2 side faces — the same hexagonal
+  // outline prismFaces/drawBlock actually draws), per พี่แยม's follow-up
+  // after discovering the getImageMaxH('block') sizing bug: the old
+  // "contain-fit" box (64×32, a flat 2:1 rectangle — see getImageMaxH's own
+  // comment) didn't match the block's real rendered shape at all (a roughly
+  // SQUARE 64×64 cube), so พี่แยม's fence art drawn to the old box's
+  // proportions came out squished. This template shows exactly where the
+  // artwork's outline should sit, not just raw numbers to calculate by
+  // hand — a bold outer hexagon (the true silhouette boundary) plus
+  // lighter dashed internal guides (the front-face seam + the roof's own
+  // back edges) for aligning each face's shading/perspective too, not only
+  // the outer boundary. This does NOT fix getImageMaxH('block') itself —
+  // that's still a separate, not-yet-confirmed follow-up (see this
+  // version's changelog entry).
+  //
+  // geometry: mirrors prismFaces(x, y, BLOCK_HEIGHT, ..., BLOCK_FOOTPRINT_SCALE)
+  // exactly (hw=32, hh=16, height=32) with local origin (the ground anchor,
+  // where drawBlock's own (x,y) sits) shifted to canvas point (32, 48) so
+  // the whole 64-tall silhouette (from y=-48 to y=+16 locally) fits with
+  // zero wasted margin, same "derive the bounding box, don't guess padding"
+  // approach exportIsoGridReference above already uses.
+  function exportBlockTemplate(){
+    // v3.125: exports at 4x pixel density (256×256 physical pixels) instead
+    // of a literal 64×64 file — per พี่แยม's report that the 0.5×0.5 grid
+    // overlay (v3.124, 16 tiny diamonds packed into just a 64×32px roof
+    // area) blurred into an indistinct blob in a normal image viewer's
+    // smooth-scaled zoom, since each diamond edge segment was only 1-2
+    // native pixels wide. EXPORT_SCALE + ctx.scale() below is the ONLY
+    // change needed — every coordinate/line-width in this function is
+    // still written in the same 64×64 LOGICAL space as before (still
+    // represents the same true 1x1x1 size), the canvas transform just
+    // renders 4x denser so thin/close-together lines survive typical
+    // smooth-interpolation zooming instead of merging together. Not a
+    // logical geometry change, so nothing else in this function needed
+    // touching — an explicit reminder note is drawn in the corner so
+    // พี่แยม remembers to scale back down to 64×64 before treating this as
+    // final in-game art, not just a reference to trace over.
+    const EXPORT_SCALE = 4;
+    const off = document.createElement('canvas');
+    off.width = 64 * EXPORT_SCALE; off.height = 64 * EXPORT_SCALE;
+    const offCtx = off.getContext('2d');
+    offCtx.scale(EXPORT_SCALE, EXPORT_SCALE);
+    const ox = 32, oy = 48;
+    const top = { x: ox, y: oy - 48 };
+    const rightTop = { x: ox + 32, y: oy - 32 };
+    const rightBottom = { x: ox + 32, y: oy };
+    const front = { x: ox, y: oy + 16 };
+    const leftBottom = { x: ox - 32, y: oy };
+    const leftTop = { x: ox - 32, y: oy - 32 };
+    const roofBack = { x: ox, y: oy - 16 }; // top diamond's own back vertex — internal, not on the outer silhouette
+
+    // bold outer silhouette — the artwork's own outline should trace this
+    offCtx.strokeStyle = 'rgba(0,0,0,0.7)';
+    offCtx.lineWidth = 1.5;
+    offCtx.setLineDash([]);
+    offCtx.beginPath();
+    offCtx.moveTo(top.x, top.y);
+    offCtx.lineTo(rightTop.x, rightTop.y);
+    offCtx.lineTo(rightBottom.x, rightBottom.y);
+    offCtx.lineTo(front.x, front.y);
+    offCtx.lineTo(leftBottom.x, leftBottom.y);
+    offCtx.lineTo(leftTop.x, leftTop.y);
+    offCtx.closePath();
+    offCtx.stroke();
+
+    // lighter dashed internal structure — front vertical seam (between the
+    // left/right faces) + the roof diamond's own 2 back edges
+    offCtx.strokeStyle = 'rgba(0,0,0,0.35)';
+    offCtx.lineWidth = 1;
+    offCtx.setLineDash([3, 2]);
+    offCtx.beginPath();
+    offCtx.moveTo(roofBack.x, roofBack.y);
+    offCtx.lineTo(front.x, front.y);
+    offCtx.stroke();
+    offCtx.beginPath();
+    offCtx.moveTo(rightTop.x, rightTop.y);
+    offCtx.lineTo(roofBack.x, roofBack.y);
+    offCtx.lineTo(leftTop.x, leftTop.y);
+    offCtx.stroke();
+    offCtx.setLineDash([]);
+
+    // v3.124: also traces เส้น Grid 0.5×0.5/เส้นแนวตั้ง onto this template
+    // WHEN they're currently ticked in Build mode — per พี่แยม's "ถ้าติ๊ก
+    // 0.5 กับ แนวตั้ง ก็ให้ export ออกมาด้วย", same "export follows what's
+    // ticked" principle exportIsoGridReference (v3.118) already established
+    // for the whole-board grid export. Colors stay the fixed black/
+    // translucent palette every line in this file already uses (NOT the
+    // customizable gridLineColor/etc. swatches from v3.120) — same reason
+    // v3.120 kept exportIsoGridReference's colors fixed: this PNG is meant
+    // to sit under external artwork on a light canvas, unrelated to
+    // whatever accent color looks good against the game's own dark UI.
+    if (microGridVisible){
+      // เส้น Grid 0.5×0.5 is normally a whole-board GROUND-plane overlay;
+      // the only face of this single block that actually sits on the
+      // ground plane is its roof (top face) — the diamond bounded by
+      // top/rightTop/roofBack/leftTop already traced above. Subdividing
+      // that diamond the exact same recursive way drawMicroSubGrid does
+      // (quadrant, then sub-quadrant) reproduces what 0.5×0.5 would show
+      // for this exact 1×1 footprint if it were sitting on the real board.
+      const roofW = 64, roofH = 32; // this block's own footprint size (TILE_W×TILE_H at BLOCK_FOOTPRINT_SCALE)
+      const roofCx = ox, roofCy = oy - 32;
+      const localQuadOffsets = {
+        top: { dx: 0, dy: -roofH/4 }, right: { dx: roofW/4, dy: 0 },
+        bottom: { dx: 0, dy: roofH/4 }, left: { dx: -roofW/4, dy: 0 }
+      };
+      offCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+      offCtx.lineWidth = 0.75;
+      offCtx.setLineDash([2, 2]);
+      Object.values(localQuadOffsets).forEach(off1=>{
+        const qx = roofCx + off1.dx, qy = roofCy + off1.dy;
+        Object.values(localQuadOffsets).forEach(off2=>{
+          const sx = qx + off2.dx/2, sy = qy + off2.dy/2;
+          offCtx.beginPath();
+          offCtx.moveTo(sx, sy - roofH/8);
+          offCtx.lineTo(sx + roofW/8, sy);
+          offCtx.lineTo(sx, sy + roofH/8);
+          offCtx.lineTo(sx - roofW/8, sy);
+          offCtx.closePath();
+          offCtx.stroke();
+        });
+      });
+      offCtx.setLineDash([]);
+    }
+    if (verticalLinesVisible){
+      // rises from this block's own 3 visible ground/footprint corners
+      // (same anchor concept drawVerticalLines uses — grid vertices, not
+      // roof corners) up to the canvas's own top edge (y=0) exactly — per
+      // พี่แยม's "อยากให้ตัดพอดีขอบ 64px" (want it clipped exactly to the
+      // 64px edge), rather than the in-game version's fixed 150px length,
+      // since this template's canvas is only 64px tall to begin with
+      offCtx.strokeStyle = 'rgba(0,0,0,0.4)';
+      offCtx.lineWidth = 1;
+      offCtx.setLineDash([]);
+      [leftBottom, front, rightBottom].forEach(pt=>{
+        offCtx.beginPath();
+        offCtx.moveTo(pt.x, pt.y);
+        offCtx.lineTo(pt.x, 0);
+        offCtx.stroke();
+      });
+    }
+
+    const a = document.createElement('a');
+    a.href = off.toDataURL('image/png');
+    a.download = 'block_1x1x1_template.png';
     a.click();
   }
 
@@ -6494,6 +7501,13 @@
       ctx.translate(-x, -y);
     }
 
+    // v3.113: a custom (cloned) type renders via its baseType's procedural
+    // fallback shape below when no image is uploaded for it — objType
+    // itself stays the key used for image lookups/state (each clone gets
+    // its OWN separate image slot, never shares its baseType's upload)
+    const cloneDef = customTypes[objType];
+    const drawType = cloneDef ? cloneDef.baseType : objType;
+
     // npc/table/vase (FACING_CYCLE_TYPES) pick between their front/back
     // upload (state.facing) with fallback; every other type keeps using its
     // single upload slot as before
@@ -6505,19 +7519,26 @@
       // image passes NPC_GROUND_OFFSET too (see drawSprite's comment), same
       // as drawPlayer's custom-image branch above, manually tunable via the
       // "Offset พื้น (px)" build-panel input. tableSmall/giftBox (v3.55) get
-      // their own adjustable offsets for the same reason; every other type
+      // their own adjustable offsets for the same reason; every custom
+      // (cloned) type gets its own too (v3.123, per พี่แยม's "อยากตั้ง
+      // offset ของรูปที่ใส่เข้ามาได้ด้วยจ้า") — every other built-in type
       // still falls through to drawSprite's TILE_H*0.3 default (undefined).
       const objGroundOffset = objType === 'npc' ? NPC_GROUND_OFFSET
         : objType === 'tableSmall' ? TABLE_SMALL_GROUND_OFFSET
         : objType === 'giftBox' ? GIFTBOX_GROUND_OFFSET
+        : customTypes[objType] ? customTypes[objType].groundOffset
         : undefined;
       drawSprite(customImg, drawCol, drawRow, getObjectSpriteMaxW(objType), 0, getImageMaxH(objType), objGroundOffset);
     } else {
-      switch(objType){
+      // v3.113: switches on drawType (resolves to baseType for a clone),
+      // not objType directly — this is the whole mechanism that makes a
+      // cloned type draw identically to its template before an image is
+      // uploaded for it
+      switch(drawType){
         case 'box': drawBox(col, row); break;
         case 'wall': drawWall(col, row, state); break;
         case 'block': drawBlock(col, row); break;
-        case 'wallbox': case 'wallbox5': drawWallBox(col, row, WALLBOX_TYPES[objType], state); break;
+        case 'wallbox': case 'wallbox5': drawWallBox(col, row, WALLBOX_TYPES[drawType], state); break;
         case 'tree': drawTree(col, row); break;
         case 'rock': drawRock(col, row); break;
         case 'barrel': drawBarrel(col, row); break;
@@ -6550,15 +7571,22 @@
         ctx.save();
         ctx.translate(topperOff.dx, topperOff.dy);
         const topperImg = customObjectImages[topperType];
+        // v3.113: a cloned vase/giftBox-based type can sit as a topper too
+        // (it joins TABLE_TOPPER_TYPES in registerCustomType when its
+        // baseType is a member) — resolve its baseType here the same way
+        // drawType does above, so the no-image fallback shape/offset below
+        // matches its template instead of always defaulting to the vase shape
+        const topperClone = customTypes[topperType];
+        const topperDrawType = topperClone ? topperClone.baseType : topperType;
         if (imgReady(topperImg)){
           // giftBox-as-topper (v3.55) reuses GIFTBOX_GROUND_OFFSET too, so
           // the same uploaded image looks consistent whether it's sitting on
           // bare ground or as a table topper; vase-as-topper keeps drawSprite's
           // TILE_H*0.3 default (undefined) as before — vase never got its own
           // adjustable offset, only tableSmall/giftBox did
-          const topperGroundOffset = topperType === 'giftBox' ? GIFTBOX_GROUND_OFFSET : undefined;
+          const topperGroundOffset = topperDrawType === 'giftBox' ? GIFTBOX_GROUND_OFFSET : undefined;
           drawSprite(topperImg, col, row, getObjectSpriteMaxW(topperType), TABLE_HEIGHT, getImageMaxH(topperType), topperGroundOffset);
-        } else if (topperType === 'giftBox'){
+        } else if (topperDrawType === 'giftBox'){
           drawGiftBox(col, row, TABLE_HEIGHT);
         } else {
           drawVase(col, row, TABLE_HEIGHT);
@@ -6821,6 +7849,9 @@
     drawTerrainModeOutline();
     drawDropPreview();
     drawMovingGhost();
+    // v3.117: drawn last/on top so the ruler stays visible for comparing
+    // heights even when standing right next to a tall placed object
+    if (mode === 'build' && verticalLinesVisible) drawVerticalLines();
     ctx.restore();
   }
 
@@ -7078,6 +8109,39 @@
     microGridVisible = !microGridVisible;
     this.classList.toggle('active', microGridVisible);
   });
+
+  // ---- Vertical reference lines visibility toggle (v3.117) ----
+  // same independent on/off pattern as the 3 grid toggles above — fully
+  // independent of all of them (a different overlay shape entirely, see
+  // drawVerticalLines' own comment)
+  document.getElementById('toggleVerticalLinesBtn').addEventListener('click', function(){
+    verticalLinesVisible = !verticalLinesVisible;
+    this.classList.toggle('active', verticalLinesVisible);
+  });
+
+  // ---- Per-line grid color swatches (v3.120) ----
+  // each swatch's hex value combines with its line's own FIXED alpha (see
+  // the gridLineColor/etc. `let` declarations' comment) into a full
+  // rgba() string, applied immediately (the render loop already redraws
+  // every frame, so no manual redraw call is needed) and persisted so it
+  // survives a reload, same pattern as every other IndexedDB-backed setting
+  const GRID_LINE_ALPHAS = { grid: 0.4, fineGrid: 0.18, microGrid: 0.14, verticalLine: 0.55 };
+  function wireGridColorInput(inputId, settingName, alpha, applyFn){
+    const input = document.getElementById(inputId);
+    input.addEventListener('input', ()=>{
+      applyFn(hexToRgba(input.value, alpha));
+      saveSettingToStorage(settingName, input.value);
+    });
+    loadSettingFromStorage(settingName).then(hex=>{
+      if (!hex) return;
+      input.value = hex;
+      applyFn(hexToRgba(hex, alpha));
+    });
+  }
+  wireGridColorInput('gridColorInput', 'gridColorHex', GRID_LINE_ALPHAS.grid, v=> gridLineColor = v);
+  wireGridColorInput('fineGridColorInput', 'fineGridColorHex', GRID_LINE_ALPHAS.fineGrid, v=> fineGridLineColor = v);
+  wireGridColorInput('microGridColorInput', 'microGridColorHex', GRID_LINE_ALPHAS.microGrid, v=> microGridLineColor = v);
+  wireGridColorInput('verticalLineColorInput', 'verticalLineColorHex', GRID_LINE_ALPHAS.verticalLine, v=> verticalLineColor = v);
 
   // ---- Build / Play mode switching ----
   const BUILD_HINT = document.getElementById('controlHint').innerHTML;
@@ -7344,14 +8408,18 @@
     fileInput.value = '';
   });
 
-  document.querySelectorAll('.choose-img-btn').forEach(btn=>{
+  // v3.113: pulled out of the page-load-only querySelectorAll loops below
+  // so a dynamically-created custom-type settings card (buildCustomSettingsCard)
+  // can wire its own choose/clear buttons the exact same way after page
+  // load — the original loops only ever ran once at script init and never
+  // picked up buttons added to the DOM afterward
+  function wireUpChooseImgBtn(btn){
     btn.addEventListener('click', ()=>{
       pendingUpload = { kind: btn.dataset.kind, type: btn.dataset.type };
       fileInput.click();
     });
-  });
-
-  document.querySelectorAll('.clear-img-btn').forEach(btn=>{
+  }
+  function wireUpClearImgBtn(btn){
     btn.addEventListener('click', ()=>{
       const { kind, type } = btn.dataset;
       if (kind === 'object') delete customObjectImages[type];
@@ -7362,7 +8430,9 @@
       clearThumbnail(kind, type);
       removeImageFromStorage(kind, type);
     });
-  });
+  }
+  document.querySelectorAll('.choose-img-btn').forEach(wireUpChooseImgBtn);
+  document.querySelectorAll('.clear-img-btn').forEach(wireUpClearImgBtn);
 
   // restore any images saved from a previous visit (see "Persisting
   // uploaded images" above) — runs once on page load, reusing the exact
@@ -7405,6 +8475,353 @@
     restoreOrMigrateImage(btn.dataset.kind, btn.dataset.type);
   });
 
+  // ---- Custom object types: create/register/delete + UI wiring (v3.113) ----
+  // registerCustomType(): the single place that makes a clone "real" —
+  // copies every OBJECT_TYPES flag from baseType (so blocking/footprint/
+  // wallHost keep working through the game's existing generic code paths
+  // with zero extra changes) and mirrors FACING_CYCLE_TYPES/TABLE_TOPPER_TYPES
+  // Set membership so a cloned vase/giftBox/tableSmall/npc keeps that part
+  // of its template's behavior too. Purely data — never touches the DOM,
+  // since it's reused by both a fresh "สร้าง" click (createCustomTypeFromForm,
+  // below) and restoreCustomTypes() rebuilding everything on page load.
+  function registerCustomType(def){
+    const base = OBJECT_TYPES[def.baseType];
+    OBJECT_TYPES[def.key] = Object.assign({}, base, { label: def.label });
+    if (def.group === 'foundation') FOUNDATION_TYPES.add(def.key);
+    // v3.116: EVERY custom type gets the full front/back facing-cycle
+    // (right-click cycles front/front-flip/back-flip/back, independent
+    // uploaded image per facing) regardless of whether its own baseType
+    // has this — พี่แยม's explicit request: "หลักการเดียวกับ NPC เลยจ้า
+    // ซ้ายขวา Filp ข้างหลังเปลี่ยนรูป" (same principle as NPC — left-right
+    // flip, and flipping to the back changes the image) — after noticing a
+    // Foundation-whitelist clone ("รั้ว" from block) had no back-image row
+    // under v3.115's baseType-conditional version. This deliberately makes
+    // a custom type MORE capable than its own template in this one respect
+    // (block itself still only plain-flips; a custom type cloned from it no
+    // longer does) — cycleFacingFlip/getActiveObjectImage/defaultState all
+    // already key off FACING_CYCLE_TYPES generically, so this is a pure
+    // membership change, no new plumbing needed.
+    FACING_CYCLE_TYPES.add(def.key);
+    if (TABLE_TOPPER_TYPES.has(def.baseType)) TABLE_TOPPER_TYPES.add(def.key);
+    VISUAL_HEIGHT[def.key] = VISUAL_HEIGHT[def.baseType] || TILE_H;
+    customTypes[def.key] = def;
+  }
+
+  function persistCustomTypes(){
+    saveSettingToStorage('customTypesRegistry', JSON.stringify(customTypes));
+  }
+
+  function sanitizeLabel(s){
+    return String(s == null ? '' : s).replace(/[<>"'`]/g, '').trim();
+  }
+
+  function isTypeKeyTaken(key){
+    return !!(OBJECT_TYPES[key] || TERRAIN_COLORS[key] || customTypes[key]);
+  }
+
+  // borrows whatever emoji its baseType's own static palette card already
+  // uses, so a "รั้ว" cloned from Block still shows something recognizable
+  // (🧊) before an image is uploaded for it
+  function emojiForBaseType(baseType){
+    const src = document.querySelector(`.pal-item[data-kind="object"][data-type="${baseType}"] .pal-emoji`);
+    return src ? src.textContent : '🧩';
+  }
+
+  // how many placed instances of a custom type currently exist on the
+  // board (ground-placed objects.Map entries + table-topper slots, which
+  // store their occupant as a plain type string inside state.toppers
+  // rather than their own objects.Map entry) — used to block deletion
+  // instead of silently orphaning placed objects into an unknown type
+  function countCustomTypeUsage(key){
+    let count = 0;
+    objects.forEach(entry=>{
+      if (entry.type === key) count++;
+      if (entry.state && entry.state.toppers){
+        Object.values(entry.state.toppers).forEach(t=>{ if (t === key) count++; });
+      }
+    });
+    return count;
+  }
+
+  function buildCustomPaletteItem(def){
+    const el = document.createElement('div');
+    el.className = 'pal-item custom-type-item';
+    el.dataset.kind = 'object';
+    el.dataset.type = def.key;
+    el.draggable = true;
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'pal-emoji';
+    emojiSpan.textContent = emojiForBaseType(def.baseType);
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'pal-label';
+    labelSpan.textContent = def.label;
+    el.appendChild(emojiSpan);
+    el.appendChild(labelSpan);
+    wireUpPalItem(el);
+    const addBtn = document.getElementById(def.group === 'foundation' ? 'addFoundationTypeBtn' : 'addFurnitureTypeBtn');
+    addBtn.parentElement.insertBefore(el, addBtn);
+    return el;
+  }
+
+  // builds this custom type's card in the "ตั้งค่า" tab's "🧩 ชนิดที่สร้างเอง"
+  // accordion — mirrors the built-in furniture cards' ID/ชื่อ + image-upload
+  // + width/height structure, minus the back-image row and ground-offset
+  // row every built-in card doesn't uniformly have either (a known v1
+  // simplification — see the "ขอบเขตที่ไม่ทำ" note in the confirmed outline).
+  // def.key already passed isTypeKeyTaken/regex validation before this is
+  // ever called, and def.label is always sanitizeLabel()'d — both safe to
+  // interpolate directly into innerHTML below.
+  function buildCustomSettingsCard(def){
+    // v3.123: backfills a def saved before this version (no groundOffset
+    // field yet) with drawSprite's own default, so its "Offset พื้น (px)"
+    // input starts at the value already visually in effect instead of 0
+    if (def.groundOffset == null) def.groundOffset = TILE_H * 0.3;
+    const card = document.createElement('details');
+    card.className = 'acc-sub';
+    card.id = `customTypeCard-${def.key}`;
+    // v3.116: every custom type is now in FACING_CYCLE_TYPES regardless of
+    // baseType (see registerCustomType's comment), so its card always gets
+    // a "รูปหลัง" row too — v3.115 conditioned this on the baseType, which
+    // hid it for a Foundation-whitelist clone like "รั้ว" (from block);
+    // พี่แยม wanted the same front/back-image-swap behavior NPC has on
+    // every custom type, not just ones from a template that already had it.
+    const backImgRow = `
+        <div class="img-row" data-kind="object-back" data-type="${def.key}">
+          <div class="img-thumb" id="thumb-object-back-${def.key}"><span class="pal-emoji">${emojiForBaseType(def.baseType)}</span></div>
+          <div class="img-row-label">รูปหลัง</div>
+          <div class="img-row-actions">
+            <button class="choose-img-btn" data-kind="object-back" data-type="${def.key}">เลือกรูป</button>
+            <button class="clear-img-btn" data-kind="object-back" data-type="${def.key}">ล้าง</button>
+          </div>
+        </div>`;
+    card.innerHTML = `
+      <summary><span id="${def.key}CardSummary">${def.label}</span> <span style="color:var(--muted);font-weight:400;font-size:11px;">(จาก ${OBJECT_TYPES[def.baseType].label})</span></summary>
+      <div class="acc-sub-body">
+        <div class="field-row">
+          <div class="field"><label>ไอดี (คีย์ — แก้ไม่ได้)</label><input type="text" value="${def.key}" disabled></div>
+          <div class="field"><label for="${def.key}CustomNameInput">ชื่อ</label><input type="text" id="${def.key}CustomNameInput" value="${def.label}"></div>
+        </div>
+        <div class="img-row" data-kind="object" data-type="${def.key}">
+          <div class="img-thumb" id="thumb-object-${def.key}"><span class="pal-emoji">${emojiForBaseType(def.baseType)}</span></div>
+          <div class="img-row-label">รูปหน้า</div>
+          <div class="img-row-actions">
+            <button class="choose-img-btn" data-kind="object" data-type="${def.key}">เลือกรูป</button>
+            <button class="clear-img-btn" data-kind="object" data-type="${def.key}">ล้าง</button>
+          </div>
+        </div>${backImgRow}
+        <div class="field-row">
+          <div class="field"><label for="${def.key}ImgWInput">กว้าง</label><input type="number" id="${def.key}ImgWInput" min="4" max="512" step="1" value="${Math.round(def.w)}"></div>
+          <div class="field"><label for="${def.key}ImgHInput">สูง</label><input type="number" id="${def.key}ImgHInput" min="4" max="512" step="1" value="${Math.round(def.h)}"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="${def.key}GroundOffsetInput" title="เลื่อนรูปที่อัปโหลดขึ้น(ค่าลบ)/ลง(ค่าบวก) จากจุดยึดพื้น — ไม่กระทบ footprint/ตำแหน่งบนกระดาน">Offset พื้น (px)</label><input type="number" id="${def.key}GroundOffsetInput" min="-200" max="200" step="1" value="${Math.round(def.groundOffset)}"></div>
+        </div>
+        <button id="apply${def.key}SizeBtn">บันทึก</button>
+        <button type="button" class="delete-custom-type-btn" id="delete${def.key}Btn">🗑️ ลบชนิดนี้</button>
+      </div>
+    `;
+    document.getElementById('customTypesAccBody').appendChild(card);
+    document.getElementById('customTypesAcc').style.display = '';
+
+    card.querySelectorAll('.choose-img-btn').forEach(wireUpChooseImgBtn);
+    card.querySelectorAll('.clear-img-btn').forEach(wireUpClearImgBtn);
+
+    const nameInput = document.getElementById(`${def.key}CustomNameInput`);
+    const wInput = document.getElementById(`${def.key}ImgWInput`);
+    const hInput = document.getElementById(`${def.key}ImgHInput`);
+    const groundOffsetInput = document.getElementById(`${def.key}GroundOffsetInput`);
+    document.getElementById(`apply${def.key}SizeBtn`).addEventListener('click', ()=>{
+      const name = sanitizeLabel(nameInput.value) || def.label;
+      nameInput.value = name;
+      def.label = name;
+      applyDisplayName(def.key, name);
+      const rawW = parseFloat(wInput.value), rawH = parseFloat(hInput.value);
+      def.w = clampSize(Number.isFinite(rawW) ? rawW : def.w);
+      def.h = clampSize(Number.isFinite(rawH) ? rawH : def.h);
+      wInput.value = Math.round(def.w);
+      hInput.value = Math.round(def.h);
+      const rawOffset = parseFloat(groundOffsetInput.value);
+      def.groundOffset = clampOffset(Number.isFinite(rawOffset) ? rawOffset : def.groundOffset);
+      groundOffsetInput.value = Math.round(def.groundOffset);
+      persistCustomTypes();
+      showToast(`บันทึก "${name}" แล้ว`);
+    });
+    document.getElementById(`delete${def.key}Btn`).addEventListener('click', ()=> deleteCustomType(def.key));
+  }
+
+  function deleteCustomType(key){
+    const def = customTypes[key];
+    if (!def) return;
+    const usage = countCustomTypeUsage(key);
+    if (usage > 0){
+      alert(`ยังมี "${def.label}" วางอยู่บนแผนที่ ${usage} ชิ้น — ลบของบนแผนที่ออกให้หมดก่อนถึงจะลบชนิดนี้ได้`);
+      return;
+    }
+    const ok = confirm(`ลบชนิด "${def.label}" ถาวร? (รูปที่อัปโหลดไว้จะถูกลบไปด้วย ย้อนกลับไม่ได้)`);
+    if (!ok) return;
+    delete OBJECT_TYPES[key];
+    FOUNDATION_TYPES.delete(key);
+    FACING_CYCLE_TYPES.delete(key);
+    TABLE_TOPPER_TYPES.delete(key);
+    delete VISUAL_HEIGHT[key];
+    delete customObjectImages[key];
+    delete customObjectImagesBack[key];
+    removeImageFromStorage('object', key);
+    removeImageFromStorage('object-back', key);
+    delete customTypes[key];
+    persistCustomTypes();
+    const palItem = document.querySelector(`.pal-item[data-kind="object"][data-type="${key}"]`);
+    if (palItem) palItem.remove();
+    const card = document.getElementById(`customTypeCard-${key}`);
+    if (card) card.remove();
+    if (!Object.keys(customTypes).length) document.getElementById('customTypesAcc').style.display = 'none';
+    showToast(`ลบ "${def.label}" แล้ว`);
+  }
+
+  // ---- "+ เพิ่มชนิดใหม่จากแม่แบบ" modal wiring ----
+  let addTypeModalGroup = 'foundation';
+  const addTypeModalOverlay = document.getElementById('addTypeModalOverlay');
+  const addTypeBaseSelect = document.getElementById('addTypeBaseSelect');
+  const addTypeIdInput = document.getElementById('addTypeIdInput');
+  const addTypeNameInput = document.getElementById('addTypeNameInput');
+  const addTypeModalError = document.getElementById('addTypeModalError');
+  const addTypeImgThumb = document.getElementById('thumb-object-__pendingNewType__');
+
+  function showAddTypeError(msg){
+    addTypeModalError.textContent = msg;
+    addTypeModalError.classList.add('show');
+  }
+
+  function openAddTypeModal(group){
+    addTypeModalGroup = group;
+    document.getElementById('addTypeModalTitle').textContent =
+      `เพิ่มชนิดใหม่จากแม่แบบ — ${group === 'foundation' ? 'Foundation' : 'Furniture'}`;
+    addTypeBaseSelect.innerHTML = '';
+    CLONABLE_BASE_TYPES[group].forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = OBJECT_TYPES[t].label;
+      addTypeBaseSelect.appendChild(opt);
+    });
+    addTypeIdInput.value = '';
+    addTypeNameInput.value = '';
+    addTypeModalError.textContent = '';
+    addTypeModalError.classList.remove('show');
+    clearThumbnail('object', '__pendingNewType__');
+    addTypeModalOverlay.classList.add('show');
+  }
+  function closeAddTypeModal(){
+    addTypeModalOverlay.classList.remove('show');
+    // discard any image chosen inside the modal but never committed by
+    // actually clicking "สร้าง" — otherwise it'd linger in IndexedDB forever
+    // under a key that never becomes a real type
+    delete customObjectImages['__pendingNewType__'];
+    removeImageFromStorage('object', '__pendingNewType__');
+  }
+  document.getElementById('addFoundationTypeBtn').addEventListener('click', ()=> openAddTypeModal('foundation'));
+  document.getElementById('addFurnitureTypeBtn').addEventListener('click', ()=> openAddTypeModal('furniture'));
+  document.getElementById('addTypeCancelBtn').addEventListener('click', closeAddTypeModal);
+
+  // the modal's own "เลือกรูป"/"ล้าง" buttons upload into a scratch slot
+  // keyed '__pendingNewType__' (kind:'object') — reuses the exact same
+  // fileInput/pendingUpload/applyCustomImage/setThumbnail pipeline every
+  // other image upload uses, just under a placeholder key that only exists
+  // until "สร้าง" is clicked (createCustomTypeFromForm moves it to the real
+  // key below) or the modal is cancelled (closeAddTypeModal discards it)
+  document.getElementById('addTypeChooseImgBtn').addEventListener('click', ()=>{
+    pendingUpload = { kind: 'object', type: '__pendingNewType__' };
+    fileInput.click();
+  });
+  document.getElementById('addTypeClearImgBtn').addEventListener('click', ()=>{
+    delete customObjectImages['__pendingNewType__'];
+    clearThumbnail('object', '__pendingNewType__');
+    removeImageFromStorage('object', '__pendingNewType__');
+  });
+
+  document.getElementById('addTypeCreateBtn').addEventListener('click', ()=>{
+    const baseType = addTypeBaseSelect.value;
+    const rawKey = addTypeIdInput.value.trim();
+    const label = sanitizeLabel(addTypeNameInput.value);
+    addTypeModalError.classList.remove('show');
+
+    if (!CLONABLE_BASE_TYPES[addTypeModalGroup].includes(baseType)){
+      showAddTypeError('แม่แบบต้นทางไม่ถูกต้อง');
+      return;
+    }
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(rawKey)){
+      showAddTypeError('ไอดีต้องขึ้นต้นด้วยตัวอักษร a-z/A-Z แล้วตามด้วย a-z, A-Z, 0-9, _ เท่านั้น');
+      return;
+    }
+    if (isTypeKeyTaken(rawKey)){
+      showAddTypeError('ไอดีนี้ถูกใช้ไปแล้ว ลองตั้งชื่ออื่น');
+      return;
+    }
+    if (!label){
+      showAddTypeError('กรุณาใส่ชื่อ');
+      return;
+    }
+
+    const def = {
+      key: rawKey, baseType, group: addTypeModalGroup, label,
+      w: getObjectSpriteMaxW(baseType), h: getImageMaxH(baseType),
+      // v3.123: matches drawSprite's own TILE_H*0.3 default exactly, so a
+      // freshly-created type's uploaded image doesn't visually jump until
+      // พี่แยม actually adjusts "Offset พื้น (px)" in its settings card
+      groundOffset: TILE_H * 0.3
+    };
+    registerCustomType(def);
+
+    // move any image already staged under the scratch '__pendingNewType__'
+    // slot over to the real key — cheaper than re-uploading, and means
+    // "เลือกรูป" inside the modal genuinely works before the type formally
+    // exists yet
+    const pendingImg = customObjectImages['__pendingNewType__'];
+    if (pendingImg){
+      customObjectImages[rawKey] = pendingImg;
+      delete customObjectImages['__pendingNewType__'];
+      loadImageFromStorage('object', '__pendingNewType__').then(dataUrl=>{
+        if (dataUrl){
+          saveImageToStorage('object', rawKey, dataUrl);
+          removeImageFromStorage('object', '__pendingNewType__');
+        }
+      });
+    }
+
+    buildCustomPaletteItem(def);
+    buildCustomSettingsCard(def);
+    if (pendingImg) setThumbnail('object', rawKey, pendingImg.src);
+    persistCustomTypes();
+    addTypeModalOverlay.classList.remove('show');
+    showToast(`สร้างชนิด "${label}" แล้ว`);
+  });
+
+  // rebuilds every custom type saved from a previous visit — registry
+  // (customTypesRegistry) restored first so OBJECT_TYPES/FOUNDATION_TYPES/
+  // etc. are populated before any rendering happens, then each type's own
+  // uploaded image (if any) restored the same way restoreOrMigrateImage
+  // already restores every built-in type's image
+  async function restoreCustomTypes(){
+    const raw = await loadSettingFromStorage('customTypesRegistry');
+    if (!raw) return;
+    let saved;
+    try { saved = JSON.parse(raw); } catch (err){ return; }
+    if (!saved || typeof saved !== 'object') return;
+    Object.values(saved).forEach(def=>{
+      // guards against a stale/corrupted entry (e.g. referencing a baseType
+      // that no longer exists, or somehow already registered) instead of
+      // letting registerCustomType/buildCustomPaletteItem crash on it
+      if (!def || !def.key || !OBJECT_TYPES[def.baseType] || customTypes[def.key]) return;
+      registerCustomType(def);
+      buildCustomPaletteItem(def);
+      buildCustomSettingsCard(def);
+      restoreOrMigrateImage('object', def.key);
+      // v3.116: every custom type's card now has a "รูปหลัง" row (see
+      // registerCustomType/buildCustomSettingsCard) — restore unconditionally
+      restoreOrMigrateImage('object-back', def.key);
+    });
+  }
+  restoreCustomTypes();
+
   // ---- Export / Import saved images (v3.52) ----
   // พี่แยม asked for a way to back up/move the whole set of IndexedDB-saved
   // custom images — e.g. before clearing browser data, or to carry them
@@ -7439,8 +8856,16 @@
   document.getElementById('exportImagesBtn').addEventListener('click', async ()=>{
     const all = await getAllStoredImages();
     const count = Object.keys(all).length;
-    if (!count){ alert('ยังไม่มีรูปที่บันทึกไว้ในเครื่องนี้'); return; }
-    const json = JSON.stringify({ version: 1, images: all }, null, 2);
+    const customCount = Object.keys(customTypes).length;
+    if (!count && !customCount){ alert('ยังไม่มีรูปที่บันทึกไว้ในเครื่องนี้'); return; }
+    // v3.113: bundles the "ชนิดที่สร้างเอง" registry alongside the images
+    // themselves — per พี่แยม's confirmed request, so opening a saved map
+    // (which only stores type-key STRINGS, see buildMapData's own comment)
+    // on a different browser/machine that never created these custom types
+    // doesn't silently render them invisible. version bumped to 2; an old
+    // (version 1) file simply has no customTypes field, which the import
+    // handler below already treats as "0 custom types to restore."
+    const json = JSON.stringify({ version: 2, images: all, customTypes }, null, 2);
     const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
     downloadDataUrl(dataUrl, `isometric-images-${todayStamp()}.json`);
   });
@@ -7468,13 +8893,36 @@
         return;
       }
       const keys = Object.keys(data.images);
-      if (!keys.length){ alert('ไฟล์นี้ไม่มีรูปเลย'); return; }
+      // v3.113: a version-2 export can also carry customTypes — an older
+      // version-1 file simply has no such field, which just means 0 custom
+      // types to restore (see exportImagesBtn's own comment). Only NEW keys
+      // (not already registered locally) are imported — an existing custom
+      // type's own baseType/group/size never gets silently overwritten by a
+      // same-keyed entry from the file, unlike images which intentionally
+      // do overwrite (see the confirm() text below).
+      const isImportableCustomDef = def =>
+        !!def && !!def.key && !customTypes[def.key] &&
+        !!CLONABLE_BASE_TYPES[def.group] && CLONABLE_BASE_TYPES[def.group].includes(def.baseType);
+      const importableCustomDefs = (data.customTypes && typeof data.customTypes === 'object')
+        ? Object.values(data.customTypes).filter(isImportableCustomDef)
+        : [];
+      if (!keys.length && !importableCustomDefs.length){ alert('ไฟล์นี้ไม่มีรูปหรือชนิดที่สร้างเองให้นำเข้า'); return; }
       // importing overwrites any existing image of the same kind/type —
       // anything not in this file is left untouched (additive, not a full
       // replace, since this is a "restore/merge my images" action, not a
       // map-style full reset)
-      const ok = confirm(`นำเข้ารูป ${keys.length} รูป — รูปชนิดเดียวกันที่มีอยู่แล้วจะถูกเขียนทับ ต้องการดำเนินการต่อไหม?`);
+      const parts = [];
+      if (keys.length) parts.push(`รูป ${keys.length} รูป (ชนิดเดียวกันที่มีอยู่แล้วจะถูกเขียนทับ)`);
+      if (importableCustomDefs.length) parts.push(`ชนิดที่สร้างเองใหม่ ${importableCustomDefs.length} ชนิด`);
+      const ok = confirm(`นำเข้า ${parts.join(' + ')} — ต้องการดำเนินการต่อไหม?`);
       if (!ok) return;
+
+      importableCustomDefs.forEach(def=>{
+        registerCustomType(def);
+        buildCustomPaletteItem(def);
+        buildCustomSettingsCard(def);
+      });
+      if (importableCustomDefs.length) persistCustomTypes();
 
       let applied = 0;
       for (const combinedKey of keys){
@@ -7500,7 +8948,7 @@
           img.src = dataUrl;
         });
       }
-      alert(`นำเข้ารูปสำเร็จ ${applied} จาก ${keys.length} รูป`);
+      alert(`นำเข้าสำเร็จ — รูป ${applied} จาก ${keys.length} รูป, ชนิดที่สร้างเองใหม่ ${importableCustomDefs.length} ชนิด`);
     };
     reader.readAsText(file);
   });
@@ -7825,7 +9273,15 @@
   const emptyDragImage = new Image();
   emptyDragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBTAA7';
 
-  document.querySelectorAll('.pal-item').forEach(el=>{
+  // v3.113: pulled out of the page-load-only querySelectorAll loop below so
+  // a dynamically-created custom-type palette card (buildCustomPaletteItem)
+  // can wire itself the same way after page load — the original loop only
+  // ever ran once at script init and never picked up items added to the DOM
+  // afterward (also applies to the "+ เพิ่มชนิดใหม่จากแม่แบบ" add-type-item
+  // buttons, harmlessly — they have no data-kind/data-type so dragstart is
+  // never actually triggered by the browser and click just falls through to
+  // disarmAllSpecialModes(), same as any other non-terrain click)
+  function wireUpPalItem(el){
     el.addEventListener('dragstart', e=>{
       if (mode !== 'build'){ e.preventDefault(); return; }
       if (el.hasAttribute('draggable') === false || el.getAttribute('draggable') === 'false') return;
@@ -7864,7 +9320,8 @@
         disarmAllSpecialModes();
       }
     });
-  });
+  }
+  document.querySelectorAll('.pal-item').forEach(wireUpPalItem);
 
   canvas.addEventListener('dragover', e=>{
     lastPointerEvent = e;
@@ -8438,6 +9895,20 @@
   // ---- Delete hovered object with Backspace / Delete (build mode only) ----
   window.addEventListener('keydown', e=>{
     if (e.key === 'Backspace' || e.key === 'Delete'){
+      // v3.114: this listener is global (window), so without this guard it
+      // preventDefault()'d Backspace/Delete even while typing in ANY text
+      // input on the page (the "เพิ่มชนิดใหม่จากแม่แบบ" ไอดี field, the
+      // existing table/vase/tableSmall/giftBox/grass1-9 ID/ชื่อ fields, map
+      // size, image size — all of them) — browsers can't edit text if the
+      // key that erases a character is hijacked before it ever reaches the
+      // input. Bug pre-dates v3.113; only surfaced now because typing a
+      // fresh custom-type ID was the first time พี่แยม needed to backspace
+      // inside a text field enough to notice. Skip entirely whenever an
+      // input/textarea/select is focused, so normal text editing works
+      // exactly like it would on any other page — the hovered-object
+      // delete below only ever fires when nothing is focused for typing.
+      const activeTag = document.activeElement && document.activeElement.tagName;
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
       e.preventDefault();
       if (mode === 'build' && hoveredObjKey && !movingObj){
         const obj = objects.get(hoveredObjKey);
@@ -8923,6 +10394,7 @@
 
   document.getElementById('exportGridBtn').addEventListener('click', exportGridReference);
   document.getElementById('exportIsoGridBtn').addEventListener('click', exportIsoGridReference);
+  document.getElementById('exportBlockTemplateBtn').addEventListener('click', exportBlockTemplate);
 
   document.getElementById('saveImageCleanBtn').addEventListener('click', ()=>{
     captureMapImage(true);
