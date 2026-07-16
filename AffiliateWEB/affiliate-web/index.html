@@ -117,7 +117,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v1.0 · กำลังโหลด…</span>
+  <span id="status">v1.1 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -439,7 +439,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v1.0';
+const VERSION = 'v1.1';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -1653,6 +1653,32 @@ $('#btnTiktokReload').onclick = async () => {
 
 // เริ่มต้น: ดึงรายชื่อเดือนที่ cache ไว้ใน IndexedDB มาโชว์ก่อนเลย ไม่ต้องรอ fetch จาก Sheet
 refreshTiktokMonthOptions(localStorage.getItem('tiktokSelectedMonth') || '').catch(() => {});
+
+// เช็คอัตโนมัติว่ามีเดือนใหม่ที่ยังไม่เคยโหลด (ตามรูปแบบชื่อ "ยอดขายเดือน <เดือน>-<ปี>") ตั้งแต่เดือน 1 ถึงเดือนปัจจุบันของปีนี้
+// เดือนที่ cache ไว้แล้วข้ามทันที (เร็ว) ส่วนเดือนที่ยังไม่มีชีตจริง (ยังไม่ถึงเดือนนั้น) จะ error แล้วข้ามไปเงียบๆ ไม่รบกวน
+// ครอบคลุมแค่ปีปัจจุบัน — เดือนเก่าปีก่อนๆ ยังต้องกด "➕ โหลดเดือนใหม่" เองครั้งแรก
+async function autoDiscoverTiktokMonths() {
+  try {
+    const existing = await tiktokDbGetAll();
+    const known = new Set(existing.map(m => m.sheetName));
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    let lastNew = '';
+    for (let mo = 1; mo <= month; mo++) {
+      const name = `ยอดขายเดือน ${mo}-${year}`;
+      if (known.has(name)) continue;
+      try {
+        const rec = await fetchTiktokMonthSummary(name);
+        await tiktokDbPut(rec);
+        lastNew = name;
+        toast(`พบ "${name}" ใหม่ โหลดให้อัตโนมัติแล้ว ✓`);
+      } catch (e) { /* ยังไม่มีชีตเดือนนี้ ข้ามไปเงียบๆ */ }
+    }
+    if (lastNew) await refreshTiktokMonthOptions($('#tiktokMonthSelect').value || lastNew);
+  } catch (e) { /* เช็คไม่สำเร็จ ไม่ต้องรบกวนพี่ */ }
+}
+autoDiscoverTiktokMonths();
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
