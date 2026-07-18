@@ -3125,6 +3125,541 @@
     both the visible label and its title tooltip to say "(256×256)" and
     spell out that this is 4x the true 64×64 size, not a change to what
     size the artwork actually represents. Text-only fix, no logic touched.
+
+  v3.127 (2026-07-16) — Reorganized the "บันทึก" tab per พี่แยม's "เราจะ
+    สามารถจัดระเบียบ UI ให้มันใช้งานง่ายกว่านี้ได้ไหม" (can we organize the
+    UI to be easier to use) — this tab had accumulated into 8 buttons in a
+    flat list across v3.118/v3.121 (grid/iso-grid/block-template exports),
+    plus map save/load, screenshot saves, and a destructive "ล้างแผนที่
+    ทั้งหมด" button, all with zero visual grouping. Sent an outline first
+    (before/after comparison) and got confirmation before touching markup.
+
+    Regrouped into 5 `<details class="acc">` sections (reusing the exact
+    same accordion styling already used everywhere else in this panel — no
+    new CSS needed) by actual purpose: "🗺️ แผนที่" and "🖼️ บันทึกภาพหน้าจอ"
+    default OPEN (used often); "📐 อ้างอิงสำหรับวาดรูป" and "🗂️ สำรองรูปที่
+    อัปโหลดไว้" default collapsed (used occasionally); "⚠️ ล้างข้อมูล" is
+    its own collapsed section at the very end with a red-tinted summary, so
+    the one destructive action in this tab isn't sitting in the same flat
+    list as everything else where a stray click could hit it.
+
+    Also moved "⬇️⬆️ Export/Import รูปที่บันทึกไว้" (the whole custom-image
+    backup pair) OUT of the "ใส่รูปเอง" tab and into this tab's new "🗂️
+    สำรองรูปที่อัปโหลดไว้" section — it's a backup/restore operation, the
+    same category as map save/load, not an image-upload operation, so it
+    never belonged mixed in at the bottom of the per-type upload rows in
+    the first place. "ใส่รูปเอง" now contains only per-type image uploads,
+    nothing else. Every button's id/element and every existing JS event
+    listener is completely untouched — this was purely a markup
+    reorganization (move + wrap in `<details>`), zero logic changes.
+
+    Verified with Playwright (Chromium + WebKit): all 12 button/input ids
+    still resolve correctly in their new locations; confirmed
+    exportImagesBtn exists exactly once in the whole document (no
+    accidental duplicate left behind in "ใส่รูปเอง"); saveMapBtn,
+    exportBlockTemplateBtn, and the relocated exportImagesBtn all still
+    produce real downloads when clicked; screenshotted the reorganized tab
+    to confirm the accordion grouping renders as designed; zero console/
+    page errors in either engine.
+
+  v3.128 (2026-07-17) — Added per-type Export/Import for custom (cloned)
+    types, per "อยากให้แต่ละชนิดสามารถ export indexedDB ออกมาได้ พอ import
+    ใหม่จะได้ใส่อันเดิมได้" (want each type to be exportable individually,
+    so re-importing restores the same one) — asked first whether the
+    existing whole-database "⬇️⬆️ Export/Import รูปที่บันทึกไว้" (which
+    already bundles every image + every custom type together, since
+    v3.113) already covered this; พี่แยม confirmed no, specifically wanted
+    a lighter single-type export instead of always moving everything.
+
+    New "⬇️ Export ชนิดนี้ (.json)" button in every custom type's settings
+    card (next to "🗑️ ลบชนิดนี้") — exportCustomType(key) bundles that
+    one type's def (key/baseType/group/label/w/h/groundOffset) plus its own
+    front/back images (loaded fresh from IndexedDB, not just whatever's
+    currently in memory) into a single small .json file, reusing
+    imgStorageKey()'s exact "<kind>_<type>" key format so the file's shape
+    stays consistent with the whole-database export. New "⬆️ Import ชนิดที่
+    สร้างเอง (.json)" button reads that file back — validates the baseType
+    is still in CLONABLE_BASE_TYPES (in case the whitelist ever changes)
+    and blocks (with an alert) importing over an already-taken key, rather
+    than silently overwriting an existing type — then calls the same
+    registerCustomType/buildCustomPaletteItem/buildCustomSettingsCard
+    functions every other creation path already uses, so an imported type
+    is indistinguishable from one created by hand. Deliberately placed the
+    import button OUTSIDE the customTypesAcc accordion (which stays hidden
+    until at least one custom type already exists) so it still works from
+    a completely fresh install with zero custom types yet — otherwise
+    restoring the very FIRST type from a backup file would be impossible.
+
+    Verified with Playwright (Chromium + WebKit): created "รั้ว", exported
+    it, deleted it locally, re-imported the exact same file — it comes
+    back with the same key/label and its palette card restored; attempting
+    to import the same file a second time is correctly blocked (still
+    exactly 1 card, not a duplicate); re-ran the save-tab-reorg regression
+    check (closest neighboring change, v3.127) — unaffected; zero console/
+    page errors in either engine.
+
+  v3.129 (2026-07-17) — Added a footprint override for แม่แบบ (custom type)
+    clones — first request was "พี่อยากสร้างแม่แบบรั้วเตี้ยใหม่จ้า ก้อปปี้
+    ฟังก์ชั่นแม่แบบของกล่องมาอีกอันเลย แต่จะเป็นขนาดเล็กกว่า 1x1 มันจะเป็น
+    1x0.5" (a new "รั้วเตี้ย" low-fence template, cloned from box, but sized
+    smaller than 1x1 — 1x0.5). Two rounds of outline needed before landing
+    on the right interpretation: the first (height-scaled) reading was
+    corrected by พี่แยม to "footprint บนกระดานแคบลงครึ่ง ความสูงผนังเท่ากล่อง
+    เดิม" (the footprint narrows by half, wall height stays equal to box's
+    original) — confirmed via short-fence-footprint-mockup.html, plus a
+    screenshot of an actual in-game fence against the 0.5×0.5 grid
+    ("เมื่อพี่เปิด Grid 0.5 มันจะเป็นแบบนี้จ้า") answering Q1 (quadrant
+    footprint, like block) and a direct follow-up answering Q2 (52px wall
+    height — box's own, not BLOCK_HEIGHT's 32px standard shared by every
+    other small-footprint type).
+
+    This is the FIRST custom type ever allowed to differ from its baseType's
+    OBJECT_TYPES flags — every clone before this always inherited footprint
+    identically (registerCustomType's Object.assign spread). Scoped narrowly:
+    the "เพิ่มชนิดใหม่จากแม่แบบ" modal only offers a footprint (เต็มช่อง /
+    ควอดรันต์เล็ก) dropdown when baseType is 'box' specifically — the only
+    full-footprint clonable base whose no-image draw fallback (drawBox) is
+    prism-shaped and already had a clean scale hook to reuse (matching
+    drawBlock/drawTableSmall/drawGiftBox's own scale param to prismFaces);
+    tree/rock/barrel are hand-drawn shapes with no such hook, so they don't
+    get this option yet. Choice is only offered at creation time (disabled
+    after, since it affects already-placed objects).
+
+    Turned out almost the entire quadrant-footprint system (snap position,
+    stacking, guide/outline size, sprite max-width, hit-testing) is already
+    100% generic off OBJECT_TYPES[type].footprint via isSmallFootprint(type)
+    — setting footprint:'small' on the custom type's OBJECT_TYPES entry in
+    registerCustomType was enough to make ALL of that work with zero other
+    changes. Height already inherits unchanged too (VISUAL_HEIGHT[def.key] =
+    VISUAL_HEIGHT[def.baseType], pre-existing line) — box's own 52px, no
+    override logic needed there at all. The one genuine gap: the no-image
+    procedural fallback (drawBox) was hardcoded to always draw a full-tile
+    footprint regardless of OBJECT_TYPES.footprint, so it needed a new
+    optional `scale` param (default 1, unchanged for plain box) that
+    drawObject's switch now passes BLOCK_FOOTPRINT_SCALE for whenever
+    isSmallFootprint(objType) is true — boxH itself is untouched by this
+    param, so wall height keeps its normal 52px regardless of scale.
+
+    Verified with Playwright (Chromium + WebKit): footprint dropdown shows
+    for baseType 'box', hides for 'block'; created "shortFence" (footprint:
+    small); placed 4 independent instances into the 4 quadrants of one tile
+    and confirmed via exported map JSON all 4 landed with distinct subs
+    (top/right/bottom/left, not merged/rejected) — plain 'box' at the same
+    tile still correctly rejects a 2nd placement (full footprint unaffected).
+    Along the way, confirmed via a baseline test with plain 'block' that an
+    exact-quadrant-center click point is ambiguous with the tile-center-
+    adjacent neighbor's silhouette for ANY small-footprint type (findElevated
+    BaseAt's polygon containment) — pre-existing engine behavior, not a
+    regression from this change, and not something a real click near a
+    quadrant's own outer edge would ever hit. Screenshotted a shortFence
+    next to a plain block and a plain box side-by-side: footprint reads
+    visibly narrower than the box (matching block's), while wall height
+    matches the box exactly (taller than the block beside it), confirming
+    the design intent. Zero console/page errors in either engine.
+
+  v3.130 (2026-07-18) — Promoted "รั้วเตี้ย" from v3.129's on-demand custom
+    (cloned) type into a genuine built-in Foundation type, per พี่แยม's
+    "อยากให้สร้างเป็นแม่แบบของ Foundation เลยจ้า" (want it shipped with the
+    game itself) — sent an outline (short-fence-builtin-mockup.html) first
+    since this is a real behavior change (a type that used to require
+    manually clicking "+ เพิ่มชนิดใหม่" once per browser now just appears on
+    a fresh page load, in every browser, with zero setup), confirmed "ok".
+
+    Added OBJECT_TYPES.shortFence (footprint:'small', same quadrant
+    snapping as block) with its own SHORT_FENCE_HEIGHT constant pinned to
+    box's own wall height (26*RENDER_SCALE = 52px) — deliberately NOT
+    BLOCK_HEIGHT, same distinction v3.129 already established. Added to
+    FOUNDATION_TYPES, a static palette item (🪵 emoji, right after บล็อก)
+    and a static "ใส่รูปเอง" image-upload row (right after block's own),
+    matching every other built-in type's pattern exactly — no new JS wiring
+    needed for either, since the page-load loops that wire up .pal-item and
+    .choose-img-btn/.clear-img-btn elements already cover any element
+    present in the static HTML. drawObject's switch gained its own
+    'shortFence' case (drawBox(col,row,BLOCK_FOOTPRINT_SCALE) — always
+    quadrant-scaled, no isSmall branch needed since this type is never
+    anything else). Proactively pinned getVisualHeight('shortFence') to
+    SHORT_FENCE_HEIGHT the same way tableSmall/giftBox already do, to avoid
+    ever hitting the roof-double-counting bug v3.122 found and fixed for
+    custom-type clones (same risk shape: small-footprint but visually tall).
+
+    The v3.129 "+ เพิ่มชนิดใหม่" custom-type system (including its box-only
+    footprint-override dropdown) is untouched and still fully available for
+    future one-off types — "รั้วเตี้ย" specifically just no longer needs to
+    go through it. isTypeKeyTaken() already blocks creating a NEW custom
+    type keyed 'shortFence' now that it's a real OBJECT_TYPES entry, with
+    no extra code needed (existing OBJECT_TYPES[key] check in that function
+    covers it automatically).
+
+    Verified with Playwright (Chromium + WebKit): shortFence palette item
+    and image-upload row both present on a completely fresh page load, no
+    creation step; attempting to create a custom type with the
+    now-reserved key 'shortFence' is correctly blocked (modal stays open);
+    placed 4 shortFence instances into the 4 independent quadrants of one
+    tile straight from the palette (no setup); re-ran the v3.129 custom-
+    type footprint-override regression (renamed its test key to avoid the
+    new reservation) and the standalone per-type export/import regression —
+    both still pass unaffected. Zero console/page errors in either engine.
+
+  v3.131 (2026-07-18) — Reverted รั้วเตี้ย's wall height from box's own 52px
+    back to BLOCK_HEIGHT's 32px standard, per "รั้วเตี้ยความสูงให้เหลือ 1
+    ช่อง" — after seeing it placed next to a plain block (v3.130's own
+    verification screenshot), พี่แยม decided 52px read as visibly too tall/
+    thin for its narrow quadrant footprint. "1 ช่อง" was ambiguous between a
+    few readings (BLOCK_HEIGHT=32px matching every other small-footprint
+    type, vs TILE_H=64px as the game's literal "1 Y unit" before footprint
+    scaling) — asked directly via AskUserQuestion, confirmed 32px (matches
+    block/tableSmall/giftBox).
+
+    One-line change: SHORT_FENCE_HEIGHT now reads BLOCK_HEIGHT instead of
+    26*RENDER_SCALE. Nothing else needed touching — VISUAL_HEIGHT.shortFence,
+    getVisualHeight's pin, and drawObject's draw-fallback case all already
+    referenced the SHORT_FENCE_HEIGHT constant rather than a hardcoded
+    number, so they picked up the new value automatically. รั้วเตี้ย now
+    reads exactly as tall as block on screen — the only remaining visual
+    difference between them is silhouette shape (drawBox reused with a
+    scale param vs drawBlock's own prism), not height.
+
+    Verified with Playwright (Chromium + WebKit): re-ran the v3.130
+    built-in regression suite unchanged — still passes (palette/img-row
+    present on fresh load, 4-quadrant placement, reserved-key guard).
+    Screenshotted block/shortFence/box side by side: shortFence and block
+    now sit at identical height, box still visibly taller than both. Zero
+    console/page errors in either engine.
+
+  v3.132 (2026-07-18) — Removed "รั้วเตี้ย" (shortFence) entirely, per
+    พี่แยม's "เอางี้ ลบรั้วเตี้ยออกก่อน ลบเลยเดี๊ยวพี่พรอมใหม่" (let's do
+    this, remove รั้วเตี้ย first — go ahead and delete it, I'll prompt again
+    with a new approach) — sent right after a screenshot of the shape's
+    actual in-game hover-outline, suggesting the v3.130/v3.131 design wasn't
+    quite what พี่แยม had in mind after all and a fresh approach is coming.
+    Explicit, unambiguous instruction to delete now rather than re-outline
+    first, so this was a straight removal with no new confirmation step.
+
+    Reverted every OBJECT_TYPES.shortFence / FOUNDATION_TYPES / VISUAL_HEIGHT
+    / SHORT_FENCE_HEIGHT / getVisualHeight pin / drawObject switch-case /
+    palette-item / "ใส่รูปเอง" img-row addition from v3.130–v3.131 — the
+    game's built-in type roster is back to exactly what it was before v3.130
+    (box/wall/tree/rock/barrel/block/wallbox/wallbox5, no more, no less).
+    Left the v3.129 custom-type system itself untouched (the "+ เพิ่มชนิด
+    ใหม่" modal, its box-only footprint-override dropdown, CLONABLE_BASE_
+    TYPES, FOOTPRINT_OVERRIDE_BASE_TYPES) — that's general infrastructure
+    unrelated to รั้วเตี้ย specifically, and พี่แยม only asked to remove
+    รั้วเตี้ย itself, not the mechanism it was built from.
+
+    Verified with Playwright (Chromium + WebKit): shortFence's palette item
+    and "ใส่รูปเอง" img-row are both gone on a fresh page load; the key
+    "shortFence" is free again — creating a NEW custom type with that exact
+    ID now succeeds (was blocked as taken in v3.130/v3.131), confirming the
+    built-in reservation is fully lifted. Zero console/page errors in
+    either engine.
+
+  v3.133 (2026-07-18) — Re-created "รั้วเตี้ย" (shortFence) as a built-in
+    Foundation type again, this time referenced from บล็อก (Block) instead
+    of กล่อง (box), per "สร้างรั้วเตี๊ยขึ้นมาใหม่โดยอ้างอิงจาก บล็อก1x1x1".
+    Asked directly whether "referencing Block" meant footprint AND height
+    both matching Block exactly (not just footprint like the box-referenced
+    v3.130 attempt) — พี่แยม confirmed yes, exactly like Block.
+
+    Added back OBJECT_TYPES.shortFence (footprint:'small', matching Block),
+    FOUNDATION_TYPES entry, and VISUAL_HEIGHT.shortFence — this time reusing
+    BLOCK_HEIGHT directly instead of a separate constant, since there's no
+    longer any height difference from Block to track. New drawShortFence()
+    function is drawBlock's exact call shape (prismFaces with BLOCK_HEIGHT +
+    BLOCK_FOOTPRINT_SCALE), just re-colored to a weathered tan/wood palette
+    (#c9a468/#8a6a3f/#6b4f2e) instead of Block's gray, so it reads as
+    visually distinct in the palette before any image is uploaded — same
+    "identical geometry, different palette" precedent tableSmall already
+    established relative to Block. Deliberately did NOT add a getVisualHeight
+    pin this time (unlike v3.130's box-referenced version) — Block itself
+    has never needed one despite supporting custom image uploads, so a type
+    that's geometrically identical to Block shouldn't need one either;
+    adding one anyway would be an unrequested/unproven precaution, not a
+    fix for an actual observed problem. Palette item (🪵, after Block) and
+    "ใส่รูปเอง" image-upload row (after Block's own) added the same way as
+    v3.130 — no new JS wiring needed, the page-load loops already cover any
+    .pal-item/.img-row element present in the static HTML.
+
+    Verified with Playwright (Chromium + WebKit): re-ran the same built-in
+    regression suite from v3.130 unchanged — palette/img-row present on
+    fresh load, 4 independent quadrant placements succeed, reserved-key
+    guard blocks a duplicate custom type. Screenshotted block/shortFence/box
+    side by side: shortFence and block now sit at identical footprint AND
+    height, differing only in color; box still visibly taller than both.
+    Zero console/page errors in either engine.
+
+  v3.134 (2026-07-18) — รั้วเตี้ยเท่านั้น (not any other small-footprint
+    type) now snaps to a finer 16-cell grid per tile (X=Y=0.25) instead of
+    the usual 4-quadrant one (0.5) — per พี่แยม's confirmed (X,Y,Z) =
+    (0.25, 0.25, 0.5) plus "จะมีแต่รั้วเตี้ยที่สามารถวางได้ 0.25 แต่ตัวอื่นๆ
+    ให้วาง 4 ตำแหน่ง 0.5 เหมือนเดิม" (only รั้วเตี้ย gets 0.25, everything
+    else keeps the existing 4-position 0.5 system) — sent a scope/approach
+    outline first (short-fence-16grid-scope-mockup.html) since this touches
+    the shared small-footprint placement machinery, confirmed "โอเคจ้า
+    แก้เลย" before starting.
+
+    Root design: kept footprint:'small' on shortFence unchanged (so it still
+    rides every generic small-footprint code path for free — collision,
+    stacking, drag/move, save/load) and instead gave it its OWN "sub" key
+    SHAPE ("qx_qy", qx/qy each 0-3) that's structurally impossible to
+    collide with the existing named-string quadrant keys ('top'/'right'/
+    'bottom'/'left'), so the two systems can never cross-contaminate the
+    same objects.Map. New QUADRANT16_KEYS/QUADRANT16_OFFSETS (offset formula
+    verified to reproduce QUADRANT_OFFSETS exactly at divisions=2, just
+    generalized to 4) plus getTileSubCell16() (mirrors getTileQuadrant's own
+    screen-offset math, NOT screenToGrid — an intermediate version used
+    screenToGrid assuming a tile spans [col,col+1), but this game's tiles
+    are actually CENTERED on their integer col/row, spanning [col-0.5,
+    col+0.5); caught via a failing regression test — all 16 test placements
+    landed in cell "0_0" instead of 16 distinct cells — before this ever
+    reached พี่แยม).
+
+    Three shared functions got a type-aware branch: getQuadrantOffset(sub)
+    now checks both QUADRANT_OFFSETS and QUADRANT16_OFFSETS (key SHAPE alone
+    disambiguates, no type parameter needed — fixes ~10 call sites for
+    free: drawObject, getSilhouettePolygon, table-topper rendering, drag-
+    preview, all unchanged), getGuideSize(type) and getObjectSpriteMaxW(type)
+    both special-case 'shortFence' to TILE_W/4 (this is also what shrinks
+    its hit-test/hover-outline to match — a forced consequence of the
+    16-cell grid, not an independent choice: at the old 0.5 hit-test size,
+    16 pieces could never actually sit adjacent without invisible dead-space
+    rejecting the neighbor). anyQuadrantOccupied(c,r) now also scans
+    QUADRANT16_KEYS, so a full-footprint object (box, tree, ...) is still
+    correctly blocked once any of the 16 cells has something in it.
+    resolveCell(e,type) — the single choke point BOTH fresh drops and
+    existing-object repositioning already funnel through — picks
+    getTileSubCell16 vs getTileQuadrant based on `type === 'shortFence'`.
+
+    Known accepted limitation: wallboxFreeQuadrants()'s `free.includes(sub)`
+    check (shared by isPlacementValid/isMoveValid for the wallbox-sharing-a-
+    tile case) only ever contains named quadrant strings, so it can never
+    match a "qx_qy" sub — a รั้วเตี้ย can't currently share a tile with a
+    wallbox even in genuinely free space. Fails closed (over-conservative
+    rejection, never a false positive/overlap), and out of scope for this
+    request — noted for later if it turns out to matter.
+
+    Bonus: discovered the existing "🔳 เส้น Grid 0.5×0.5" (micro sub-grid,
+    v3.112) toggle already draws EXACTLY this same 16-cell geometry as a
+    reference overlay (verified: its nested getQuadrantOffset() math
+    produces the identical position as QUADRANT16_OFFSETS at qx=0,qy=0) —
+    no new grid-drawing code needed at all; พี่แยม can already toggle it on
+    to see รั้วเตี้ย's snap positions precisely, and this is likely exactly
+    what the original "เมื่อพี่เปิด Grid 0.5 มันจะเป็นแบบนี้จ้า" reference
+    screenshot (much earlier in this whole รั้วเตี้ย saga) was showing.
+
+    Verified with Playwright (Chromium + WebKit): placed 16 shortFence
+    pieces, one per sub-cell of a single tile — all 16 land, all 16 sub keys
+    distinct (post-fix; pre-fix regression caught the screenToGrid bug
+    above). Placed 4 blocks in a separate tile via the OLD quadrant system —
+    still exactly 4, still named-string subs, completely unaffected.
+    Screenshotted the filled 16-cell tile: pieces tile together edge-to-edge
+    with zero visible gaps; attempted to drop a plain box on top of the
+    fully-filled tile — correctly rejected (anyQuadrantOccupied). Zero
+    console/page errors in either engine.
+
+  v3.135 (2026-07-18) — Renamed "รั้วเตี้ย" → "กล่อง (0.25x0.25x0.5)", per
+    "ช่วยตั้งชื่อ รั้วเตี้ยเป็น กล่อง + ตามด้วยขนาด (X,Y,Z) ที" — matches
+    the existing "ชื่อ (XxYxZ)" convention already used by every other
+    dimension-labeled built-in in this palette (e.g. "บล็อก (1x1x1)",
+    "กำแพงกล่อง (1x2x6)"), using the actual confirmed (X,Y,Z)=(0.25,0.25,0.5)
+    from v3.134. Pure label/display-text change — internal key (shortFence),
+    footprint/height/draw behavior, and the 16-cell snap grid are completely
+    untouched; existing saved maps referencing the "shortFence" key are
+    unaffected since the key itself never changed, only its displayed name.
+    Updated in the 3 places the label actually renders (palette item,
+    "ใส่รูปเอง" tab's img-row-label, OBJECT_TYPES.shortFence.label itself)
+    — left historical changelog/comment mentions of "รั้วเตี้ย" as-is, since
+    those describe what was true at the time, not the current name.
+
+    Verified with Playwright (Chromium + WebKit): both the palette label and
+    the ใส่รูปเอง img-row label now read "กล่อง (0.25x0.25x0.5)" exactly.
+    Zero console/page errors in either engine.
+
+  v3.136 (2026-07-18) — Added "กล่อง (0.5x0.25x0.5)" as a new built-in
+    Foundation type — พี่แยม noticed placing 2 of "กล่อง (0.25x0.25x0.5)"
+    side by side gave exactly this size, asked "ตอนนี้พี่อยากได้กล่องขนาด
+    (X, Y, Z) = (0.5, 0.25, 0.5) เพิ่มเป็น แม่แบบ Found เพิ่มจ้า". Sent an
+    outline first (box-domino-mockup.html) flagging this as the first
+    non-square (X≠Y) small-footprint shape in the game, with 2 open
+    questions — พี่แยม confirmed both proposed defaults with "โอเค": (1) it
+    spans 2 adjacent cells of the existing 16-cell grid, 12 possible anchor
+    positions per tile (3 columns × 4 rows, clamped so its span never runs
+    off the edge); (2) right-click rotates it 90° between horizontal
+    (X=0.5,Y=0.25) and vertical (X=0.25,Y=0.5), reusing the same flip
+    concept wallbox already has.
+
+    New DOUBLE_BOX_TYPE ('boxDouble') stores at a single Map entry keyed by
+    its own 2-cell-span ANCHOR in "d{qx}_{qy}" format (structurally distinct
+    from both QUADRANT_KEYS' named strings and the plain "qx_qy" 16-cell
+    keys — can never collide with either) — orientation lives in state.flip
+    (not the key itself), so right-click can rotate it in place exactly
+    like every other object's flip. Extended prismFaces() to take an
+    optional independent scaleY (defaults to scaleX — every existing call
+    site keeps working unchanged) since this is the first shape needing
+    asymmetric ground-plane scaling. New helpers: doubleBoxCells (which 2
+    of the 16 cells a given anchor+orientation covers), isDoubleBoxAnchorInBounds,
+    scanDoubleBoxOccupiedCells (linear scan over the 16 possible anchors —
+    same "just scan it" precedent findElevatedBaseAt/resolveObjectKeyAt
+    already use), isDoubleBoxSpanFree (the actual placement/move/flip
+    validity check), getDoubleBoxOffset (screen offset = midpoint of its 2
+    covered cells' own QUADRANT16_OFFSETS).
+
+    Three shared functions (getObjectOffset, getGuideSize, resolveCell's
+    small-footprint branch) got a DOUBLE_BOX_TYPE-aware path alongside their
+    existing shortFence one; isPlacementValid/isMoveValid/anyQuadrantOccupied
+    each got a matching branch so a double-box, a shortFence, and a plain
+    full-footprint object (box, tree, ...) all correctly block each other
+    wherever their footprints would actually overlap. The right-click
+    contextmenu handler validates a double-box's flip BEFORE committing it
+    (every other type's flip is purely visual and never needs this) —
+    rotating in place changes which 2 cells it covers, so an unchecked flip
+    could silently create a new overlap; an invalid flip is now silently
+    rejected (state unchanged), same "invalid = no-op" pattern every other
+    rejected placement/move already uses. findElevatedBaseAt explicitly
+    excludes double-box objects from ever being offered as a stacking base
+    (its own "d..." key isn't a single slot the generic stacking math
+    understands) and resolveCell skips elevated-base targeting entirely for
+    a double-box being placed, for the same reason.
+
+    Verified with Playwright (Chromium + WebKit): placed 2 non-overlapping
+    double-boxes on one tile, a 3rd overlapping attempt correctly rejected;
+    a shortFence placed on a cell already covered by a double-box is
+    rejected, on a free cell it succeeds; right-click flip succeeds when
+    the new orientation's 2nd cell is free, is correctly rejected (no-op)
+    when a shortFence already occupies it, and succeeds again once that
+    blocker is deleted. Screenshotted a horizontal and a (right-click-
+    flipped) vertical double-box side by side with a plain block for scale
+    — both orientations render correctly, rotated 90° from each other, at
+    the expected size. Zero console/page errors in either engine.
+
+  v3.137 (2026-07-18) — Removed "กล่อง (0.5x0.25x0.5)" (boxDouble) entirely,
+    one version after adding it. พี่แยม sent a screenshot of it in-game and
+    said "ไม่ใช่จ้า แก้ขนาดเป็น 0.25x0.25x0.5 วางข้างๆกันอะ แบบในรูป" (that's
+    not it — fix the size to 0.25x0.25x0.5, placed beside each other, like
+    in the picture) — genuinely ambiguous whether this meant "resize the
+    new type" or "don't need the new type at all," since visually a single
+    0.5-wide double-box and two adjacent 0.25 boxes look identical on
+    screen. Asked directly rather than guess a second time on the same
+    feature: พี่แยม confirmed the latter — delete boxDouble outright, the
+    combined look was always achievable with 2 independent instances of
+    "กล่อง (0.25x0.25x0.5)" (unchanged since v3.134/v3.135), each movable/
+    deletable/rotatable on its own, which is what was actually wanted all
+    along. v3.136 itself was the misread, not a design change needed now.
+
+    Reverted every v3.136 addition back out in full: OBJECT_TYPES.boxDouble/
+    FOUNDATION_TYPES/VISUAL_HEIGHT entries, the whole DOUBLE_BOX_TYPE helper
+    block (parseDoubleBoxSub, isDoubleBoxAnchorInBounds, doubleBoxCells,
+    getDoubleBoxOffset, scanDoubleBoxOccupiedCells, isDoubleBoxSpanFree,
+    getDoubleBoxAnchor, getObjectOffset), drawBoxDouble and its switch-case,
+    prismFaces' scaleY parameter (reverted to its original single-scale
+    signature — nothing needs asymmetric scaling anymore), every
+    DOUBLE_BOX_TYPE-aware branch added to getObjectSpriteMaxW/getGuideSize/
+    getSilhouettePolygon/drawObject/dragPreview/isPlacementValid/
+    isMoveValid/anyQuadrantOccupied/findElevatedBaseAt/resolveCell/the
+    right-click contextmenu handler, isMoveValid's flip parameter (and its
+    3 call sites), and the palette item + "ใส่รูปเอง" img-row HTML. The
+    game's small-footprint placement system is back to exactly what v3.135
+    left it at — shortFence's own 16-cell grid (v3.134) is completely
+    untouched throughout, since that's the actual mechanism พี่แยม wants
+    to keep using directly (2 independent placements) instead of boxDouble.
+
+    Verified with Playwright (Chromium + WebKit): boxDouble's palette item
+    and "ใส่รูปเอง" img-row are both gone on a fresh page load; re-ran the
+    v3.134/v3.135 shortFence regression suites unchanged — still pass
+    (16-cell placement, reload persistence, reserved-key guard). Zero
+    console/page errors in either engine.
+
+  v3.138 (2026-07-18) — Added a general "เครื่องมือสร้างกล่องขนาดเอง"
+    (box-maker) tool: type X/Y/Z into the web page, get a box that exact
+    size, no code needed per size — พี่แยม's "พี่อยากได้เรื่องมือสร้างกล่อง
+    จ้า ให้พี่กล่องขนาด x y z ในเว็บ และน้องก็สร้างตามขนาดที่พี่บอกในเว็บ
+    เริ่มจาก 0.25" — direct response to the v3.136→v3.137 lesson: a one-off
+    hardcoded shape per size doesn't scale, so this generalizes the whole
+    small-footprint occupancy system instead. Sent an outline first
+    (box-maker-tool-mockup.html) with 3 open questions; พี่แยม confirmed
+    all 3 proposed defaults: X/Y capped at 1.0 (within one tile only for
+    v1), Z free-form (not grid-locked), no rotation support.
+
+    New "+ สร้างกล่องขนาดเอง" button (Foundation palette) opens a dedicated
+    modal — separate from the existing "+ เพิ่มชนิดใหม่" clone modal, since
+    this defines a shape from scratch rather than copying a template's
+    exact behavior. X/Y snap to the nearest 0.25 step and clamp to
+    0.25-1.0, converted to a 1-4 cell-count span (spanX/spanY) on the same
+    4x4/16-cell grid shortFence (v3.134) already established; Z clamps to
+    a sane 0.1-3.0 range and converts to px via the same "1.0 = one full
+    BLOCK_UNIT_HEIGHT" convention the XYZ ruler outline used earlier.
+    Reuses the existing customTypes registry end to end (baseType:'box',
+    footprint:'small') — image upload, palette card, settings card,
+    export/import-by-type, reload persistence all come for free through
+    the same machinery every other custom type already has, since none of
+    that cares about spanX/spanY at all.
+
+    The actual generalization: every v3.136 DOUBLE_BOX_TYPE-specific
+    function got rewritten to read spanX/spanY off customTypes[type]
+    instead of a hardcoded 2×1 shape — isSizedBoxType, parseSizedBoxSub,
+    sizedBoxCells, getSizedBoxOffset, scanSizedBoxOccupiedCells (linear
+    scan over the 16 possible anchors, same "just scan it" precedent
+    findElevatedBaseAt/resolveObjectKeyAt use), isSizedBoxSpanFree,
+    getSizedBoxAnchor — same "b{qx}_{qy}" anchor-key shape idea as
+    v3.136's "d..." keys (a 3rd shape, still collision-free against the
+    other two). getObjectOffset/getGuideSize/getObjectSpriteMaxW/
+    isPlacementValid/isMoveValid/anyQuadrantOccupied/findElevatedBaseAt/
+    resolveCell/drawObject's no-image fallback each got a matching
+    isSizedBoxType(type) branch. Re-added prismFaces' independent scaleY
+    parameter (reverted in v3.137, needed again here — genuinely general
+    this time, driven by each type's own def instead of one hardcoded
+    shape) and a new drawSizedBox(col,row,spanX,spanY,heightPx) reusing
+    box's own orange/brown palette. No rotation support this round (per
+    the confirmed Q3), so no contextmenu changes were needed at all.
+
+    Verified with Playwright (Chromium + WebKit): created 3 boxes
+    (0.25×0.25×0.25, 0.5×0.25×0.4, 1×1×1) — all appear in the palette
+    immediately. Placed the 1-cell and 2-cell boxes non-overlapping on one
+    tile; a 3rd overlapping attempt correctly rejected; shortFence on a
+    cell covered by the 2-cell box is rejected, on a free cell it
+    succeeds; the 4-cell (full-tile) box correctly blocks a plain box from
+    being placed on the same tile afterward. Reload persistence and
+    invalid-ID validation both confirmed. Screenshotted all 3 sizes next
+    to a plain block — proportions scale correctly relative to each other.
+    Zero console/page errors in either engine.
+
+  v3.139 (2026-07-18) — Fixed a geometry bug in the box-maker (v3.138): a
+    box whose X≠Y (e.g. 0.5×0.25×0.5) rendered as a squashed flat "cube"
+    instead of the long domino box slanted along the iso grid that พี่แยม
+    actually wanted (they sent the correct reference: an elongated box with
+    a center seam). Root cause: drawSizedBox drew the box via
+    prismFaces(scaleX, scaleY), which stretches a SCREEN-axis diamond
+    independently on x and y. That's only correct when X=Y (a uniform scale
+    stays a proper iso diamond); for X≠Y it produces a screen-stretched
+    diamond that is NOT the isometric projection of a non-square footprint —
+    the two only coincide for squares. So the shape, the yellow hover
+    outline/hit-test, AND the drag-drop guide were all wrong for any X≠Y
+    box (this is also the "กรอบไฮไลต์ไม่พอดีกล่อง" report from v3.138).
+
+    Fix: added sizedBoxCorners(spanX,spanY) — the TRUE iso projection of the
+    footprint's 4 grid corners (each cell = 0.25 tile) as screen offsets
+    from the footprint center (which getSizedBoxOffset already computes as
+    the average of the covered cells' centers; verified the corners are
+    consistent with that center). Rewrote drawSizedBox to draw a
+    parallelogram prism from those corners (two visible side faces + top),
+    keeping box's orange/brown palette, plus faint internal seams along the
+    0.25-cell quadrant boundaries so a multi-cell box reads as its cells
+    (matches the approved outline's seam). getSilhouettePolygon and the
+    drop-preview guide each got an isSizedBoxType branch tracing the same
+    corners, so outline/hit-test/guide now match the rendered box exactly.
+    prismFaces' scaleX/scaleY path is untouched and still used by every
+    non-sized-box object (block, box, wall, table, ...), so all of those
+    render byte-for-byte identically. Square (X=Y) SIZED boxes now also go
+    through the new drawSizedBox path — their overall shape/proportions are
+    unchanged (a uniform iso diamond, exactly as before), but a multi-cell
+    one now shows the same faint quadrant seams (a 1-cell box has none), an
+    intentional consistency with the elongated case.
+
+    Sent an SVG outline first (sized_box_fix_outline.html, before/after +
+    4-step plan); พี่แยม confirmed ("โอเค") before any code changed.
+    Verified with Playwright (Chromium + WebKit): 0.5×0.25, 0.25×0.5, and
+    1×0.25 boxes now render as correctly-oriented domino shapes; X=Y boxes
+    and a plain block are pixel-identical to before; yellow outline traces
+    the box tightly. Zero console/page errors in either engine.
 -->
 
 
@@ -3788,7 +4323,7 @@
 <div>
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.126: แก้ label ปุ่ม Export เทมเพลตบล็อกให้ตรงกับขนาดไฟล์จริง — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.126</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.139: แก้บั๊กกล่อง box-maker X≠Y ให้เป็นทรงยาวรีเอียงตามไอโซ (ไม่ใช่ลูกบาศก์แบน) — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.139</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -3842,9 +4377,11 @@
             <div class="pal-item" data-kind="object" data-type="rock" draggable="true"><span class="pal-emoji">🪨</span><span class="pal-label">ก้อนหิน</span></div>
             <div class="pal-item" data-kind="object" data-type="barrel" draggable="true"><span class="pal-emoji">🛢️</span><span class="pal-label">ถัง</span></div>
             <div class="pal-item" data-kind="object" data-type="block" draggable="true"><span class="pal-emoji">🧊</span><span class="pal-label">บล็อก (1x1x1)</span></div>
+            <div class="pal-item" data-kind="object" data-type="shortFence" draggable="true"><span class="pal-emoji">🪵</span><span class="pal-label">กล่อง (0.25x0.25x0.5)</span></div>
             <div class="pal-item" data-kind="object" data-type="wallbox" draggable="true"><span class="pal-emoji">🧱</span><span class="pal-label">กำแพงกล่อง (1x2x6)</span></div>
             <div class="pal-item" data-kind="object" data-type="wallbox5" draggable="true"><span class="pal-emoji">🧱</span><span class="pal-label">กำแพงกล่อง (1x2x5)</span></div>
             <div class="pal-item add-type-item" id="addFoundationTypeBtn" data-add-group="foundation">+ เพิ่มชนิดใหม่จากแม่แบบ</div>
+            <div class="pal-item add-type-item" id="addSizedBoxBtn">+ สร้างกล่องขนาดเอง</div>
           </div>
         </div>
 
@@ -3949,11 +4486,8 @@
 
       <div class="tab-panel" id="tab-images" style="display:none;">
         <p class="img-tab-hint">อัปโหลดรูปของตัวเองแทนภาพวาดแต่ละชนิด กดค้าง/คลิกขวาที่รูปตัวอย่างเพื่อล้างรูป</p>
-        <p class="img-tab-hint">รูปที่อัปโหลดจำไว้อัตโนมัติในเครื่องนี้อยู่แล้ว (IndexedDB) — ปุ่มด้านล่างไว้สำรอง/ย้ายรูปทั้งชุดไปเครื่อง/เบราว์เซอร์อื่น</p>
+        <p class="img-tab-hint">รูปที่อัปโหลดจำไว้อัตโนมัติในเครื่องนี้อยู่แล้ว (IndexedDB) — ปุ่มสำรอง/ย้ายรูปทั้งชุดย้ายไปอยู่ที่แท็บ "บันทึก" แล้ว (หมวด "🗂️ สำรองรูปที่อัปโหลดไว้")</p>
         <p class="img-tab-hint">โต๊ะ / โต๊ะเล็ก / แจกัน / กล่องของขวัญ ย้ายไปรวมกับการตั้งค่าขนาด+Offset ที่แท็บ "ตั้งค่า" แล้ว (รูป+ขนาดของแต่ละชิ้นอยู่ในที่เดียวกัน)</p>
-        <button id="exportImagesBtn">⬇️ Export รูปที่บันทึกไว้ (.json)</button>
-        <button id="importImagesBtn">⬆️ Import รูปที่บันทึกไว้ (.json)</button>
-        <input type="file" id="importImagesInput" accept=".json,application/json" style="display:none">
         <div class="divider"></div>
 
         <div class="cat">
@@ -4004,6 +4538,14 @@
             <div class="img-row-actions">
               <button class="choose-img-btn" data-kind="object" data-type="block">เลือกรูป</button>
               <button class="clear-img-btn" data-kind="object" data-type="block">ล้าง</button>
+            </div>
+          </div>
+          <div class="img-row" data-kind="object" data-type="shortFence">
+            <div class="img-thumb" id="thumb-object-shortFence"><span class="pal-emoji">🪵</span></div>
+            <div class="img-row-label">กล่อง (0.25x0.25x0.5)</div>
+            <div class="img-row-actions">
+              <button class="choose-img-btn" data-kind="object" data-type="shortFence">เลือกรูป</button>
+              <button class="clear-img-btn" data-kind="object" data-type="shortFence">ล้าง</button>
             </div>
           </div>
         </div>
@@ -4444,6 +4986,11 @@
             <button id="applyMapSizeBtn">ปรับขนาดแผนที่</button>
           </div>
         </details>
+        <!-- v3.128: อยู่นอก customTypesAcc (ซึ่งซ่อนไว้จนกว่าจะมีชนิดที่สร้าง
+             เองอย่างน้อย 1 ชนิด) ตั้งใจ — ปุ่ม Import ต้องใช้ได้แม้ยังไม่มี
+             ชนิดไหนเลย (กรณีกู้คืน/ย้ายเครื่องที่ยังไม่เคยสร้างอะไรมาก่อน) -->
+        <button id="importCustomTypeBtn" title="นำเข้าไฟล์ชนิดที่สร้างเองรายตัวเดียว (จากปุ่ม Export ชนิดนี้ ในการ์ดตั้งค่าของแต่ละชนิด)">⬆️ Import ชนิดที่สร้างเอง (.json)</button>
+        <input type="file" id="importCustomTypeInput" accept=".json,application/json" style="display:none">
         <details class="acc" id="customTypesAcc" style="display:none;">
           <summary title="ชนิดที่พี่แยมสร้างเองจากแม่แบบ (ปุ่ม + เพิ่มชนิดใหม่จากแม่แบบ ในแท็บวางวัตถุ)">🧩 ชนิดที่สร้างเอง (Custom)</summary>
           <div class="acc-body" id="customTypesAccBody"></div>
@@ -4451,26 +4998,57 @@
       </div>
 
       <div class="tab-panel" id="tab-save" style="display:none;">
-        <p class="section-label">📐 Export กริดอ้างอิง (สำหรับวาดรูป)</p>
-        <div class="field-row">
-          <div class="field"><label for="gridExportWidthInput">กว้าง (px)</label><input type="number" id="gridExportWidthInput" min="1" max="8192" step="1" value="512"></div>
-          <div class="field"><label for="gridExportHeightInput">สูง (px)</label><input type="number" id="gridExportHeightInput" min="1" max="8192" step="1" value="512"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label for="gridExportSpacingInput">ระยะห่างเส้น (px)</label><input type="number" id="gridExportSpacingInput" min="1" max="2048" step="1" value="64"></div>
-        </div>
-        <button id="exportGridBtn">📐 Export กริด PNG</button>
-        <button id="exportIsoGridBtn" title="Export เฉพาะเส้น Grid ที่เปิด (ติ๊ก) อยู่ตอนนี้ในแท็บวางวัตถุ — 🔲/🔳/🔳/📏">🔷 Export กริด Isometric (ตามเส้น Grid ที่เปิดอยู่)</button>
-        <button id="exportBlockTemplateBtn" title="ไฟล์ PNG 256×256 (ความละเอียด 4 เท่าของขนาดจริง 64×64) พื้นหลังโปร่งใส มีเส้นขอบเขตทรงลูกบาศก์จริงของบล็อก (1x1x1) ไว้ทาบวาดรูปให้สัดส่วนตรง">🧊 Export เทมเพลตบล็อก (256×256)</button>
-        <div class="divider"></div>
-        <p class="section-label">บันทึก / นำเข้า</p>
-        <button id="saveImageCleanBtn">🖼️ บันทึกรูปภาพ (จัดกึ่งกลาง)</button>
-        <button id="saveImageCurrentBtn">🖼️ บันทึกรูปภาพ (มุมมองตอนนี้)</button>
-        <button id="saveMapBtn">💾 บันทึกแผนที่ (.json)</button>
-        <button id="importMapBtn">📂 นำเข้าแผนที่ (.json)</button>
-        <input type="file" id="importMapInput" accept=".json,application/json" style="display:none">
-        <div class="divider"></div>
-        <button id="clearBtn">ล้างแผนที่ทั้งหมด</button>
+        <!-- v3.127: จัดกลุ่มปุ่ม Export/บันทึกใหม่ตามหน้าที่จริง (ก่อนหน้านี้
+             เรียงเป็นปุ่มยาว 8 ปุ่มปนกันหมด) — แผนที่/บันทึกภาพหน้าจอ เปิด
+             ค้างไว้เพราะใช้บ่อยสุด, อ้างอิงสำหรับวาดรูป/สำรองรูป พับเก็บ
+             เพราะใช้เป็นครั้งคราว, ล้างข้อมูล แยกไว้ท้ายสุดพับเก็บ+เตือนสีแดง
+             กันมือลั่น — ปุ่ม/ไอดี/event listener เดิมทุกตัวไม่เปลี่ยนเลย
+             แค่ย้ายตำแหน่ง + ห่อด้วย accordion (.acc ที่มีอยู่แล้วทั้งไฟล์)
+             เท่านั้น ไม่ต้องเพิ่ม CSS ใหม่ -->
+        <details class="acc" open>
+          <summary>🗺️ แผนที่</summary>
+          <div class="acc-body">
+            <button id="saveMapBtn">💾 บันทึกแผนที่ (.json)</button>
+            <button id="importMapBtn">📂 นำเข้าแผนที่ (.json)</button>
+            <input type="file" id="importMapInput" accept=".json,application/json" style="display:none">
+          </div>
+        </details>
+        <details class="acc" open>
+          <summary>🖼️ บันทึกภาพหน้าจอ</summary>
+          <div class="acc-body">
+            <button id="saveImageCleanBtn">🖼️ บันทึกรูปภาพ (จัดกึ่งกลาง)</button>
+            <button id="saveImageCurrentBtn">🖼️ บันทึกรูปภาพ (มุมมองตอนนี้)</button>
+          </div>
+        </details>
+        <details class="acc">
+          <summary>📐 อ้างอิงสำหรับวาดรูป</summary>
+          <div class="acc-body">
+            <div class="field-row">
+              <div class="field"><label for="gridExportWidthInput">กว้าง (px)</label><input type="number" id="gridExportWidthInput" min="1" max="8192" step="1" value="512"></div>
+              <div class="field"><label for="gridExportHeightInput">สูง (px)</label><input type="number" id="gridExportHeightInput" min="1" max="8192" step="1" value="512"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label for="gridExportSpacingInput">ระยะห่างเส้น (px)</label><input type="number" id="gridExportSpacingInput" min="1" max="2048" step="1" value="64"></div>
+            </div>
+            <button id="exportGridBtn">📐 Export กริด PNG</button>
+            <button id="exportIsoGridBtn" title="Export เฉพาะเส้น Grid ที่เปิด (ติ๊ก) อยู่ตอนนี้ในแท็บวางวัตถุ — 🔲/🔳/🔳/📏">🔷 Export กริด Isometric (ตามเส้น Grid ที่เปิดอยู่)</button>
+            <button id="exportBlockTemplateBtn" title="ไฟล์ PNG 256×256 (ความละเอียด 4 เท่าของขนาดจริง 64×64) พื้นหลังโปร่งใส มีเส้นขอบเขตทรงลูกบาศก์จริงของบล็อก (1x1x1) ไว้ทาบวาดรูปให้สัดส่วนตรง">🧊 Export เทมเพลตบล็อก (256×256)</button>
+          </div>
+        </details>
+        <details class="acc">
+          <summary title="ย้ายมาจากแท็บ &quot;ใส่รูปเอง&quot; (v3.127) — รวมงานสำรองข้อมูลไว้ที่แท็บบันทึกที่เดียว">🗂️ สำรองรูปที่อัปโหลดไว้</summary>
+          <div class="acc-body">
+            <button id="exportImagesBtn">⬇️ Export รูปที่บันทึกไว้ (.json)</button>
+            <button id="importImagesBtn">⬆️ Import รูปที่บันทึกไว้ (.json)</button>
+            <input type="file" id="importImagesInput" accept=".json,application/json" style="display:none">
+          </div>
+        </details>
+        <details class="acc">
+          <summary style="color:#e08c86;">⚠️ ล้างข้อมูล</summary>
+          <div class="acc-body">
+            <button id="clearBtn">ล้างแผนที่ทั้งหมด</button>
+          </div>
+        </details>
       </div>
       </div>
 
@@ -4567,6 +5145,23 @@
       <label for="addTypeNameInput">ชื่อ (โชว์ในพาเลท)</label>
       <input type="text" id="addTypeNameInput" placeholder="เช่น รั้ว">
     </div>
+    <!-- v3.129: footprint override — only offered when baseType is 'box'
+         (the only full-footprint clonable base whose no-image draw fallback,
+         drawBox, actually supports a scale param today; tree/rock/barrel are
+         hand-drawn shapes with no such hook yet). Confirmed with พี่แยม via
+         short-fence-footprint-mockup.html: "รั้วเตี้ย" needs a QUADRANT
+         footprint (like block) while keeping its WALL HEIGHT equal to box's
+         own (52px, not BLOCK_HEIGHT's 32px) — this field controls only the
+         footprint half; height always inherits from baseType unchanged
+         (registerCustomType's existing VISUAL_HEIGHT[def.key] = VISUAL_HEIGHT[def.baseType] line). -->
+    <div class="field" id="addTypeFootprintField" style="display:none;">
+      <label for="addTypeFootprintSelect">พื้นที่บนกระดาน (footprint)</label>
+      <select id="addTypeFootprintSelect">
+        <option value="full">เต็มช่อง (เหมือนแม่แบบ)</option>
+        <option value="small">ควอดรันต์เล็ก (1 ใน 4 ของช่อง เหมือนบล็อก)</option>
+      </select>
+      <p class="field-hint">เลือกได้แค่ตอนสร้าง เปลี่ยนทีหลังไม่ได้ (กระทบของที่วางไปแล้วบนแผนที่) — ความสูงผนังยังเท่าแม่แบบเดิมเสมอ ไม่ลดตามขนาด footprint</p>
+    </div>
     <div class="field">
       <label>รูปภาพ (ไม่ใส่ก็ได้ — ใส่ทีหลังได้ที่แท็บ "ตั้งค่า")</label>
       <div class="img-row" id="addTypeImgRow" data-kind="object" data-type="__pendingNewType__">
@@ -4582,6 +5177,52 @@
     <div class="type-modal-actions">
       <button type="button" id="addTypeCancelBtn">ยกเลิก</button>
       <button type="button" class="primary" id="addTypeCreateBtn">สร้าง</button>
+    </div>
+  </div>
+</div>
+
+<!-- v3.138: เครื่องมือสร้างกล่องขนาดเอง (box-maker) — พี่แยม's "พี่อยากได้
+     เรื่องมือสร้างกล่องจ้า ให้พี่กล่องขนาด x y z ในเว็บ และน้องก็สร้างตาม
+     ขนาดที่พี่บอกในเว็บ" — general X/Y/Z input instead of the box-domino
+     one-off (v3.136, reverted v3.137). Separate modal from the "+ เพิ่มชนิด
+     ใหม่" one above since this defines a shape from scratch rather than
+     cloning an existing template's exact behavior. Confirmed outline
+     defaults (box-maker-tool-mockup.html): X/Y capped at 1.0 (within one
+     tile only, v1), Z free-form, no rotation. -->
+<div class="type-modal-overlay" id="addSizedBoxModalOverlay">
+  <div class="type-modal">
+    <h3>สร้างกล่องขนาดเอง</h3>
+    <p class="type-modal-sub">1.0 = เต็มช่อง — X/Y ปัดเข้าขั้นละ 0.25 อัตโนมัติ (0.25 ถึง 1.0) Z ใส่เป็นค่าอิสระได้</p>
+    <p class="type-modal-error" id="addSizedBoxModalError"></p>
+    <div class="field-row">
+      <div class="field"><label for="addSizedBoxXInput">X (กว้าง)</label><input type="number" id="addSizedBoxXInput" min="0.25" max="1" step="0.25" value="0.25"></div>
+      <div class="field"><label for="addSizedBoxYInput">Y (ลึก)</label><input type="number" id="addSizedBoxYInput" min="0.25" max="1" step="0.25" value="0.25"></div>
+      <div class="field"><label for="addSizedBoxZInput">Z (สูง)</label><input type="number" id="addSizedBoxZInput" min="0.1" max="3" step="0.05" value="0.25"></div>
+    </div>
+    <div class="field">
+      <label for="addSizedBoxIdInput">ไอดี (คีย์ภายใน — a-z, A-Z, 0-9, _ เท่านั้น ห้ามซ้ำ)</label>
+      <input type="text" id="addSizedBoxIdInput" placeholder="เช่น myBox1">
+      <p class="field-hint">ใช้อ้างอิงในไฟล์เซฟแผนที่ — ตั้งแล้วเปลี่ยนทีหลังไม่ได้ (อยากเปลี่ยนต้องสร้างใหม่)</p>
+    </div>
+    <div class="field">
+      <label for="addSizedBoxNameInput">ชื่อ (โชว์ในพาเลท)</label>
+      <input type="text" id="addSizedBoxNameInput" placeholder="เช่น กล่องทดสอบ">
+    </div>
+    <div class="field">
+      <label>รูปภาพ (ไม่ใส่ก็ได้ — ใส่ทีหลังได้ที่แท็บ "ตั้งค่า")</label>
+      <div class="img-row" id="addSizedBoxImgRow" data-kind="object" data-type="__pendingSizedBox__">
+        <div class="img-thumb" id="thumb-object-__pendingSizedBox__"><span class="pal-emoji">🖼️</span></div>
+        <div class="img-row-label">รูป</div>
+        <div class="img-row-actions">
+          <button type="button" id="addSizedBoxChooseImgBtn">เลือกรูป</button>
+          <button type="button" id="addSizedBoxClearImgBtn">ล้าง</button>
+        </div>
+      </div>
+      <p class="field-hint">ถ้ายังไม่ใส่รูป จะโชว์เป็นกล่องสีน้ำตาลขนาดตามที่ตั้งไปก่อน จนกว่าจะอัปโหลดรูปของตัวเอง</p>
+    </div>
+    <div class="type-modal-actions">
+      <button type="button" id="addSizedBoxCancelBtn">ยกเลิก</button>
+      <button type="button" class="primary" id="addSizedBoxCreateBtn">สร้างกล่องขนาดนี้</button>
     </div>
   </div>
 </div>
@@ -4682,6 +5323,18 @@
   // topper corners, just for objects sitting directly on bare ground instead
   // of on top of a table. QUADRANT_KEYS is the canonical list of the 4 slots.
   const QUADRANT_KEYS = ['top', 'right', 'bottom', 'left'];
+  // v3.134: รั้วเตี้ยเท่านั้น (X=Y=0.25, half of every other small-footprint
+  // type's 0.5) gets its own finer 4x4=16-cell grid per tile, keyed "qx_qy"
+  // (qx,qy each 0-3) — deliberately a DIFFERENT string shape than the named
+  // QUADRANT_KEYS strings ('top'/'right'/...) so the two systems can never
+  // collide in the same objects.Map, and every generic helper that reads
+  // "sub" as an opaque string (smallKey/layerKey/parseKey/findFreeLayer/
+  // getStackLift, map save/load) keeps working on both unchanged — only the
+  // functions that need to interpret what a "sub" MEANS (offset, occupancy
+  // scan, size) needed a matching QUADRANT16 counterpart, added right next
+  // to each one below.
+  const QUADRANT16_KEYS = [];
+  for (let qy = 0; qy < 4; qy++) for (let qx = 0; qx < 4; qx++) QUADRANT16_KEYS.push(qx + '_' + qy);
   function smallKey(c, r, sub){ return key(c, r) + ':' + sub; }
   // each quadrant slot can additionally stack several objects vertically
   // (layer 0, 1, 2, ...) — layer 0 keeps the plain smallKey (so existing
@@ -4729,7 +5382,15 @@
   // full-footprint object can't be placed on top of small-footprint objects
   // stacked at any height
   function anyQuadrantOccupied(c, r){
-    return QUADRANT_KEYS.some(q => anyLayerOccupied(c, r, q));
+    // v3.134: also scans the 16-cell grid (รั้วเตี้ย) — a full-footprint
+    // object (box, tree, ...) must be blocked by ANY occupied sub-cell of
+    // either system, not just the 4-quadrant one
+    // v3.138: also checks for any box-maker custom type — its own "b..."
+    // keys aren't covered by either scan above, so without this a
+    // full-footprint object could otherwise be placed right through one
+    return QUADRANT_KEYS.some(q => anyLayerOccupied(c, r, q))
+      || QUADRANT16_KEYS.some(q => anyLayerOccupied(c, r, q))
+      || scanSizedBoxOccupiedCells(c, r, null).size > 0;
   }
 
   // cumulative real height of whatever is stacked BELOW a given layer in a
@@ -4814,6 +5475,17 @@
     // vase), height is 1 "Y" unit tall — the base primitive future obstacles
     // (e.g. a 2x3x1 wall segment) will be composed from
     block:  { blocking:true,  label:'บล็อก (1x1x1)', footprint:'small' },
+    // v3.133: รั้วเตี้ย, take 2 — v3.130-v3.132 referenced กล่อง (box) and
+    // got removed after พี่แยม saw the actual in-game shape and wanted a
+    // fresh approach. This version references บล็อก (Block) instead, per
+    // "สร้างรั้วเตี๊ยขึ้นมาใหม่โดยอ้างอิงจาก บล็อก1x1x1" — confirmed via
+    // AskUserQuestion: footprint AND height both match Block exactly
+    // (quadrant + BLOCK_HEIGHT), not just footprint like the box version
+    // did. Only difference from Block is its own drawShortFence() shape/
+    // color (see below) and its own separate image-upload slot — same
+    // "distinct color, identical geometry" precedent as tableSmall/giftBox
+    // already established relative to Block.
+    shortFence: { blocking:true, label:'กล่อง (0.25x0.25x0.5)', footprint:'small' },
     // multi-block composite obstacle: a full-tile-footprint object (blocks
     // the whole tile + snaps on the same half-tile lattice as wall/box) but
     // rendered as a non-square rectangular prism — long side 2 units, short
@@ -4875,6 +5547,12 @@
   // like a tall thin post instead of a proportionate 1x1x1 cube
   const BLOCK_FOOTPRINT_SCALE = 0.5;
   const BLOCK_HEIGHT = BLOCK_UNIT_HEIGHT * BLOCK_FOOTPRINT_SCALE; // 16px
+  // v3.134: รั้วเตี้ยเท่านั้น — footprint scale 0.25 (half of Block's 0.5,
+  // matching its own 16-cell grid), height stays BLOCK_HEIGHT unchanged
+  // (Z=0.5, confirmed unchanged from Block — prismFaces' height param is
+  // independent of its scale param, so this doesn't need its own height
+  // constant the way SHORT_FENCE_HEIGHT briefly did in v3.130-131)
+  const SHORT_FENCE_FOOTPRINT_SCALE = 0.25;
   // โต๊ะเล็ก (tableSmall, v3.47) — same footprint/height convention as Block
   // (a small-footprint "1x1x1" primitive), just re-colored to look wood-like
   const TABLE_SMALL_HEIGHT = BLOCK_HEIGHT; // same height as Block
@@ -4900,8 +5578,26 @@
     bottom: { dx: 0, dy: TILE_H/4 },
     left:   { dx: -TILE_W/4, dy: 0 }
   };
+  // v3.134: same idea as QUADRANT_OFFSETS but for the 16-cell grid — each
+  // sub-cell's offset is derived from its center's fractional grid position
+  // (col,row each 0..1 within the tile) via the same isometric transform
+  // gridToScreen itself uses, generalized from a fixed 0.25/0.75 split (the
+  // 4-quadrant case) to an 8th/8th+quarter-step split across 4 divisions.
+  // Verified this formula reproduces QUADRANT_OFFSETS exactly when divisions
+  // is 2 instead of 4 (e.g. qx=0,qy=0,div=2 -> offsetCol=offsetRow=-0.25,
+  // matching 'top' exactly) — same math, finer division.
+  const QUADRANT16_OFFSETS = {};
+  QUADRANT16_KEYS.forEach(k => {
+    const [qx, qy] = k.split('_').map(Number);
+    const offsetCol = (qx + 0.5) / 4 - 0.5;
+    const offsetRow = (qy + 0.5) / 4 - 0.5;
+    QUADRANT16_OFFSETS[k] = {
+      dx: (offsetCol - offsetRow) * (TILE_W / 2),
+      dy: (offsetCol + offsetRow) * (TILE_H / 2)
+    };
+  });
   function getQuadrantOffset(sub){
-    return QUADRANT_OFFSETS[sub] || { dx: 0, dy: 0 };
+    return QUADRANT_OFFSETS[sub] || QUADRANT16_OFFSETS[sub] || { dx: 0, dy: 0 };
   }
   // classifies where a screen point (mx,my) falls within tile (col,row)'s
   // diamond: one of the 4 quadrants split by the dashed sub-grid lines
@@ -4914,6 +5610,140 @@
     if (a <= 0 && b >= 0) return 'right';
     if (a >= 0 && b >= 0) return 'bottom';
     return 'left';
+  }
+  // v3.134: finer 16-cell counterpart to getTileQuadrant, used only for
+  // รั้วเตี้ย. Deliberately mirrors getTileQuadrant's own screen-offset
+  // approach (u,v normalized to the tile's half-width/half-height) rather
+  // than going through screenToGrid — an earlier version used screenToGrid
+  // and assumed a tile spans [col, col+1), but this game's tiles are
+  // actually CENTERED on their integer (col,row) (spanning [col-0.5,
+  // col+0.5)), same convention getTileQuadrant already accounts for via its
+  // own u,v math; reusing that exact convention here (inverted back to
+  // fractional col/row offsets: dCol=(u+v)/2, dRow=(v-u)/2, each roughly
+  // in [-0.5, 0.5]) avoids re-deriving it and getting it wrong twice.
+  function getTileSubCell16(mx, my, col, row){
+    const { x, y } = gridToScreen(col, row);
+    const u = (mx - x) / (TILE_W / 2);
+    const v = (my - y) / (TILE_H / 2);
+    const dCol = (u + v) / 2, dRow = (v - u) / 2;
+    const qx = Math.min(3, Math.max(0, Math.floor((dCol + 0.5) * 4)));
+    const qy = Math.min(3, Math.max(0, Math.floor((dRow + 0.5) * 4)));
+    return qx + '_' + qy;
+  }
+
+  // ---- Box-maker: custom X/Y/Z-sized boxes (v3.138) ----
+  // General replacement for v3.136's one-off boxDouble: any custom type
+  // created via "+ สร้างกล่องขนาดเอง" gets its own def.spanX/def.spanY
+  // (integer 1-4, each cell = 0.25 of a tile) instead of a hardcoded shape,
+  // so this same machinery handles every size พี่แยม creates without new
+  // code per size. Stored via the same smallKey/layerKey machinery as
+  // every other small-footprint object, keyed by its own ANCHOR cell in
+  // "b{qx}_{qy}" format — a 3rd sub-key shape, distinct from both
+  // QUADRANT_KEYS' named strings and the plain "qx_qy" 16-cell keys, so it
+  // can never collide with either as a Map key.
+  function isSizedBoxType(type){
+    return !!(customTypes[type] && customTypes[type].spanX);
+  }
+  function parseSizedBoxSub(sub){
+    const m = typeof sub === 'string' ? /^b(\d)_(\d)$/.exec(sub) : null;
+    return m ? { qx: +m[1], qy: +m[2] } : null;
+  }
+  // true if a spanX×spanY box anchored at (qx,qy) stays within the 4x4 grid
+  function isSizedBoxAnchorInBounds(qx, qy, spanX, spanY){
+    return qx + spanX <= 4 && qy + spanY <= 4;
+  }
+  // every QUADRANT16_KEYS-format cell string a spanX×spanY box at this
+  // anchor covers
+  function sizedBoxCells(qx, qy, spanX, spanY){
+    const cells = [];
+    for (let dx = 0; dx < spanX; dx++){
+      for (let dy = 0; dy < spanY; dy++) cells.push((qx + dx) + '_' + (qy + dy));
+    }
+    return cells;
+  }
+  // screen offset for the CENTER of a sized box's cell span — the average
+  // of every covered cell's own QUADRANT16_OFFSETS (generalizes v3.136's
+  // 2-cell midpoint to any N cells)
+  function getSizedBoxOffset(sub, spanX, spanY){
+    const a = parseSizedBoxSub(sub);
+    if (!a) return { dx: 0, dy: 0 };
+    const cells = sizedBoxCells(a.qx, a.qy, spanX, spanY);
+    let dx = 0, dy = 0;
+    cells.forEach(k => { const o = QUADRANT16_OFFSETS[k] || { dx: 0, dy: 0 }; dx += o.dx; dy += o.dy; });
+    return { dx: dx / cells.length, dy: dy / cells.length };
+  }
+  // v3.139: the 4 top-face corners of a spanX×spanY sized box, as screen
+  // offsets (dx,dy) from the footprint CENTER (the point getSizedBoxOffset
+  // returns). These are the TRUE isometric projection of the footprint's
+  // grid corners (each cell = 0.25 tile) — the old prismFaces(scaleX,scaleY)
+  // path instead stretched a screen-axis diamond, which is only correct when
+  // X=Y and made an X≠Y box render as a squashed flat "cube" instead of the
+  // long domino box it should be. c1=back, c2=right, c3=front, c4=left,
+  // matching prismFaces' own vertex order (so drawSizedBox/silhouette stay in
+  // sync). ax/ay are half the footprint span in tile units.
+  function sizedBoxCorners(spanX, spanY){
+    const ax = spanX * 0.125, ay = spanY * 0.125;
+    const TW2 = TILE_W / 2, TH2 = TILE_H / 2;
+    const corner = (dc, dr) => ({ dx: (dc - dr) * TW2, dy: (dc + dr) * TH2 });
+    return {
+      c1: corner(-ax, -ay), c2: corner(ax, -ay),
+      c3: corner(ax, ay),   c4: corner(-ax, ay)
+    };
+  }
+  // scans every possible sized-box anchor position on this tile and
+  // returns the full set of 16-cell keys currently covered by any of them
+  // — linear scan over the 16 possible anchors, same "just scan it"
+  // precedent findElevatedBaseAt/resolveObjectKeyAt already use.
+  // `excludeSub` skips one anchor (a piece's own current position) when
+  // re-validating a move for that same piece.
+  function scanSizedBoxOccupiedCells(c, r, excludeSub){
+    const covered = new Set();
+    for (let qx = 0; qx <= 3; qx++){
+      for (let qy = 0; qy <= 3; qy++){
+        const sub = 'b' + qx + '_' + qy;
+        if (sub === excludeSub) continue;
+        const o = objects.get(layerKey(c, r, sub, 0));
+        if (o && isSizedBoxType(o.type)){
+          const def = customTypes[o.type];
+          if (isSizedBoxAnchorInBounds(qx, qy, def.spanX, def.spanY)){
+            sizedBoxCells(qx, qy, def.spanX, def.spanY).forEach(k => covered.add(k));
+          }
+        }
+      }
+    }
+    return covered;
+  }
+  // true if placing/moving a spanX×spanY box to this anchor would be free
+  // of ANY conflict on this tile: other sized boxes, plain 16-cell objects
+  // (กล่อง 0.25x0.25x0.5) occupying any covered cell at any stack layer,
+  // and bounds. Does NOT check the tile's own full-footprint slot
+  // (key(c,r)) — callers already do that the same way every other
+  // small-footprint type does.
+  function isSizedBoxSpanFree(c, r, qx, qy, spanX, spanY, excludeSub){
+    if (!isSizedBoxAnchorInBounds(qx, qy, spanX, spanY)) return false;
+    const cells = sizedBoxCells(qx, qy, spanX, spanY);
+    if (cells.some(cellKey => anyLayerOccupied(c, r, cellKey))) return false;
+    const occupiedByOther = scanSizedBoxOccupiedCells(c, r, excludeSub);
+    return !cells.some(cellKey => occupiedByOther.has(cellKey));
+  }
+  // resolves a mouse point into the nearest valid spanX×spanY anchor,
+  // clamped so the box never runs off the 4x4 grid — used by resolveCell
+  // for a fresh drag from the palette
+  function getSizedBoxAnchor(mx, my, col, row, spanX, spanY){
+    const cell = getTileSubCell16(mx, my, col, row);
+    const [qx, qy] = cell.split('_').map(Number);
+    return 'b' + Math.min(4 - spanX, qx) + '_' + Math.min(4 - spanY, qy);
+  }
+  // single dispatch point for "what's this small-footprint object's screen
+  // offset" — a sized box needs its own def-aware calc (spanX/spanY change
+  // which cells it covers); every other small-footprint type is unaffected
+  // and keeps going through plain getQuadrantOffset(sub) as before
+  function getObjectOffset(type, sub){
+    if (isSizedBoxType(type)){
+      const def = customTypes[type];
+      return getSizedBoxOffset(sub, def.spanX, def.spanY);
+    }
+    return getQuadrantOffset(sub);
   }
 
   // "small" footprint objects (currently just the vase) occupy 1 of the 4
@@ -4960,6 +5790,11 @@
     if (type === 'vase') return VASE_IMAGE_MAX_W;
     if (type === 'tableSmall') return TABLE_SMALL_IMAGE_MAX_W;
     if (type === 'giftBox') return GIFTBOX_IMAGE_MAX_W;
+    // v3.134: รั้วเตี้ย's footprint (X=0.25) is half the width of every other
+    // small-footprint type's quadrant (0.5) — its own explicit branch,
+    // since the generic isSmallFootprint fallback below still means "half a
+    // tile" for block/vase/tableSmall/giftBox/npc, unchanged
+    if (type === 'shortFence') return TILE_W / 4;
     return isSmallFootprint(type) ? TILE_W / 2 : TILE_W * 1.05;
   }
 
@@ -4967,6 +5802,20 @@
   // vase is a small 1x1 sub-cell item, so its guide is a quarter-tile diamond;
   // everything else reserves and shows a full tile)
   function getGuideSize(type){
+    // v3.134: รั้วเตี้ย gets its own smaller guide (0.25 fraction of the
+    // tile, matching its 16-cell grid) — this is also what makes its hit-
+    // test/hover-outline size shrink to match (getSilhouettePolygon reads
+    // this same function), the necessary consequence of the 16-cell grid
+    // actually being usable without invisible dead space between pieces
+    if (type === 'shortFence') return { w: TILE_W / 4, h: TILE_H / 4 };
+    // v3.138: a box-maker custom type's guide matches its own def.spanX/
+    // spanY exactly (each cell = TILE_W/4 or TILE_H/4) instead of the
+    // generic isSmallFootprint fallback below (which would always mean
+    // "half a tile," wrong for any size other than a 2x2-cell box)
+    if (isSizedBoxType(type)){
+      const def = customTypes[type];
+      return { w: def.spanX * (TILE_W / 4), h: def.spanY * (TILE_H / 4) };
+    }
     return isSmallFootprint(type) ? { w: TILE_W / 2, h: TILE_H / 2 } : { w: TILE_W, h: TILE_H };
   }
 
@@ -4982,7 +5831,10 @@
     barrel: 34 * RENDER_SCALE,
     block: BLOCK_HEIGHT, wallbox: BLOCK_HEIGHT * 6, wallbox5: BLOCK_HEIGHT * 5,
     frame: 16 * RENDER_SCALE, frameSmall: 8 * RENDER_SCALE,
-    tableSmall: TABLE_SMALL_HEIGHT, giftBox: GIFTBOX_HEIGHT
+    tableSmall: TABLE_SMALL_HEIGHT, giftBox: GIFTBOX_HEIGHT,
+    // v3.133: shortFence references Block exactly — same BLOCK_HEIGHT, no
+    // separate constant needed (unlike v3.130's box-referenced attempt)
+    shortFence: BLOCK_HEIGHT
   };
 
   // Adjustable max-image-size overrides for table/vase (mutable `let`, like
@@ -5123,7 +5975,7 @@
     if (isWallboxType(objType)) return getWallBoxSilhouette(col, row, state && state.flip, WALLBOX_TYPES[objType]);
     const { x, y } = gridToScreen(col, row);
     const small = isSmallFootprint(objType);
-    const offset = small ? getQuadrantOffset(state && state.sub) : { dx: 0, dy: 0 };
+    const offset = small ? getObjectOffset(objType, state && state.sub) : { dx: 0, dy: 0 };
     const height = getVisualHeight(objType, forHitTest);
     const layerLift = small ? getStackLift(col, row, state && state.sub, (state && state.layer) || 0) : 0;
     const cx = x + offset.dx, cy = y + offset.dy - layerLift;
@@ -5158,6 +6010,25 @@
         [cx + hw, npcCy],
         [cx - hw, npcCy],
         [cx - hw, npcCy - wallH]
+      ];
+    }
+    // v3.139: a sized box's silhouette is the iso parallelogram prism (see
+    // sizedBoxCorners/drawSizedBox), not the generic screen-axis hexagon below
+    // — otherwise the yellow hover outline / hit-test box stayed a flat
+    // diamond and never matched an X≠Y box's actual long domino shape
+    // (พี่แยม's "กรอบไฮไลต์ไม่พอดีกล่อง" report). Same 6-point order the
+    // hexagon uses: back-top, right-top, right-ground, front-ground,
+    // left-ground, left-top.
+    if (isSizedBoxType(objType)){
+      const def = customTypes[objType];
+      const { c1, c2, c3, c4 } = sizedBoxCorners(def.spanX, def.spanY);
+      return [
+        [cx + c1.dx, cy + c1.dy - height],
+        [cx + c2.dx, cy + c2.dy - height],
+        [cx + c2.dx, cy + c2.dy],
+        [cx + c3.dx, cy + c3.dy],
+        [cx + c4.dx, cy + c4.dy],
+        [cx + c4.dx, cy + c4.dy - height]
       ];
     }
     const { w, h } = getGuideSize(objType);
@@ -5258,7 +6129,7 @@
   // collectibles, characters — defaults to the "decor/characters"
   // Furniture half, so a newly-added type never needs a second list.
   const FOUNDATION_TYPES = new Set([
-    'box', 'wall', 'tree', 'rock', 'barrel', 'block', 'wallbox', 'wallbox5',
+    'box', 'wall', 'tree', 'rock', 'barrel', 'block', 'shortFence', 'wallbox', 'wallbox5',
     'grass', 'sand', 'water',
     'door', 'chest', 'lever'
   ]);
@@ -5776,9 +6647,16 @@
   // base point while leaving height untouched — used to draw sub-cell-sized
   // objects (e.g. a 1-block-footprint unit) with the same isometric prism
   // logic as full-tile objects like walls/boxes/tables (scale=1, default)
-  function prismFaces(x, y, height, topFill, leftFill, rightFill, edgeStroke, scale){
-    scale = scale || 1;
-    const hw = (TILE_W/2) * scale, hh = (TILE_H/2) * scale;
+  // v3.138: scaleY is optional and defaults to scaleX (every existing call
+  // site's behavior, unchanged) — re-added for the general box-maker tool
+  // (เครื่องมือสร้างกล่องขนาดเอง), which needs independent X/Y footprint
+  // sizing per custom box, same need v3.136's one-off boxDouble had before
+  // it was reverted; this time it's driven generically by each custom
+  // type's own def.spanX/spanY instead of a single hardcoded shape.
+  function prismFaces(x, y, height, topFill, leftFill, rightFill, edgeStroke, scaleX, scaleY){
+    scaleX = scaleX || 1;
+    scaleY = scaleY == null ? scaleX : scaleY;
+    const hw = (TILE_W/2) * scaleX, hh = (TILE_H/2) * scaleY;
     ctx.beginPath();
     ctx.moveTo(x - hw, y);
     ctx.lineTo(x, y + hh);
@@ -5797,7 +6675,7 @@
     ctx.fillStyle = rightFill;
     ctx.fill();
 
-    drawDiamond(x, y - height, TILE_W * scale, TILE_H * scale);
+    drawDiamond(x, y - height, TILE_W * scaleX, TILE_H * scaleY);
     ctx.fillStyle = topFill;
     ctx.fill();
     if (edgeStroke){
@@ -6294,11 +7172,18 @@
     }
   }
 
-  function drawBox(col, row){
+  // scale (v3.129, default 1 = unchanged): lets a footprint-overridden custom
+  // type cloned from box (see FOOTPRINT_OVERRIDE_BASE_TYPES) render its
+  // footprint at BLOCK_FOOTPRINT_SCALE — same idea as drawBlock/drawTableSmall/
+  // drawGiftBox's own scale param to prismFaces — while boxH stays untouched,
+  // so wall height keeps matching plain box's (confirmed with พี่แยม: "ความสูง
+  // ผนังเท่ากล่องเดิม") instead of shrinking along with the footprint.
+  function drawBox(col, row, scale){
+    scale = scale || 1;
     const {x, y} = gridToScreen(col, row);
     const boxH = 26 * RENDER_SCALE;
-    prismFaces(x, y, boxH, '#c98a4b', '#7a4a22', '#5e3a1a', 'rgba(0,0,0,.25)');
-    const hw = TILE_W/2, hh = TILE_H/2, topY = y - boxH;
+    prismFaces(x, y, boxH, '#c98a4b', '#7a4a22', '#5e3a1a', 'rgba(0,0,0,.25)', scale);
+    const hw = (TILE_W/2) * scale, hh = (TILE_H/2) * scale, topY = y - boxH;
     ctx.strokeStyle = 'rgba(255,255,255,.25)';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -6306,6 +7191,59 @@
     ctx.lineTo(x + hw*0.5, topY + hh*0.25);
     ctx.moveTo(x + hw*0.5, topY - hh*0.25);
     ctx.lineTo(x - hw*0.5, topY + hh*0.25);
+    ctx.stroke();
+  }
+
+  // เครื่องมือสร้างกล่องขนาดเอง (box-maker, v3.138) — spanX/spanY (cell
+  // counts, each cell = 0.25 of a tile) and heightPx are entirely
+  // per-instance (from that custom type's own def), unlike every other
+  // draw* function here which has a fixed baked-in shape. Reuses box's own
+  // orange/brown palette so it visually reads as "a box" regardless of size.
+  // v3.139: draws the box as a true iso-projected parallelogram prism (see
+  // sizedBoxCorners) instead of the old prismFaces(scaleX,scaleY) screen-axis
+  // stretch — so an X≠Y box (e.g. 0.5×0.25) renders as a long domino box
+  // slanted along the grid, not a squashed flat cube. Same box palette as
+  // before. (col,row) is the tile base; drawObject has already ctx.translate'd
+  // by the footprint-center offset, so drawing centered on (x,y) here lands
+  // the prism on the correct sub-cell.
+  function drawSizedBox(col, row, spanX, spanY, heightPx){
+    const { x, y } = gridToScreen(col, row);
+    const { c1, c2, c3, c4 } = sizedBoxCorners(spanX, spanY);
+    const g = c => ({ x: x + c.dx, y: y + c.dy });                 // ground corner
+    const t = c => ({ x: x + c.dx, y: y + c.dy - heightPx });      // top corner
+    const [G2, G3, G4] = [g(c2), g(c3), g(c4)];
+    const [T1, T2, T3, T4] = [t(c1), t(c2), t(c3), t(c4)];
+    const face = (pts, fill) => {
+      ctx.beginPath();
+      pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    };
+    // left face (c4–c3 edge), right face (c2–c3 edge), then top parallelogram
+    face([G4, G3, T3, T4], '#7a4a22');
+    face([G2, G3, T3, T2], '#5e3a1a');
+    face([T1, T2, T3, T4], '#c98a4b');
+    // internal quadrant seams on the top face so a multi-cell box reads as its
+    // constituent 0.25 cells (matches the approved outline's center seam);
+    // a 1×1-cell box has no internal seam
+    const lerp = (a, b, f) => ({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+    ctx.strokeStyle = 'rgba(0,0,0,.18)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < spanX; i++){
+      const f = i / spanX, a = lerp(T1, T2, f), b = lerp(T4, T3, f);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    for (let j = 1; j < spanY; j++){
+      const f = j / spanY, a = lerp(T1, T4, f), b = lerp(T2, T3, f);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    // outer edge stroke (same subtle outline prismFaces draws)
+    ctx.strokeStyle = 'rgba(0,0,0,.25)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    [T1, T2, T3, T4].forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.closePath();
     ctx.stroke();
   }
 
@@ -6358,6 +7296,16 @@
   function drawBlock(col, row){
     const {x, y} = gridToScreen(col, row);
     prismFaces(x, y, BLOCK_HEIGHT, '#a7adb4', '#61666c', '#4c5157', 'rgba(0,0,0,.3)', BLOCK_FOOTPRINT_SCALE);
+  }
+
+  // รั้วเตี้ย (shortFence) — v3.133 launched identical footprint to Block
+  // (0.5 scale); v3.134 narrowed its OWN footprint further to 0.25 (X=Y=0.25,
+  // per พี่แยม's (X,Y,Z)=(0.25,0.25,0.5)) via SHORT_FENCE_FOOTPRINT_SCALE —
+  // height (BLOCK_HEIGHT) stays untouched, still re-colored to the same
+  // weathered fence-post tan.
+  function drawShortFence(col, row){
+    const {x, y} = gridToScreen(col, row);
+    prismFaces(x, y, BLOCK_HEIGHT, '#c9a468', '#8a6a3f', '#6b4f2e', 'rgba(0,0,0,.3)', SHORT_FENCE_FOOTPRINT_SCALE);
   }
 
   // โต๊ะเล็ก (tableSmall, v3.47) — identical box shape/footprint to drawBlock,
@@ -7486,7 +8434,7 @@
     // whichever sub-cell quadrant they were dropped/moved into within their
     // tile, and lifted up by however many layers they're stacked on top of
     const isSmall = isSmallFootprint(objType);
-    const quadOff = isSmall ? getQuadrantOffset(state && state.sub) : { dx: 0, dy: 0 };
+    const quadOff = isSmall ? getObjectOffset(objType, state && state.sub) : { dx: 0, dy: 0 };
     const layerLift = isSmall ? getStackLift(col, row, state && state.sub, (state && state.layer) || 0) : 0;
 
     ctx.save();
@@ -7529,15 +8477,28 @@
         : customTypes[objType] ? customTypes[objType].groundOffset
         : undefined;
       drawSprite(customImg, drawCol, drawRow, getObjectSpriteMaxW(objType), 0, getImageMaxH(objType), objGroundOffset);
+    } else if (isSizedBoxType(objType)){
+      // v3.138: box-maker custom types have their own spanX/spanY/height,
+      // not a fixed shape drawBox's own hardcoded scale param can express —
+      // drawn directly here instead of going through the switch/baseType
+      // resolution below (which is for "identical to template" clones)
+      const def = customTypes[objType];
+      drawSizedBox(col, row, def.spanX, def.spanY, VISUAL_HEIGHT[objType] || TILE_H);
     } else {
       // v3.113: switches on drawType (resolves to baseType for a clone),
       // not objType directly — this is the whole mechanism that makes a
       // cloned type draw identically to its template before an image is
       // uploaded for it
       switch(drawType){
-        case 'box': drawBox(col, row); break;
+        // v3.129: isSmall (computed above from objType, not drawType) is true
+        // for a footprint-overridden box clone — scales down just the
+        // footprint width/depth via drawBox's new scale param, matching
+        // BLOCK_FOOTPRINT_SCALE, while leaving boxH (wall height) alone.
+        // Plain box (isSmall always false) keeps scale=1, unchanged.
+        case 'box': drawBox(col, row, isSmall ? BLOCK_FOOTPRINT_SCALE : 1); break;
         case 'wall': drawWall(col, row, state); break;
         case 'block': drawBlock(col, row); break;
+        case 'shortFence': drawShortFence(col, row); break;
         case 'wallbox': case 'wallbox5': drawWallBox(col, row, WALLBOX_TYPES[drawType], state); break;
         case 'tree': drawTree(col, row); break;
         case 'rock': drawRock(col, row); break;
@@ -7686,13 +8647,28 @@
     }
     const { x, y } = gridToScreen(dragPreview.col, dragPreview.row);
     const { w, h } = getGuideSize(dragPreview.type);
-    const off = isSmallFootprint(dragPreview.type) ? getQuadrantOffset(dragPreview.sub) : { dx: 0, dy: 0 };
+    const off = isSmallFootprint(dragPreview.type) ? getObjectOffset(dragPreview.type, dragPreview.sub) : { dx: 0, dy: 0 };
     // dropping a vase onto a table lifts the guide up onto the table's top
     // surface so it matches where the vase will actually render; stacking a
     // small-footprint object on top of others (via Tab) lifts it further
     const lift = getTopperLift(dragPreview.type, dragPreview.col, dragPreview.row);
     const layerLift = getStackLift(dragPreview.col, dragPreview.row, dragPreview.sub, dragPreview.layer || 0);
-    drawDiamond(x + off.dx, y + off.dy - lift - layerLift, w, h);
+    // v3.139: a sized box's drop guide traces its true iso footprint
+    // parallelogram (same corners drawSizedBox/silhouette use), not the
+    // generic screen-axis diamond that only matched an X=Y box
+    if (isSizedBoxType(dragPreview.type)){
+      const def = customTypes[dragPreview.type];
+      const { c1, c2, c3, c4 } = sizedBoxCorners(def.spanX, def.spanY);
+      const gx = x + off.dx, gy = y + off.dy - lift - layerLift;
+      ctx.beginPath();
+      [c1, c2, c3, c4].forEach((c, i) => {
+        const px = gx + c.dx, py = gy + c.dy;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+    } else {
+      drawDiamond(x + off.dx, y + off.dy - lift - layerLift, w, h);
+    }
     ctx.fillStyle = dragPreview.valid ? 'rgba(95,211,188,0.5)' : 'rgba(224,90,90,0.5)';
     ctx.fill();
     ctx.strokeStyle = dragPreview.valid ? '#5fd3bc' : '#e05a5a';
@@ -8487,6 +9463,17 @@
   function registerCustomType(def){
     const base = OBJECT_TYPES[def.baseType];
     OBJECT_TYPES[def.key] = Object.assign({}, base, { label: def.label });
+    // v3.129: first-ever exception to "a clone's OBJECT_TYPES flags always
+    // match its baseType exactly" — def.footprint === 'small' narrows a
+    // full-footprint base (currently only 'box' can produce this, see
+    // FOOTPRINT_OVERRIDE_BASE_TYPES) down to one quadrant, same as block's
+    // own footprint:'small'. This alone is what makes isSmallFootprint(key)
+    // return true, which every other quadrant-aware code path already reads
+    // generically off OBJECT_TYPES[type].footprint (snap position, guide
+    // size, sprite max-width, silhouette/hit-test) — no changes needed
+    // anywhere else except drawObject's no-image box fallback (drawBox now
+    // takes a scale param) since that one shape is hardcoded full-tile-size.
+    if (def.footprint === 'small') OBJECT_TYPES[def.key].footprint = 'small';
     if (def.group === 'foundation') FOUNDATION_TYPES.add(def.key);
     // v3.116: EVERY custom type gets the full front/back facing-cycle
     // (right-click cycles front/front-flip/back-flip/back, independent
@@ -8503,7 +9490,12 @@
     // membership change, no new plumbing needed.
     FACING_CYCLE_TYPES.add(def.key);
     if (TABLE_TOPPER_TYPES.has(def.baseType)) TABLE_TOPPER_TYPES.add(def.key);
-    VISUAL_HEIGHT[def.key] = VISUAL_HEIGHT[def.baseType] || TILE_H;
+    // v3.138: box-maker custom types (def.spanX set) carry their own
+    // exact height in def.heightUnits ("1.0" = one full BLOCK_UNIT_HEIGHT,
+    // same convention the XYZ ruler outline used) instead of inheriting
+    // baseType's fixed VISUAL_HEIGHT — every other custom type is
+    // unaffected and keeps the baseType-inherited value as before.
+    VISUAL_HEIGHT[def.key] = def.heightUnits != null ? def.heightUnits * TILE_H : (VISUAL_HEIGHT[def.baseType] || TILE_H);
     customTypes[def.key] = def;
   }
 
@@ -8617,6 +9609,7 @@
           <div class="field"><label for="${def.key}GroundOffsetInput" title="เลื่อนรูปที่อัปโหลดขึ้น(ค่าลบ)/ลง(ค่าบวก) จากจุดยึดพื้น — ไม่กระทบ footprint/ตำแหน่งบนกระดาน">Offset พื้น (px)</label><input type="number" id="${def.key}GroundOffsetInput" min="-200" max="200" step="1" value="${Math.round(def.groundOffset)}"></div>
         </div>
         <button id="apply${def.key}SizeBtn">บันทึก</button>
+        <button type="button" id="export${def.key}Btn">⬇️ Export ชนิดนี้ (.json)</button>
         <button type="button" class="delete-custom-type-btn" id="delete${def.key}Btn">🗑️ ลบชนิดนี้</button>
       </div>
     `;
@@ -8646,7 +9639,29 @@
       persistCustomTypes();
       showToast(`บันทึก "${name}" แล้ว`);
     });
+    document.getElementById(`export${def.key}Btn`).addEventListener('click', ()=> exportCustomType(def.key));
     document.getElementById(`delete${def.key}Btn`).addEventListener('click', ()=> deleteCustomType(def.key));
+  }
+
+  // v3.128: exports ONE custom type (its def + own front/back images, if
+  // any) as its own standalone .json file — per พี่แยม's "อยากให้แต่ละชนิด
+  // สามารถ export indexedDB ออกมาได้ พอ import ใหม่จะได้ใส่อันเดิมได้"
+  // (want to export each type individually, so re-importing puts it back
+  // as the same one) — a lighter-weight sibling to the whole-database
+  // "⬇️ Export รูปที่บันทึกไว้" (which bundles every image + every custom
+  // type together) for when พี่แยม only wants to move/share/restore ONE
+  // type without touching everything else.
+  async function exportCustomType(key){
+    const def = customTypes[key];
+    if (!def) return;
+    const images = {};
+    const front = await loadImageFromStorage('object', key);
+    if (front) images[imgStorageKey('object', key)] = front;
+    const back = await loadImageFromStorage('object-back', key);
+    if (back) images[imgStorageKey('object-back', key)] = back;
+    const json = JSON.stringify({ version: 1, type: 'customType', def, images }, null, 2);
+    const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+    downloadDataUrl(dataUrl, `custom-type-${key}-${todayStamp()}.json`);
   }
 
   function deleteCustomType(key){
@@ -8686,11 +9701,24 @@
   const addTypeNameInput = document.getElementById('addTypeNameInput');
   const addTypeModalError = document.getElementById('addTypeModalError');
   const addTypeImgThumb = document.getElementById('thumb-object-__pendingNewType__');
+  const addTypeFootprintField = document.getElementById('addTypeFootprintField');
+  const addTypeFootprintSelect = document.getElementById('addTypeFootprintSelect');
 
   function showAddTypeError(msg){
     addTypeModalError.textContent = msg;
     addTypeModalError.classList.add('show');
   }
+
+  // only 'box' has a scale-aware no-image draw fallback today (drawBox now
+  // takes an optional scale param) — see the modal HTML's comment above
+  // addTypeFootprintField for why tree/rock/barrel aren't offered this yet
+  const FOOTPRINT_OVERRIDE_BASE_TYPES = new Set(['box']);
+  function syncAddTypeFootprintField(){
+    const show = FOOTPRINT_OVERRIDE_BASE_TYPES.has(addTypeBaseSelect.value);
+    addTypeFootprintField.style.display = show ? '' : 'none';
+    addTypeFootprintSelect.value = 'full';
+  }
+  addTypeBaseSelect.addEventListener('change', syncAddTypeFootprintField);
 
   function openAddTypeModal(group){
     addTypeModalGroup = group;
@@ -8708,6 +9736,7 @@
     addTypeModalError.textContent = '';
     addTypeModalError.classList.remove('show');
     clearThumbnail('object', '__pendingNewType__');
+    syncAddTypeFootprintField();
     addTypeModalOverlay.classList.add('show');
   }
   function closeAddTypeModal(){
@@ -8761,9 +9790,18 @@
       return;
     }
 
+    // v3.129: footprint override, only offered (see FOOTPRINT_OVERRIDE_BASE_TYPES)
+    // when baseType is 'box' — 'small' narrows the on-board footprint to one
+    // quadrant (like block) while wall height stays untouched (still box's
+    // own VISUAL_HEIGHT, set below by registerCustomType as always). def.w
+    // must match that narrower footprint too, or an uploaded image would
+    // still contain-fit into a full-tile-wide box and overflow the quadrant.
+    const footprintOverride = FOOTPRINT_OVERRIDE_BASE_TYPES.has(baseType) ? addTypeFootprintSelect.value : 'full';
     const def = {
       key: rawKey, baseType, group: addTypeModalGroup, label,
-      w: getObjectSpriteMaxW(baseType), h: getImageMaxH(baseType),
+      footprint: footprintOverride,
+      w: footprintOverride === 'small' ? TILE_W / 2 : getObjectSpriteMaxW(baseType),
+      h: getImageMaxH(baseType),
       // v3.123: matches drawSprite's own TILE_H*0.3 default exactly, so a
       // freshly-created type's uploaded image doesn't visually jump until
       // พี่แยม actually adjusts "Offset พื้น (px)" in its settings card
@@ -8793,6 +9831,112 @@
     persistCustomTypes();
     addTypeModalOverlay.classList.remove('show');
     showToast(`สร้างชนิด "${label}" แล้ว`);
+  });
+
+  // ---- "สร้างกล่องขนาดเอง" (box-maker) modal wiring (v3.138) ----
+  const addSizedBoxModalOverlay = document.getElementById('addSizedBoxModalOverlay');
+  const addSizedBoxModalError = document.getElementById('addSizedBoxModalError');
+  const addSizedBoxXInput = document.getElementById('addSizedBoxXInput');
+  const addSizedBoxYInput = document.getElementById('addSizedBoxYInput');
+  const addSizedBoxZInput = document.getElementById('addSizedBoxZInput');
+  const addSizedBoxIdInput = document.getElementById('addSizedBoxIdInput');
+  const addSizedBoxNameInput = document.getElementById('addSizedBoxNameInput');
+
+  function showAddSizedBoxError(msg){
+    addSizedBoxModalError.textContent = msg;
+    addSizedBoxModalError.classList.add('show');
+  }
+  function openAddSizedBoxModal(){
+    addSizedBoxXInput.value = '0.25';
+    addSizedBoxYInput.value = '0.25';
+    addSizedBoxZInput.value = '0.25';
+    addSizedBoxIdInput.value = '';
+    addSizedBoxNameInput.value = '';
+    addSizedBoxModalError.textContent = '';
+    addSizedBoxModalError.classList.remove('show');
+    clearThumbnail('object', '__pendingSizedBox__');
+    addSizedBoxModalOverlay.classList.add('show');
+  }
+  function closeAddSizedBoxModal(){
+    addSizedBoxModalOverlay.classList.remove('show');
+    delete customObjectImages['__pendingSizedBox__'];
+    removeImageFromStorage('object', '__pendingSizedBox__');
+  }
+  document.getElementById('addSizedBoxBtn').addEventListener('click', openAddSizedBoxModal);
+  document.getElementById('addSizedBoxCancelBtn').addEventListener('click', closeAddSizedBoxModal);
+  document.getElementById('addSizedBoxChooseImgBtn').addEventListener('click', ()=>{
+    pendingUpload = { kind: 'object', type: '__pendingSizedBox__' };
+    fileInput.click();
+  });
+  document.getElementById('addSizedBoxClearImgBtn').addEventListener('click', ()=>{
+    delete customObjectImages['__pendingSizedBox__'];
+    clearThumbnail('object', '__pendingSizedBox__');
+    removeImageFromStorage('object', '__pendingSizedBox__');
+  });
+
+  document.getElementById('addSizedBoxCreateBtn').addEventListener('click', ()=>{
+    addSizedBoxModalError.classList.remove('show');
+    const rawKey = addSizedBoxIdInput.value.trim();
+    const label = sanitizeLabel(addSizedBoxNameInput.value);
+    const xRaw = parseFloat(addSizedBoxXInput.value);
+    const yRaw = parseFloat(addSizedBoxYInput.value);
+    const zRaw = parseFloat(addSizedBoxZInput.value);
+
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(rawKey)){
+      showAddSizedBoxError('ไอดีต้องขึ้นต้นด้วยตัวอักษร a-z/A-Z แล้วตามด้วย a-z, A-Z, 0-9, _ เท่านั้น');
+      return;
+    }
+    if (isTypeKeyTaken(rawKey)){
+      showAddSizedBoxError('ไอดีนี้ถูกใช้ไปแล้ว ลองตั้งชื่ออื่น');
+      return;
+    }
+    if (!label){
+      showAddSizedBoxError('กรุณาใส่ชื่อ');
+      return;
+    }
+    if (!Number.isFinite(xRaw) || !Number.isFinite(yRaw) || !Number.isFinite(zRaw)){
+      showAddSizedBoxError('กรุณาใส่ตัวเลข X, Y, Z ให้ครบ');
+      return;
+    }
+    // X/Y: snap to the nearest 0.25 step, clamp to 0.25-1.0 (within one
+    // tile only — see box-maker-tool-mockup.html's Q1), then convert to a
+    // 1-4 cell-count span (each cell = 0.25 of a tile, matching the
+    // existing 16-cell grid shortFence already uses)
+    const clampStep = v => Math.min(1, Math.max(0.25, Math.round(v / 0.25) * 0.25));
+    const spanX = Math.round(clampStep(xRaw) / 0.25);
+    const spanY = Math.round(clampStep(yRaw) / 0.25);
+    // Z: free-form (not grid-locked — see Q2), just clamp to a sane range
+    // to guard against a typo producing an invisible or absurdly tall box
+    const z = Math.min(3, Math.max(0.1, zRaw));
+
+    const def = {
+      key: rawKey, baseType: 'box', group: 'foundation', label,
+      footprint: 'small',
+      spanX, spanY, heightUnits: z,
+      w: spanX * (TILE_W / 4),
+      h: z * TILE_H,
+      groundOffset: TILE_H * 0.3
+    };
+    registerCustomType(def);
+
+    const pendingImg = customObjectImages['__pendingSizedBox__'];
+    if (pendingImg){
+      customObjectImages[rawKey] = pendingImg;
+      delete customObjectImages['__pendingSizedBox__'];
+      loadImageFromStorage('object', '__pendingSizedBox__').then(dataUrl=>{
+        if (dataUrl){
+          saveImageToStorage('object', rawKey, dataUrl);
+          removeImageFromStorage('object', '__pendingSizedBox__');
+        }
+      });
+    }
+
+    buildCustomPaletteItem(def);
+    buildCustomSettingsCard(def);
+    if (pendingImg) setThumbnail('object', rawKey, pendingImg.src);
+    persistCustomTypes();
+    addSizedBoxModalOverlay.classList.remove('show');
+    showToast(`สร้างกล่อง "${label}" (${clampStep(xRaw)}x${clampStep(yRaw)}x${z}) แล้ว`);
   });
 
   // rebuilds every custom type saved from a previous visit — registry
@@ -8953,6 +10097,77 @@
     reader.readAsText(file);
   });
 
+  // v3.128: imports ONE custom type from the .json exportCustomType()
+  // produces above — sibling to the whole-database importImagesInput
+  // handler, but for a single type instead of everything. Lives OUTSIDE
+  // customTypesAcc (which starts hidden until the first custom type
+  // exists) so this button still works from a completely fresh page —
+  // otherwise พี่แยม couldn't restore even the FIRST custom type from a
+  // backup file on a brand-new install.
+  document.getElementById('importCustomTypeBtn').addEventListener('click', ()=>{
+    document.getElementById('importCustomTypeInput').click();
+  });
+  document.getElementById('importCustomTypeInput').addEventListener('change', e=>{
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      let data;
+      try {
+        data = JSON.parse(reader.result);
+      } catch (err){
+        alert('ไฟล์ไม่ถูกต้อง (อ่าน JSON ไม่ได้)');
+        return;
+      }
+      const def = data && data.def;
+      if (!def || typeof def.key !== 'string' || !def.baseType){
+        alert('ไฟล์ไม่ถูกต้อง (ไม่พบข้อมูลชนิดที่คาดไว้ — ต้องเป็นไฟล์จากปุ่ม "Export ชนิดนี้")');
+        return;
+      }
+      if (!CLONABLE_BASE_TYPES[def.group] || !CLONABLE_BASE_TYPES[def.group].includes(def.baseType)){
+        alert('ไฟล์นี้อ้างอิงแม่แบบต้นทางที่ไม่รองรับแล้ว นำเข้าไม่ได้');
+        return;
+      }
+      if (isTypeKeyTaken(def.key)){
+        alert(`ไอดี "${def.key}" ถูกใช้ไปแล้วในเครื่องนี้ — นำเข้าไม่ได้ (ลบชนิดเดิมก่อน หรือแก้ไอดีในไฟล์แล้วลองใหม่)`);
+        return;
+      }
+      const ok = confirm(`นำเข้าชนิด "${def.label}" (ไอดี: ${def.key}) ต้องการดำเนินการต่อไหม?`);
+      if (!ok) return;
+
+      registerCustomType(def);
+      buildCustomPaletteItem(def);
+      buildCustomSettingsCard(def);
+      persistCustomTypes();
+
+      const images = data.images && typeof data.images === 'object' ? data.images : {};
+      let appliedImg = 0;
+      for (const combinedKey of Object.keys(images)){
+        const dataUrl = images[combinedKey];
+        const idx = combinedKey.indexOf('_');
+        if (idx < 0 || typeof dataUrl !== 'string') continue;
+        const kind = combinedKey.slice(0, idx);
+        const type = combinedKey.slice(idx + 1);
+        if (type !== def.key) continue; // ignore anything not belonging to this type
+        await new Promise(resolve=>{
+          const img = new Image();
+          img.onload = ()=>{
+            applyCustomImage(kind, type, img);
+            setThumbnail(kind, type, dataUrl);
+            saveImageToStorage(kind, type, dataUrl);
+            appliedImg++;
+            resolve();
+          };
+          img.onerror = ()=> resolve();
+          img.src = dataUrl;
+        });
+      }
+      showToast(`นำเข้าชนิด "${def.label}" แล้ว (รูป ${appliedImg} รูป)`);
+    };
+    reader.readAsText(file);
+  });
+
   // ---- Wall paint mode (v3.71, extended to wallbox/wallbox5 in v3.72) ----
   // null = inactive; a hex string = that color is "armed" (clicking a
   // paintable wall type paints it); CLEAR_PAINT = armed to remove a
@@ -9079,6 +10294,21 @@
           }
           return false;
         }
+        // v3.138: a box-maker custom type — a fresh drop always uses
+        // resolveCell's own-anchor computation — checks its full cell span
+        // against every OTHER sized box AND every plain 16-cell object
+        // (shortFence) sharing that same coordinate space
+        if (isSizedBoxType(type)){
+          const def = customTypes[type];
+          const a = parseSizedBoxSub(sub);
+          return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, def.spanX, def.spanY, null);
+        }
+        // v3.138: shortFence (the only OTHER type sharing the 16-cell
+        // coordinate space) also needs to check no sized box already
+        // covers this specific cell — block/vase/etc use the older,
+        // geometrically separate 4-quadrant system and don't intersect
+        // this at all
+        if (type === 'shortFence' && scanSizedBoxOccupiedCells(c, r, null).has(sub)) return false;
         return !objects.get(layerKey(c, r, sub, layer || 0));
       }
 
@@ -9112,6 +10342,14 @@
   function findElevatedBaseAt(wx, wy){
     let bestKey = null, bestDepth = -Infinity, bestLayer = -Infinity;
     for (const [k, obj] of objects.entries()){
+      // v3.138: a box-maker custom type is never a valid stacking base —
+      // its "b{qx}_{qy}" sub key isn't a single 16-cell/quadrant slot, so
+      // anything auto-stacked "on top of it" via findFreeLayer would end
+      // up keyed under a "b..." string that scanSizedBoxOccupiedCells and
+      // the 16-cell occupancy checks don't know how to interpret — never
+      // offering it here means new drops always fall through to the
+      // ground-plane branch instead, which already handles it correctly.
+      if (isSizedBoxType(obj.type)) continue;
       if (obj.type !== 'table' && !isSmallFootprint(obj.type)) continue;
       const { c, r, layer } = parseKey(k);
       const poly = getSilhouettePolygon(obj.type, c, r, obj.state);
@@ -9147,11 +10385,15 @@
       return { c: -1, r: -1, sub: null, layer: 0, mx: wx, my: wy };
     }
     if (isSmallFootprint(type)){
+      // v3.138: a box-maker custom type never targets an elevated base
+      // (see findElevatedBaseAt's own exclusion comment) — always resolves
+      // via the ground-plane anchor branch below, regardless of what's
+      // under the cursor
       // aiming at a raised surface (the big table's top, or a small-
       // footprint base like tableSmall) targets that base directly,
       // rather than trusting ground-plane math that would land elsewhere
       // — see findElevatedBaseAt's comment
-      const baseKey = findElevatedBaseAt(wx, wy);
+      const baseKey = isSizedBoxType(type) ? null : findElevatedBaseAt(wx, wy);
       if (baseKey){
         const baseObj = objects.get(baseKey);
         const { c: bc, r: br } = parseKey(baseKey);
@@ -9170,7 +10412,17 @@
       }
       const { col, row } = screenToGrid(wx, wy);
       const c = Math.round(col), r = Math.round(row);
-      const sub = getTileQuadrant(wx, wy, c, r);
+      // v3.138: a box-maker custom type resolves to its own spanX×spanY
+      // anchor and never stacks (layer always 0 — isSizedBoxSpanFree, not
+      // findFreeLayer, is what decides if this spot is actually free)
+      if (isSizedBoxType(type)){
+        const def = customTypes[type];
+        const sub = getSizedBoxAnchor(wx, wy, c, r, def.spanX, def.spanY);
+        return { c, r, sub, layer: 0, mx: wx, my: wy };
+      }
+      // v3.134: รั้วเตี้ย snaps into 1 of 16 finer sub-cells instead of the
+      // usual 4 quadrants — every other small-footprint type is unaffected
+      const sub = type === 'shortFence' ? getTileSubCell16(wx, wy, c, r) : getTileQuadrant(wx, wy, c, r);
       // auto-advance past any layer already occupied in this quadrant (see
       // findFreeLayer's comment) — makes a plain drop stack on top of
       // whatever's already there without needing Tab to reach the page
@@ -9259,6 +10511,18 @@
         }
         return false;
       }
+      // v3.138: same reasoning as isPlacementValid's matching branch —
+      // see its comment for why a sized box and shortFence get their own
+      // checks here instead of the plain single-key one. Its own current
+      // position is already removed from `objects` by the pickup handler
+      // (objects.delete(k)) by the time this runs, so no "exclude self"
+      // bookkeeping is needed here.
+      if (isSizedBoxType(type)){
+        const def = customTypes[type];
+        const a = parseSizedBoxSub(sub);
+        return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, def.spanX, def.spanY, null);
+      }
+      if (type === 'shortFence' && scanSizedBoxOccupiedCells(c, r, null).has(sub)) return false;
       return !objects.get(layerKey(c, r, sub, layer || 0));
     }
 

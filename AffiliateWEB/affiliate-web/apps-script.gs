@@ -89,6 +89,8 @@ function doPost(e) {
     return markNoShopeeLink(sheet, p);
   } else if (p.action === 'restoreShopeeCheckbox') {
     return restoreShopeeCheckbox(sheet, p);
+  } else if (p.action === 'bumpProgressDay') {
+    return bumpProgressDay(sheet, p);
   } else {
     return json({ ok: false, error: 'UNKNOWN_ACTION' });
   }
@@ -506,4 +508,39 @@ function backfillListItmeFromProgress() {
     });
   }
   Logger.log('Backfilled ' + count + ' ค่าเข้า ListITME');
+}
+
+// ============================================================
+// Progress-Day: แท็บ "📆 Progress-Day" กดนับ +1/-1 รายวัน (สคริปต์/เสียง/ถ่าย/Draft/Final/ลงคลิป)
+// ชื่อชีตมีเว้นวรรคท้ายจริง ("Progress-Day ") ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
+// คอลัมน์ A เป็น Date object จริง (โชว์เป็น "1 July 2026") ไม่ใช่ข้อความ
+// ============================================================
+const PROGRESS_DAY_SHEET = 'Progress-Day ';
+const PROGRESS_DAY_STAGE_COLS = { scripts: 2, sounds: 3, footage: 4, draft: 5, final: 6, posted: 7 };
+
+function findProgressDayRow(sheet, dateStr) {
+  const lastRow = sheet.getLastRow();
+  const values = sheet.getRange(1, 1, lastRow, 1).getValues();
+  for (let r = 0; r < values.length; r++) {
+    const v = values[r][0];
+    if (v instanceof Date && Utilities.formatDate(v, 'Asia/Bangkok', 'yyyy-MM-dd') === dateStr) return r + 1;
+  }
+  return 0;
+}
+
+// p: { date: 'yyyy-MM-dd', stage: 'scripts'|'sounds'|'footage'|'draft'|'final'|'posted', delta: 1 หรือ -1 }
+// ไม่มีแถวของวันนั้น (เช่น ข้ามเข้าเดือนใหม่ที่ยังไม่ได้เตรียมแถวไว้) → สร้างแถวใหม่ให้อัตโนมัติ
+function bumpProgressDay(sheet, p) {
+  const col = PROGRESS_DAY_STAGE_COLS[p.stage];
+  if (!col) return json({ ok: false, error: 'UNKNOWN_STAGE' });
+  let rowNum = findProgressDayRow(sheet, p.date);
+  if (!rowNum) {
+    sheet.appendRow([new Date(p.date + 'T00:00:00')]);
+    rowNum = sheet.getLastRow();
+  }
+  const cell = sheet.getRange(rowNum, col);
+  const cur = parseFloat(cell.getValue()) || 0;
+  const next = Math.max(0, cur + (p.delta || 1));
+  cell.setValue(next);
+  return json({ ok: true, value: next });
 }

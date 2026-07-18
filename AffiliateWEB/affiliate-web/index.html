@@ -41,6 +41,9 @@
   .btn { background: var(--cyan); color: #000; border: none; padding: 9px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: .85rem; font-family: inherit; }
   .btn.pink { background: var(--pink); color: #fff; }
   .btn.orange { background: #f6b26b; color: #2a1a08; }
+  .btn.purple { background: #c9a8ff; color: #000; }
+  .btn.blue { background: #7ab8ff; color: #000; }
+  .btn.green { background: #4ade80; color: #000; }
   .btn.ghost { background: var(--card2); color: var(--text); border: 1px solid var(--border); font-weight: 400; }
   .btn:disabled { background: var(--card2); color: var(--muted); cursor: not-allowed; opacity: .6; }
   .tablewrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
@@ -73,6 +76,8 @@
   .settings input, .settings textarea { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; font-family: inherit; box-sizing: border-box; }
   .settings p { font-size: .85rem; color: var(--muted); margin-top: 10px; line-height: 1.7; }
   #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 12px; font-weight: 600; display: none; z-index: 99; font-size: .85rem; }
+  .confetti-particle { position: fixed; top: 0; left: 0; font-size: 20px; pointer-events: none; z-index: 999; will-change: transform, opacity; animation: confettiPop .7s ease-out forwards; }
+  @keyframes confettiPop { 0% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4) rotate(var(--rot)); opacity: 0; } }
   canvas { max-height: 260px; }
   .item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
   .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -96,6 +101,8 @@
   .card input.goalInput:focus { outline: 1px solid var(--cyan); border-radius: 6px; }
   .tag.prod { background: #2a1c3a; color: #c9a8ff; }
   .qtable th { cursor: default; }
+  tr.pdRow:hover td { background: var(--card2); }
+  tr.pdRowActive td { background: rgba(37,244,238,.1); }
   .qtable.stages-collapsed .stagecol { display: none; }
   .qtable td.center, .qtable th.center { text-align: center; }
   .qtable input[type=checkbox] { accent-color: #16a34a; width: 15px; height: 15px; cursor: pointer; }
@@ -117,7 +124,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v1.1 · กำลังโหลด…</span>
+  <span id="status">v2.3 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -126,6 +133,7 @@
   <button data-tab="queue">📅 คิวคลิป</button>
   <button data-tab="progress">✍️ Progress</button>
   <button data-tab="listitme">🗂️ ListITME</button>
+  <button data-tab="progday">📆 Progress-Day</button>
   <button data-tab="settings">⚙️ ตั้งค่า</button>
 </nav>
 <main>
@@ -287,6 +295,11 @@
         <option value="C">C</option>
         <option value="Cต">Cต</option>
       </select>
+      <div id="listBacklogInfo" style="margin-left:auto;font-size:.78rem;color:var(--muted);align-self:center"></div>
+    </div>
+    <div class="panel" id="listNewWrap" style="display:none;margin-bottom:14px">
+      <h3 id="listNewInfo" style="margin-bottom:8px;cursor:pointer"></h3>
+      <div id="listNewBody"></div>
     </div>
     <div class="tablewrap">
       <table class="qtable">
@@ -295,6 +308,24 @@
           <th class="center">Footage</th><th class="center">สถานะ</th>
         </tr></thead>
         <tbody id="listitmeBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ PROGRESS-DAY (แท็บ +1/-1 นับงานรายวัน) ============ -->
+  <section id="tab-progday" style="display:none">
+    <div class="toolbar">
+      <input type="date" id="pdDate">
+    </div>
+    <div id="pdInfo" class="empty" style="padding:10px"></div>
+    <div class="cards" id="pdCards" style="display:none"></div>
+    <div class="tablewrap" id="pdTableWrap" style="margin-top:16px;display:none">
+      <table class="qtable">
+        <thead><tr>
+          <th>วันที่</th><th class="center">เขียนสคลิป</th><th class="center">พาร์กเสียง</th>
+          <th class="center">ถ่ายคลิปได้</th><th class="center">Draft คลิปได้</th><th class="center">Final ตัดคลิปได้</th><th class="center">ลงคลิปได้</th>
+        </tr></thead>
+        <tbody id="pdTableBody"></tbody>
       </table>
     </div>
   </section>
@@ -439,7 +470,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v1.1';
+const VERSION = 'v2.3';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -447,6 +478,7 @@ const SHEET_DESC = '📝#คำอธิบาย';
 const SHEET_LINKS = '🍊🔗ShopeeLink';
 const SHEET_PROGRESS = '⚡️Progress';
 const SHEET_LISTITME = '🗂️ ListITME';
+const SHEET_PROGRESS_DAY = 'Progress-Day '; // มีเว้นวรรคท้ายจริง ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 // ค่าเริ่มต้นที่ฝังไว้ในโค้ด กันต้องกรอกใหม่ทุกครั้งที่รีเฟรช/เปิดเบราว์เซอร์ใหม่ — แก้ในแท็บตั้งค่าเว็บได้ตามปกติ (ค่าที่กรอกเองจะทับค่านี้)
 // ชื่อชีต TODOLIST เปลี่ยนทุกเดือน ต้องมาแก้เลขนี้ในโค้ดเองด้วยตอนขึ้นเดือนใหม่ ถ้าไม่อยากกรอกในหน้าเว็บทุกเครื่อง
@@ -868,10 +900,11 @@ $('#formSale').addEventListener('submit', (e) => {
 /* ================== UI WIRING ================== */
 function switchTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
   if (name === 'queue') loadQueue();
   if (name === 'progress') loadProgress();
   if (name === 'listitme') loadListItme();
+  if (name === 'progday') loadProgDay();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 $('#rangeChips').addEventListener('click', (e) => {
@@ -1127,7 +1160,7 @@ function renderQueueRow(it, gid, isOpen, groupHead) {
     <td class="center stagecol">${stageCheck(it, 'final', code)}</td>
     <td class="center">${platformBtn(it, 'tiktok', 'TikTok', code)}</td>
     <td class="center">${platformBtn(it, 'sp', 'Shopee', code)}</td>
-    <td class="center">${stageCheck(it, 'upspace', code)}</td>
+    <td class="center">${backupBtn(it, code)}</td>
   </tr>`;
 }
 
@@ -1135,6 +1168,12 @@ function renderQueueRow(it, gid, isOpen, groupHead) {
 // (กันกรณีพี่แยมแทรก/ลบแถวใน TODOLIST ระหว่างเปิดหน้าเว็บค้างไว้ — เจอบั๊กจากเรื่องนี้มาแล้วฝั่ง Progress)
 function stageCheck(it, stage, itmCode) {
   return `<input type="checkbox" class="stagecheck" data-row="${it.row}" data-stage="${stage}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" ${it[stage] === 'TRUE' ? 'checked' : ''}>`;
+}
+
+// ปุ่มใหญ่แบบเดียวกับ TikTok/Shopee (platformBtn) แต่ไม่ต้องกรอกลิงก์ — กดแล้วสลับ true/false ตรงๆ ผ่าน setStage เดิม
+function backupBtn(it, itmCode) {
+  const done = it.upspace === 'TRUE';
+  return `<button class="${done ? 'tag on' : 'btn ghost'} backupToggle" data-row="${it.row}" data-itm="${itmCode}" data-ep="${esc(it.ep)}" data-value="${done ? 'false' : 'true'}">${done ? '☁️ Backup แล้ว' : '✓ Backup'}</button>`;
 }
 
 // A เขียว, B เหลือง (รวม B2/Bต), C ฟ้า (รวม Cต)
@@ -1201,6 +1240,15 @@ $('#queueList').addEventListener('click', async (e) => {
     $('#btnUnmarkLink').textContent = isTiktok ? 'ยังไม่ได้ลงคลิป (ลด EP ลง 1)' : 'ยังไม่ได้ลงคลิป';
     pendingLinkBtn = linkBtn;
     $('#dlgEditLink').showModal();
+    return;
+  }
+  const bkBtn = e.target.closest('.backupToggle');
+  if (bkBtn) {
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    const value = bkBtn.dataset.value === 'true';
+    bkBtn.disabled = true;
+    const ok = await saveToSheet({ sheet: todolistSheet(), action: 'setStage', row: Number(bkBtn.dataset.row), itmCode: bkBtn.dataset.itm, epText: bkBtn.dataset.ep, stage: 'upspace', value });
+    if (ok) setTimeout(loadQueue, 1500); else bkBtn.disabled = false;
     return;
   }
   const b = e.target.closest('.markbtn'); if (!b) return;
@@ -1416,22 +1464,67 @@ async function loadListItme() {
     $('#listitmeBody').innerHTML = '';
     $('#listitmeStats').style.display = 'none';
   }
+  loadListItmeNewProducts(); // แยก fetch จากชีต TODOLIST เดือนนี้ ไม่บล็อกการโหลดตารางหลัก
 }
+
+// สินค้าใหม่เดือนนี้ = ไอเทมที่มีแถวลง EP.1 อยู่ในชีต TODOLIST เดือนปัจจุบัน (ตามที่ตกลงกันไว้ — EP.1 คือคลิปแรกของไอเทมนั้นเสมอ)
+async function loadListItmeNewProducts() {
+  const sheetName = todolistSheet();
+  if (!sheetName) { $('#listNewWrap').style.display = 'none'; return; }
+  try {
+    const rows = await loadRaw(sheetName);
+    const hasHeader = rows.length && rows[0][0] === 'วันที่ลง';
+    const dataRows = hasHeader ? rows.slice(1) : rows;
+    const seen = new Set();
+    const items = [];
+    dataRows.forEach(r => {
+      if (!r[2]) return;
+      const epNum = parseFloat(String(r[3] || '').replace(/EP\.?/i, '').trim());
+      if (epNum !== 1) return;
+      const p = parseItm(r[2]);
+      if (!p || seen.has(p.id)) return;
+      seen.add(p.id);
+      items.push({ id: p.id, name: p.name, tier: r[4] });
+    });
+    $('#listNewWrap').style.display = items.length ? '' : 'none';
+    const collapsed = localStorage.getItem('listNewCollapsed') === '1';
+    $('#listNewInfo').innerHTML = `<span class="qtoggle" style="padding:0 4px 0 0">${collapsed ? '▶' : '▼'}</span>🆕 สินค้าใหม่เดือนนี้ (ลง EP.1 ครั้งแรก) — ${items.length} ตัว`;
+    $('#listNewBody').style.display = collapsed ? 'none' : '';
+    $('#listNewBody').innerHTML = items.map(it =>
+      `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:5px 10px;margin:3px;font-size:.82rem"><span class="sku">${esc(it.id)}</span> ${esc(it.name)} ${tierTag(it.tier)}</span>`
+    ).join(' ');
+  } catch (e) {
+    $('#listNewWrap').style.display = 'none';
+  }
+}
+
+$('#listNewInfo').addEventListener('click', () => {
+  const collapsed = localStorage.getItem('listNewCollapsed') === '1';
+  localStorage.setItem('listNewCollapsed', collapsed ? '0' : '1');
+  $('#listNewBody').style.display = collapsed ? '' : 'none';
+  const arrow = $('#listNewInfo .qtoggle'); if (arrow) arrow.textContent = collapsed ? '▼' : '▶';
+});
 
 let listitmeItems = []; // แคชไว้ให้ตัวกรอง Tier ใช้กรอง/เรียงใหม่โดยไม่ต้องโหลดซ้ำ
 
 function renderListItme(rows) {
-  // คอลัมน์ตามชีต 🗂️ ListITME: B=ชื่อ(idx1), C=EP ปัจจุบัน(idx2), D=Tier(idx3), E=Footage(idx4)
+  // คอลัมน์ตามชีต 🗂️ ListITME: B=ชื่อ(idx1), C=EP ปัจจุบัน(idx2), D=Tier(idx3), E=Footage(idx4), F=Draft(idx5)
   const items = rows.map(r => {
     const p = parseItm(r[1]); if (!p) return null;
     const ep = num(r[2]);
     const tier = String(r[3] || '').trim();
     const footage = epNumOf(r[4]);
+    const draft = epNumOf(r[5]);
     const footageNum = footage === '' ? 0 : footage;
     const manual = tier === 'A' || tier === 'B2'; // พี่แยมกำหนดจำนวนเอง ไม่นับในโควตา
-    return { id: p.id, name: p.name, tier, ep, footage, manual, waiting: !manual && footageNum < LISTITME_FOOTAGE_THRESHOLD };
+    return { id: p.id, name: p.name, tier, ep, footage, draft, manual, waiting: !manual && footageNum < LISTITME_FOOTAGE_THRESHOLD };
   }).filter(Boolean);
   listitmeItems = items;
+
+  // มุมเล็กๆ บอกจำนวนคลิปค้างตัด: Footage เกิน EP = ถ่ายแล้วยังไม่ตัด Draft, Draft เกิน EP = ตัด Draft แล้วยังไม่ Final/โพสต์
+  const draftBacklog = items.reduce((a, it) => a + Math.max(0, (it.footage === '' ? 0 : it.footage) - it.ep), 0);
+  const finalBacklog = items.reduce((a, it) => a + Math.max(0, (it.draft === '' ? 0 : it.draft) - it.ep), 0);
+  $('#listBacklogInfo').textContent = items.length ? `🎬 เหลือตัด Draft ${draftBacklog} คลิป · เหลือตัด Final ${finalBacklog} คลิป` : '';
 
   $('#listitmeInfo').textContent = items.length ? '' : 'ยังไม่มีข้อมูลในชีต ListITME ครับ';
   $('#listitmeStats').style.display = items.length ? '' : 'none';
@@ -1679,6 +1772,170 @@ async function autoDiscoverTiktokMonths() {
   } catch (e) { /* เช็คไม่สำเร็จ ไม่ต้องรบกวนพี่ */ }
 }
 autoDiscoverTiktokMonths();
+
+/* ================== PROGRESS-DAY: นับงานรายวัน กด +1/-1 ================== */
+// คอลัมน์ตามชีต "Progress-Day ": A=วันที่ (Date object โชว์เป็น "1 July 2026"), B-G=6 สเตจตามลำดับ
+// cls ตรงกับสีแท็ก Progress ที่ใช้อยู่แล้วในแท็บค้นหา/คิวคลิป (pscript=cyan, psound=purple, pfootage=blue) ให้จำสีตรงกันทั้งเว็บ
+const PROGDAY_STAGES = [
+  { key: 'scripts', label: 'เขียนสคลิป', cls: '' },
+  { key: 'sounds', label: 'พาร์กเสียง', cls: 'purple' },
+  { key: 'footage', label: 'ถ่ายคลิปได้', cls: 'blue' },
+  { key: 'draft', label: 'Draft คลิปได้', cls: 'orange' },
+  { key: 'final', label: 'Final ตัดคลิปได้', cls: 'green' },
+  { key: 'posted', label: 'ลงคลิปได้', cls: 'pink' },
+];
+const PROGDAY_MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+
+// "1 July 2026" -> "2026-07-01" ให้เทียบกับค่าจาก <input type=date> ได้ตรงๆ
+function progDayDateKey(v) {
+  const m = String(v || '').trim().match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (!m) return '';
+  const mi = PROGDAY_MONTHS.indexOf(m[2].toLowerCase());
+  if (mi === -1) return '';
+  return `${m[3]}-${String(mi + 1).padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+}
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+let progDayRows = [];
+
+async function loadProgDay() {
+  if (!$('#pdDate').value) $('#pdDate').value = todayKey();
+  $('#pdInfo').textContent = 'กำลังโหลด…';
+  try {
+    progDayRows = await loadRaw(SHEET_PROGRESS_DAY);
+    renderProgDay();
+  } catch (e) {
+    $('#pdInfo').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet';
+    $('#pdCards').style.display = 'none';
+  }
+}
+
+function progDayValuesFor(dateKey) {
+  const row = progDayRows.find(r => progDayDateKey(r[0]) === dateKey);
+  const v = {};
+  PROGDAY_STAGES.forEach((s, i) => { v[s.key] = row ? (num(row[i + 1]) || 0) : 0; });
+  return v;
+}
+
+function renderProgDay() {
+  const dateKey = $('#pdDate').value || todayKey();
+  const values = progDayValuesFor(dateKey);
+  $('#pdInfo').textContent = '';
+  $('#pdCards').style.display = '';
+  $('#pdCards').innerHTML = PROGDAY_STAGES.map(s => `
+    <div class="card">
+      <div class="label">${esc(s.label)}</div>
+      <div class="value cyan" id="pdVal-${s.key}">${values[s.key]}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn ghost pdBtn" data-stage="${s.key}" data-delta="-1">−1</button>
+        <button class="btn ${s.cls} pdBtn" data-stage="${s.key}" data-delta="1">+1</button>
+      </div>
+    </div>`).join('');
+
+  renderProgDayTable(dateKey);
+}
+
+// ตารางรวมทุกวันที่มีข้อมูล เรียงวันที่ 1-31 (เก่าไปใหม่) — คลิกแถวไหนเพื่อสลับการ์ดด้านบนไปวันนั้นได้เลย
+function renderProgDayTable(dateKey) {
+  const rows = progDayRows
+    .map(r => ({ raw: r[0], key: progDayDateKey(r[0]), vals: PROGDAY_STAGES.map((s, i) => num(r[i + 1]) || 0) }))
+    .filter(r => r.key)
+    .sort((a, b) => a.key.localeCompare(b.key));
+  $('#pdTableWrap').style.display = rows.length ? '' : 'none';
+  const totals = PROGDAY_STAGES.map((s, i) => rows.reduce((a, r) => a + r.vals[i], 0));
+  $('#pdTableBody').innerHTML = rows.map(r => `<tr class="pdRow${r.key === dateKey ? ' pdRowActive' : ''}" data-date="${esc(r.key)}">
+    <td>${esc(r.raw)}</td>
+    ${r.vals.map(v => `<td class="center">${v}</td>`).join('')}
+  </tr>`).join('') + (rows.length ? `<tr style="font-weight:700;background:var(--card2)">
+    <td>รวมทั้งหมด</td>
+    ${totals.map(v => `<td class="center">${v}</td>`).join('')}
+  </tr>` : '');
+}
+
+$('#pdTableWrap').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-date]'); if (!tr) return;
+  $('#pdDate').value = tr.dataset.date;
+  renderProgDay();
+});
+
+$('#pdDate').addEventListener('change', renderProgDay);
+
+// เดิมปุ่มจะ disable รอ Apps Script ตอบกลับก่อนค่อยกดซ้ำได้ (รอบละ 1-3 วิ) พี่กดรัวๆ เลยรู้สึกค้าง
+// เปลี่ยนเป็น: ตัวเลขบนจอเปลี่ยนทันทีทุกครั้งที่กด ไม่ล็อกปุ่มเลย ส่วนการบันทึกจริงลง Sheet จะรวมยอดที่กดรัวๆ
+// แล้วส่งเป็น 1 คำขอหลังหยุดกด 600ms (debounce) กันยิง request ถี่เกินจำเป็นด้วย
+const pdPending = {}; // key `${dateKey}:${stage}` -> { delta, timer }
+const PD_DEBOUNCE_MS = 600;
+
+function pdFlush(dateKey, stage) {
+  const key = `${dateKey}:${stage}`;
+  const p = pdPending[key];
+  if (!p) return;
+  delete pdPending[key];
+  if (p.delta === 0) return;
+  fetch(apiUrl(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ sheet: SHEET_PROGRESS_DAY, action: 'bumpProgressDay', date: dateKey, stage, delta: p.delta }),
+  }).then(r => r.json()).then(res => {
+    if (!res.ok) throw new Error(res.error);
+    const stageIdx = PROGDAY_STAGES.findIndex(s => s.key === stage);
+    let row = progDayRows.find(r => progDayDateKey(r[0]) === dateKey);
+    if (!row) {
+      const d = dateKey.split('-');
+      row = [`${+d[2]} ${['January','February','March','April','May','June','July','August','September','October','November','December'][+d[1] - 1]} ${d[0]}`];
+      progDayRows.push(row);
+    }
+    row[stageIdx + 1] = String(res.value);
+    const viewingThisDate = dateKey === ($('#pdDate').value || todayKey());
+    if (viewingThisDate) {
+      const valEl = $(`#pdVal-${stage}`);
+      if (valEl) valEl.textContent = res.value; // sync ให้ตรงค่าจริงบน Sheet เผื่อเพี้ยนจากที่กะไว้
+      renderProgDayTable(dateKey);
+    }
+  }).catch(() => {
+    toast(`บันทึก "${PROGDAY_STAGES.find(s => s.key === stage)?.label || stage}" ไม่สำเร็จ ลองกด +1/-1 ซ้ำอีกครั้งครับ`);
+  });
+}
+
+$('#pdCards').addEventListener('click', (e) => {
+  const b = e.target.closest('.pdBtn'); if (!b) return;
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  const stage = b.dataset.stage, delta = Number(b.dataset.delta);
+  const dateKey = $('#pdDate').value || todayKey();
+  const valEl = $(`#pdVal-${stage}`);
+  valEl.textContent = Math.max(0, num(valEl.textContent) + delta);
+  if (delta > 0) { const r = b.getBoundingClientRect(); celebrate(r.left + r.width / 2, r.top + r.height / 2); }
+
+  const key = `${dateKey}:${stage}`;
+  if (!pdPending[key]) pdPending[key] = { delta: 0, timer: null };
+  pdPending[key].delta += delta;
+  clearTimeout(pdPending[key].timer);
+  pdPending[key].timer = setTimeout(() => pdFlush(dateKey, stage), PD_DEBOUNCE_MS);
+});
+
+// เอฟเฟคฉลองเล็กๆ ตอนกด +1 สำเร็จ — ยิงอิโมจิกระจายออกจากจุด (x, y) แล้วเฟดหายไปเอง ไม่ต้องพึ่ง library ภายนอก
+const CELEBRATE_EMOJI = ['🎉', '✨', '🎊', '⭐', '💥'];
+function celebrate(x, y) {
+  const n = 10;
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('span');
+    el.className = 'confetti-particle';
+    el.textContent = CELEBRATE_EMOJI[Math.floor(Math.random() * CELEBRATE_EMOJI.length)];
+    const angle = (Math.PI * 2 * i) / n + (Math.random() - .5) * .6;
+    const dist = 50 + Math.random() * 55;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    el.style.setProperty('--rot', (Math.random() * 360 - 180) + 'deg');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  }
+}
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
