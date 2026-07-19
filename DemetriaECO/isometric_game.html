@@ -3660,6 +3660,248 @@
     1×0.25 boxes now render as correctly-oriented domino shapes; X=Y boxes
     and a plain block are pixel-identical to before; yellow outline traces
     the box tightly. Zero console/page errors in either engine.
+
+  v3.140 (2026-07-18) — Fixed a follow-on bug from v3.139: right-click
+    flipping a sized box correctly mirrored the RENDERED box (drawObject's
+    existing ctx.scale(-1,1) already handled that for every object type,
+    unchanged), but the yellow hover outline stayed in its un-flipped
+    orientation, so the outline no longer matched the box after a flip —
+    พี่แยม's screenshot + "ตอนที่พี่ Filp มันไม่ Filp ตามจ้า" report. Never
+    visible before v3.139 because every previously-flippable footprint was
+    screen-x-symmetric (a plain diamond/hexagon looks identical mirrored),
+    so no one had ever needed to mirror it explicitly; v3.139's real
+    parallelogram-prism boxes are the first genuinely asymmetric footprint
+    this outline code has had to handle (aside from wallbox/npc, which
+    already had their own explicit flip handling).
+
+    Root cause: getSilhouettePolygon/the drag-preview guide compute screen
+    points directly (no canvas transform involved), so they never picked up
+    drawObject's ctx.scale(-1,1) mirroring at all — they need to replicate
+    that mirror by hand. Traced the exact transform drawObject applies
+    (ctx.translate(quadOff) called BEFORE the flip's translate/scale/
+    translate triplet, meaning it ends up as the outermost transform in the
+    composed matrix) and confirmed algebraically that quadOff's translation
+    and the tile-center flip pivot cancel out to a clean net result: flipping
+    always mirrors a sized box around its OWN footprint center, only negating
+    each corner's dx (from sizedBoxCorners) — dy and the footprint center
+    itself never move. Applied that single-line fix (dx *= flip ? -1 : 1) in
+    both getSilhouettePolygon's sized-box branch and the drag-preview guide's
+    sized-box branch (a box being moved while already flipped needs its drop
+    guide mirrored too). drawSizedBox itself needed no change — its mirroring
+    was already correct via the canvas transform, only the two screen-space
+    silhouette calculations were missing it.
+
+    Verified with Playwright (Chromium + WebKit): flipped a 0.5×0.25 box,
+    confirmed the rendered box, its hover outline, AND its drag-move guide
+    all mirror together; un-flipped state and every square (X=Y) sized box
+    unaffected (flip fx=1, no visible change, matching pre-v3.140 behavior).
+    Zero console/page errors in either engine.
+
+  v3.141 (2026-07-18) — v3.140's flip fix exposed a deeper issue underneath:
+    for a NON-square (X≠Y) sized box, flip was never a valid operation to
+    begin with — พี่แยม's follow-up screenshot + "พอ Filp แล้ว มันก็ไม่ตรง
+    Grid 0.25 เลยจ้า" showed the (now correctly-matching, per v3.140) box +
+    outline pair together sitting off the 0.25 grid after a flip.
+
+    Root cause: drawObject's generic flip is a SCREEN-SPACE mirror
+    (ctx.scale(-1,1) around the box's own center) — for a plain rectangular
+    footprint that has no front/back, this sounds harmless, but proved
+    algebraically that negating screen-dx while keeping dy (the exact effect
+    of that mirror) solves to dc'=dr, dr'=dc — a GRID-AXIS SWAP, not a true
+    left-right mirror. A 0.5×0.25 (2-wide, 1-deep) box flips into RENDERING
+    as a 0.25×0.5 (1-wide, 2-deep) shape, while the cells actually reserved
+    for it (scanSizedBoxOccupiedCells, keyed off spanX/spanY from its own
+    def, completely unaware of flip) stay 2-wide/1-deep the whole time — so
+    the rendered box (and its outline, correctly tracking it since v3.140)
+    visibly drift off the real reserved footprint. Square (X=Y) boxes were
+    always fine — swapping two equal spans is a no-op, which is exactly why
+    this never surfaced before v3.139/v3.140 introduced genuinely
+    non-square sized boxes.
+
+    Discussed 2 options (keep the state field but make it a no-op, or block
+    the interaction outright); พี่แยม picked "ปิด Flip สำหรับกล่อง X≠Y" —
+    blocking is clearer than a click that silently does nothing forever.
+    Added isNonSquareSizedBox(type) and an early-return branch in
+    applyFlipStep for it — right-clicking a non-square sized box (or a
+    passenger riding on one) is now a silent no-op, same convention this
+    codebase already uses for other blocked actions (e.g. a rotate that
+    would overlap something). Square sized boxes and every other object
+    type are completely unaffected — the branch only matches
+    isSizedBoxType(type) with spanX !== spanY.
+
+    Verified with Playwright (Chromium + WebKit): right-clicking a 0.5×0.25
+    box no longer changes state.flip (stays false); a 0.5×0.5 (square)
+    sized box's flip still toggles normally; every other object type
+    (block, table, npc, wallbox) unaffected. Zero console/page errors in
+    either engine.
+
+  v3.142 (2026-07-18) — Replaced v3.141's "flip disabled" stopgap with the
+    real feature: right-clicking a non-square sized box now ROTATES it 90°
+    (swaps spanX/spanY), reservation and all. พี่แยม walked through it with
+    before/after screenshots of a (0.5, 0.25, 0.5) box — "พอพี่คลิกขวาจะ
+    Filp กล่องมันดันไม่ Filp ซึ้งมันควรจะเป็นแบบรูปที่พี่จะส่งไปอีกรอบ" then
+    "นี่จ้า มันควรจะ filp เป็นแบบนี้" — the target picture is the long side
+    swapping which way it faces. Confirmed geometrically that this picture
+    IS the span swap: mirroring a non-square iso footprint and swapping its
+    two spans produce identical corner sets (each corner's screen-dx negates
+    while dy is unchanged, in both cases). So v3.139-v3.141's rendering was
+    right all along — the missing half was that the RESERVED cells never
+    followed, which is what pushed the box off the 0.25 grid.
+
+    Rotation lives in a new per-instance state.rot90, not in the type def:
+    def.spanX/spanY sit on the shared customTypes template that every
+    instance of that type reads, so a per-box orientation can't live there.
+    Added getSizedBoxSpans(type, state) as the single source of truth and
+    routed EVERY span read through it — drawObject/drawSizedBox,
+    getSilhouettePolygon, the drop-preview guide, getObjectOffset,
+    getGuideSize, and critically the occupancy/validity path
+    (scanSizedBoxOccupiedCells, isPlacementValid, isMoveValid, resolveCell).
+    That last group is the actual fix: the rendered shape and the reserved
+    cells now read the same orientation from the same function, structurally
+    ruling out the class of bug that produced v3.139-v3.141. isPlacementValid
+    /isMoveValid/resolveCell/getGuideSize/getObjectOffset each took an
+    optional trailing `state`; a fresh palette drop passes nothing and gets
+    the template's un-rotated spans exactly as before.
+
+    Rotating never re-keys the object — the anchor cell stays put and only
+    the spans swap, so the commit is a plain state.rot90 toggle. Guarded by
+    canRotateSizedBox, which runs the rotated footprint through the same
+    isSizedBoxSpanFree a fresh placement uses (bounds + no shortFence + no
+    other sized box, excluding itself); a rotation that wouldn't fit is
+    silently refused, matching this file's existing blocked-action
+    convention. Square sized boxes keep their old flip (a provable visual
+    no-op for them) and never get rot90.
+
+    Verified with Playwright (Chromium + WebKit), 14 assertions each, all
+    passing: rotate toggles on/off and leaves the Map key untouched; a
+    shortFence occupying a cell the ROTATED box would need correctly blocks
+    the rotation; and the core reservation test — a cell that the un-rotated
+    box reserves becomes genuinely placeable after rotating, while the cell
+    the rotation newly covers starts correctly rejecting placements (this
+    pair is exactly what the old flip could not do). Square box still flips
+    and never gains rot90; rot90 round-trips through map export. Zero
+    console/page errors in either engine.
+
+  v3.143 (2026-07-18) — Added a per-type snap-grid choice to the box-maker:
+    a new "Snap แบบ 0.5" checkbox in the "+ สร้างกล่องขนาดเอง" modal, decided
+    once at creation (same as spanX/spanY/heightUnits already are, never
+    editable after). Off (default) keeps every existing box's placement
+    exactly as before — all 16 sub-cells reachable. On restricts a fresh
+    drop/move to the 4 corner positions the classic quadrant system already
+    uses (block, vase). พี่แยม asked where this setting should live —
+    discussed putting it in the general "แม่แบบ" (custom-type clone) system
+    vs. the box-maker's own modal, and settled on the box-maker specifically
+    since the whole concept of a sub-tile snap grid only exists for types
+    that carry spanX/spanY (box-maker products) — the general clone system
+    produces types with no such field, so the setting wouldn't mean anything
+    there. "โอเคจ้า งั้นสร้างไว้ในขนาดกล่องเอง ได้เลย ติ๊กได้ว่าจะ snap แบบ
+    0.25 หรือ 0.5" confirmed the plan before implementing.
+
+    Implementation: def.snapStep (0.25 or 0.5) stored alongside spanX/spanY/
+    heightUnits in the same customTypes registry entry — persists and
+    restores through the exact same generic registerCustomType/
+    persistCustomTypes/restoreCustomTypes machinery, no changes needed there.
+    getSizedBoxAnchor gained a trailing snapStep parameter: when it's 0.5,
+    the raw 16-cell position gets rounded to the nearest multiple of 2 cells
+    before the existing in-bounds clamp runs; a type with no snapStep field
+    at all (every box made before this version) falls back to 0.25 via
+    `snapStep || 0.25`, so old types are byte-for-byte unaffected. Deliberately
+    left the occupancy/overlap math (isSizedBoxSpanFree, scanSizedBoxOccupiedCells)
+    completely untouched — it only ever asks "which cells does this anchor
+    cover," never "how coarsely was this anchor chosen," so a 0.5-snap box's
+    reservation, rotation, and collision behavior are identical in kind to a
+    0.25-snap box, just landing on fewer possible anchor points.
+
+    Verified with Playwright (Chromium + WebKit): a 0.25-snap box dropped
+    near a specific sub-cell anchors at that EXACT cell; a 0.5-snap box
+    dropped at the same point always resolves to an even (0 or 2) qx/qy,
+    never an odd one; dropped exactly on a corner it lands precisely there;
+    snapStep survives a full page reload (created with 0.5 snap, reloaded,
+    still resolves only to the 4 coarse positions). Zero console/page
+    errors in either engine.
+
+  v3.144 (2026-07-19) — "เพิ่มชนิดใหม่จากแม่แบบ" (the general clone modal)
+    can now clone FROM a previously-created custom type, not just a built-in
+    one — พี่แยม's screenshot of the "แม่แบบต้นทาง" dropdown (only showing
+    กล่อง/บล็อก/ต้นไม้/ก้อนหิน/ถัง) plus "อยากให้มีที่เรากำหนดเองใส่ไปได้
+    ด้วย". Discussed where this setting should live before touching code;
+    confirmed excluding box-maker sized boxes from the pickable list (they'd
+    clone into a broken watered-down shape — see v3.143/rot90 lesson about
+    every span read needing the same source of truth — since this modal
+    never asks for or copies spanX/spanY/heightUnits/snapStep).
+
+    Turned out registerCustomType needed ZERO changes: `OBJECT_TYPES[def.
+    baseType]` already resolves either a built-in OR a previously-registered
+    custom type identically, since every custom type gets written into the
+    same OBJECT_TYPES registry at creation. getObjectSpriteMaxW/getImageMaxH
+    already check `customTypes[type]` first too — so a "child" clone's
+    footprint, blocking, height, and default image-size box all inherit
+    correctly through the exact same Object.assign that already existed.
+    The only real gaps were the UI/validation layer: the dropdown only ever
+    listed CLONABLE_BASE_TYPES (the hardcoded built-in whitelist), and both
+    the create-modal and the single-type import checked baseType against
+    that same whitelist only.
+
+    Added eligibleCustomBaseTypes(group) (every custom type in that group,
+    minus sized boxes) and isValidBaseType(group, baseType) (built-in
+    whitelist OR a matching, non-sized-box custom type) as the two new
+    checks everything routes through. The dropdown now shows both under
+    separate <optgroup>s ("ชนิดติดเกม" / "ชนิดที่สร้างเอง"). Single-machine
+    reload (restoreCustomTypes) needed no change — a child's baseType is
+    always inserted into customTypes strictly after its parent (you can't
+    pick a type from the dropdown before it exists), and JS object property
+    enumeration follows insertion order for string keys, so parent always
+    restores before child. The portable single-type export/import path DID
+    need a real fix: importing a "child" type onto a fresh machine that
+    doesn't have the parent yet would previously either silently produce a
+    broken clone or wrongly reject a now-legitimate custom baseType — now
+    isValidBaseType is checked there too, with a clear error telling พี่แยม
+    to import the parent type first.
+
+    Verified with Playwright (Chromium + WebKit): dropdown includes an
+    eligible custom type and excludes a box-maker sized box; a "grandchild"
+    type cloned from a custom type (itself cloned from block) correctly
+    inherits blocking + quadrant footprint behavior; both survive a full
+    page reload. Separately verified the cross-machine scenario: exporting
+    a child type's .json, importing it on a FRESH page with no parent
+    present correctly rejects with the new error message and creates
+    nothing; creating the parent locally first and re-importing the same
+    file then succeeds. Zero console/page errors in either engine.
+
+  v3.145 (2026-07-19) — Closed the box-maker gap v3.144 deliberately left
+    open. พี่แยม tried the new "เพิ่มชนิดใหม่จากแม่แบบ" dropdown in the
+    actual game and found the "BOX(...)" types missing — "แม่แบบต้นทางมา
+    ไม่หมดจ้า ยังเหลือพวก BOX ต่างๆที่สร้างไว้อยู่". Confirmed พี่แยม
+    actually wants box-maker types selectable here too (not just aware of
+    the earlier exclusion), so this implements the "copy the extra fields"
+    half of the plan v3.144's comment already flagged as the missing piece.
+
+    Removed the isSizedBoxType exclusion from eligibleCustomBaseTypes/
+    isValidBaseType. In the create handler, when the picked baseType is
+    itself a sized box (isSizedBoxType(baseType)), the new def now also
+    copies spanX, spanY, heightUnits, and snapStep (when present) straight
+    from customTypes[baseType], and forces footprint:'small' explicitly
+    (previously it would've landed on 'full' by default, since
+    FOOTPRINT_OVERRIDE_BASE_TYPES only ever offers the override for a
+    literal 'box' baseType). These 4 fields are exactly what
+    isSizedBoxType/getSizedBoxSpans/getSizedBoxAnchor read to decide a
+    placed object's real shape, occupancy, and snap granularity — without
+    them a clone LOOKED like it inherited "small footprint" (via
+    registerCustomType's ordinary Object.assign) but silently fell through
+    to the plain 1-quadrant system instead of its true multi-cell shape,
+    exactly the failure mode already anticipated. Every other baseType
+    (built-in or a regular non-sized custom type) takes the same untouched
+    path as before — parentSizedBox is null and nothing about def changes.
+
+    Verified with Playwright (Chromium + WebKit): a sized box created with
+    0.5-snap now appears in the dropdown; cloning it produces a type whose
+    placed instances use the "b{qx}_{qy}" sized-box key format (proving
+    isSizedBoxType is genuinely true, not just visually similar), snap to
+    only the 4 coarse positions (proving snapStep was inherited), and
+    rotate correctly via right-click (proving spanX/spanY were inherited,
+    since rotation validity reads them directly). Both the original and the
+    clone survive a full page reload. Zero console/page errors in either
+    engine.
 -->
 
 
@@ -4323,7 +4565,7 @@
 <div>
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.139: แก้บั๊กกล่อง box-maker X≠Y ให้เป็นทรงยาวรีเอียงตามไอโซ (ไม่ใช่ลูกบาศก์แบน) — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.139</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.145: โคลนกล่อง box-maker ผ่านเพิ่มชนิดใหม่จากแม่แบบได้แล้ว (ทรง/ขนาด/snap ตรงต้นฉบับ) — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.145</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -5200,6 +5442,13 @@
       <div class="field"><label for="addSizedBoxZInput">Z (สูง)</label><input type="number" id="addSizedBoxZInput" min="0.1" max="3" step="0.05" value="0.25"></div>
     </div>
     <div class="field">
+      <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="addSizedBoxSnap05Checkbox">
+        Snap แบบ 0.5 (ค่าเริ่มต้น = 0.25 ละเอียดกว่า)
+      </label>
+      <p class="field-hint">ตัดสินใจครั้งเดียวตอนสร้าง แก้ทีหลังไม่ได้ — 0.25 วางได้ 16 ตำแหน่งต่อช่อง (ละเอียด), 0.5 วางได้แค่ 4 ตำแหน่ง (มุมเดียวกับบล็อก/แจกัน)</p>
+    </div>
+    <div class="field">
       <label for="addSizedBoxIdInput">ไอดี (คีย์ภายใน — a-z, A-Z, 0-9, _ เท่านั้น ห้ามซ้ำ)</label>
       <input type="text" id="addSizedBoxIdInput" placeholder="เช่น myBox1">
       <p class="field-hint">ใช้อ้างอิงในไฟล์เซฟแผนที่ — ตั้งแล้วเปลี่ยนทีหลังไม่ได้ (อยากเปลี่ยนต้องสร้างใหม่)</p>
@@ -5644,6 +5893,23 @@
   function isSizedBoxType(type){
     return !!(customTypes[type] && customTypes[type].spanX);
   }
+  // v3.142: THE single source of truth for "how many cells does this
+  // particular PLACED box cover right now" — def.spanX/spanY live on the
+  // shared custom-type template (every instance of that type reads the same
+  // object), so a per-instance 90° rotation can't be stored there. It lives
+  // in state.rot90 instead, and this swaps the two spans when it's set.
+  // EVERY span read — drawing, silhouette, drag guide, AND the occupancy/
+  // validity checks — must go through here: v3.139-v3.141's whole bug family
+  // came from the rendered shape and the reserved cells disagreeing about
+  // the box's orientation (the old screen-mirror flip rotated the picture
+  // but not the reservation, so the box drifted off the 0.25 grid).
+  function getSizedBoxSpans(type, state){
+    const def = customTypes[type];
+    if (!def) return { spanX: 1, spanY: 1 };
+    return (state && state.rot90)
+      ? { spanX: def.spanY, spanY: def.spanX }
+      : { spanX: def.spanX, spanY: def.spanY };
+  }
   function parseSizedBoxSub(sub){
     const m = typeof sub === 'string' ? /^b(\d)_(\d)$/.exec(sub) : null;
     return m ? { qx: +m[1], qy: +m[2] } : null;
@@ -5704,9 +5970,12 @@
         if (sub === excludeSub) continue;
         const o = objects.get(layerKey(c, r, sub, 0));
         if (o && isSizedBoxType(o.type)){
-          const def = customTypes[o.type];
-          if (isSizedBoxAnchorInBounds(qx, qy, def.spanX, def.spanY)){
-            sizedBoxCells(qx, qy, def.spanX, def.spanY).forEach(k => covered.add(k));
+          // v3.142: reads the PLACED box's own rotated spans (o.state.rot90),
+          // not the template's — this is the exact line whose template-only
+          // read let a rotated box keep reserving its un-rotated cells
+          const { spanX, spanY } = getSizedBoxSpans(o.type, o.state);
+          if (isSizedBoxAnchorInBounds(qx, qy, spanX, spanY)){
+            sizedBoxCells(qx, qy, spanX, spanY).forEach(k => covered.add(k));
           }
         }
       }
@@ -5728,20 +5997,35 @@
   }
   // resolves a mouse point into the nearest valid spanX×spanY anchor,
   // clamped so the box never runs off the 4x4 grid — used by resolveCell
-  // for a fresh drag from the palette
-  function getSizedBoxAnchor(mx, my, col, row, spanX, spanY){
+  // for a fresh drag from the palette. `snapStep` (v3.143, default 0.25 —
+  // every pre-v3.143 type has no snapStep field and falls back here) rounds
+  // the raw 16-cell position DOWN to a coarser grid first when a type opted
+  // into 0.5: stepCells=2 leaves only {0,2} reachable per axis, the same 4
+  // corner positions the legacy quadrant system (block/vase) already uses.
+  // Occupancy math (isSizedBoxSpanFree etc.) is untouched by this — it only
+  // ever asks "which cells does THIS anchor cover," never "how was this
+  // anchor chosen," so a coarser choice of anchor is still just an anchor.
+  function getSizedBoxAnchor(mx, my, col, row, spanX, spanY, snapStep){
     const cell = getTileSubCell16(mx, my, col, row);
-    const [qx, qy] = cell.split('_').map(Number);
+    let [qx, qy] = cell.split('_').map(Number);
+    const stepCells = Math.round((snapStep || 0.25) / 0.25);
+    if (stepCells > 1){
+      qx = Math.round(qx / stepCells) * stepCells;
+      qy = Math.round(qy / stepCells) * stepCells;
+    }
     return 'b' + Math.min(4 - spanX, qx) + '_' + Math.min(4 - spanY, qy);
   }
   // single dispatch point for "what's this small-footprint object's screen
   // offset" — a sized box needs its own def-aware calc (spanX/spanY change
   // which cells it covers); every other small-footprint type is unaffected
   // and keeps going through plain getQuadrantOffset(sub) as before
-  function getObjectOffset(type, sub){
+  // v3.142: `state` is optional and only read for sized boxes (to pick up
+  // state.rot90) — every other type ignores it, so old 2-arg call sites
+  // stay correct
+  function getObjectOffset(type, sub, state){
     if (isSizedBoxType(type)){
-      const def = customTypes[type];
-      return getSizedBoxOffset(sub, def.spanX, def.spanY);
+      const { spanX, spanY } = getSizedBoxSpans(type, state);
+      return getSizedBoxOffset(sub, spanX, spanY);
     }
     return getQuadrantOffset(sub);
   }
@@ -5801,7 +6085,7 @@
   // placement/hover guide size — matches each object's own footprint (e.g. a
   // vase is a small 1x1 sub-cell item, so its guide is a quarter-tile diamond;
   // everything else reserves and shows a full tile)
-  function getGuideSize(type){
+  function getGuideSize(type, state){
     // v3.134: รั้วเตี้ย gets its own smaller guide (0.25 fraction of the
     // tile, matching its 16-cell grid) — this is also what makes its hit-
     // test/hover-outline size shrink to match (getSilhouettePolygon reads
@@ -5812,9 +6096,14 @@
     // spanY exactly (each cell = TILE_W/4 or TILE_H/4) instead of the
     // generic isSmallFootprint fallback below (which would always mean
     // "half a tile," wrong for any size other than a 2x2-cell box)
+    // v3.142: rotation-aware for the same reason every other span read is.
+    // Both current sized-box callers (getSilhouettePolygon, drawDropPreview)
+    // branch away before using this value, so this is belt-and-braces — but
+    // leaving one span read that silently ignores rot90 is exactly the trap
+    // that produced the v3.139-v3.141 bug family, so it matches the rest.
     if (isSizedBoxType(type)){
-      const def = customTypes[type];
-      return { w: def.spanX * (TILE_W / 4), h: def.spanY * (TILE_H / 4) };
+      const { spanX, spanY } = getSizedBoxSpans(type, state);
+      return { w: spanX * (TILE_W / 4), h: spanY * (TILE_H / 4) };
     }
     return isSmallFootprint(type) ? { w: TILE_W / 2, h: TILE_H / 2 } : { w: TILE_W, h: TILE_H };
   }
@@ -5975,7 +6264,7 @@
     if (isWallboxType(objType)) return getWallBoxSilhouette(col, row, state && state.flip, WALLBOX_TYPES[objType]);
     const { x, y } = gridToScreen(col, row);
     const small = isSmallFootprint(objType);
-    const offset = small ? getObjectOffset(objType, state && state.sub) : { dx: 0, dy: 0 };
+    const offset = small ? getObjectOffset(objType, state && state.sub, state) : { dx: 0, dy: 0 };
     const height = getVisualHeight(objType, forHitTest);
     const layerLift = small ? getStackLift(col, row, state && state.sub, (state && state.layer) || 0) : 0;
     const cx = x + offset.dx, cy = y + offset.dy - layerLift;
@@ -6020,18 +6309,36 @@
     // hexagon uses: back-top, right-top, right-ground, front-ground,
     // left-ground, left-top.
     if (isSizedBoxType(objType)){
-      const def = customTypes[objType];
-      const { c1, c2, c3, c4 } = sizedBoxCorners(def.spanX, def.spanY);
+      // v3.142: rotated spans — a 90°-rotated box's outline traces its
+      // rotated shape. (fx below stays for state.flip, which since v3.141 is
+      // only ever reachable for SQUARE sized boxes, where mirroring is
+      // provably the identity — so the two transforms can never compound.)
+      const { spanX, spanY } = getSizedBoxSpans(objType, state);
+      const { c1, c2, c3, c4 } = sizedBoxCorners(spanX, spanY);
+      // v3.140: drawObject flips a box by mirroring the whole canvas around
+      // the box's own footprint center (ctx.translate(quadOff) happens
+      // OUTSIDE/after the ctx.scale(-1,1) mirror in the transform stack, so
+      // the tile-center pivot and quadOff cancel out algebraically — the net
+      // effect is a plain mirror of each corner's dx around the footprint's
+      // OWN center, dy untouched). This silhouette computes screen points
+      // directly instead of going through a canvas transform, so it has to
+      // replicate that same mirror by hand or the outline (and the drag
+      // guide, same fix below) stays stuck in the un-flipped orientation
+      // while the rendered box actually flips — พี่แยม's "ตอนที่พี่ Filp มัน
+      // ไม่ Filp ตามจ้า" report, only visible now that X≠Y boxes render as a
+      // genuinely asymmetric parallelogram instead of the old flip-invariant
+      // squashed diamond.
+      const fx = (state && state.flip) ? -1 : 1;
       return [
-        [cx + c1.dx, cy + c1.dy - height],
-        [cx + c2.dx, cy + c2.dy - height],
-        [cx + c2.dx, cy + c2.dy],
-        [cx + c3.dx, cy + c3.dy],
-        [cx + c4.dx, cy + c4.dy],
-        [cx + c4.dx, cy + c4.dy - height]
+        [cx + c1.dx * fx, cy + c1.dy - height],
+        [cx + c2.dx * fx, cy + c2.dy - height],
+        [cx + c2.dx * fx, cy + c2.dy],
+        [cx + c3.dx * fx, cy + c3.dy],
+        [cx + c4.dx * fx, cy + c4.dy],
+        [cx + c4.dx * fx, cy + c4.dy - height]
       ];
     }
-    const { w, h } = getGuideSize(objType);
+    const { w, h } = getGuideSize(objType, state);
     const hw = w / 2, hh = h / 2;
     // tableSmall/giftBox (v3.62, REVERTED v3.63): v3.62 briefly shifted this
     // polygon by TABLE_SMALL_GROUND_OFFSET / GIFTBOX_GROUND_OFFSET so it
@@ -8434,7 +8741,7 @@
     // whichever sub-cell quadrant they were dropped/moved into within their
     // tile, and lifted up by however many layers they're stacked on top of
     const isSmall = isSmallFootprint(objType);
-    const quadOff = isSmall ? getObjectOffset(objType, state && state.sub) : { dx: 0, dy: 0 };
+    const quadOff = isSmall ? getObjectOffset(objType, state && state.sub, state) : { dx: 0, dy: 0 };
     const layerLift = isSmall ? getStackLift(col, row, state && state.sub, (state && state.layer) || 0) : 0;
 
     ctx.save();
@@ -8483,7 +8790,9 @@
       // drawn directly here instead of going through the switch/baseType
       // resolution below (which is for "identical to template" clones)
       const def = customTypes[objType];
-      drawSizedBox(col, row, def.spanX, def.spanY, VISUAL_HEIGHT[objType] || TILE_H);
+      // v3.142: draws the box at its own rotated spans (state.rot90)
+      const spans = getSizedBoxSpans(objType, state);
+      drawSizedBox(col, row, spans.spanX, spans.spanY, VISUAL_HEIGHT[objType] || TILE_H);
     } else {
       // v3.113: switches on drawType (resolves to baseType for a clone),
       // not objType directly — this is the whole mechanism that makes a
@@ -8646,8 +8955,10 @@
       return;
     }
     const { x, y } = gridToScreen(dragPreview.col, dragPreview.row);
-    const { w, h } = getGuideSize(dragPreview.type);
-    const off = isSmallFootprint(dragPreview.type) ? getObjectOffset(dragPreview.type, dragPreview.sub) : { dx: 0, dy: 0 };
+    const { w, h } = getGuideSize(dragPreview.type, dragPreview);
+    // v3.142: dragPreview carries rot90 (set from the moving object's state)
+    // so a rotated box's drop guide matches the shape being dropped
+    const off = isSmallFootprint(dragPreview.type) ? getObjectOffset(dragPreview.type, dragPreview.sub, dragPreview) : { dx: 0, dy: 0 };
     // dropping a vase onto a table lifts the guide up onto the table's top
     // surface so it matches where the vase will actually render; stacking a
     // small-footprint object on top of others (via Tab) lifts it further
@@ -8657,12 +8968,16 @@
     // parallelogram (same corners drawSizedBox/silhouette use), not the
     // generic screen-axis diamond that only matched an X=Y box
     if (isSizedBoxType(dragPreview.type)){
-      const def = customTypes[dragPreview.type];
-      const { c1, c2, c3, c4 } = sizedBoxCorners(def.spanX, def.spanY);
+      const spans = getSizedBoxSpans(dragPreview.type, dragPreview);
+      const { c1, c2, c3, c4 } = sizedBoxCorners(spans.spanX, spans.spanY);
       const gx = x + off.dx, gy = y + off.dy - lift - layerLift;
+      // v3.140: same corner-dx mirror as getSilhouettePolygon's matching fix
+      // — a box being moved while already flipped needs its drop guide
+      // mirrored too, or it shows the un-flipped footprint while dropping
+      const fx = dragPreview.flip ? -1 : 1;
       ctx.beginPath();
       [c1, c2, c3, c4].forEach((c, i) => {
-        const px = gx + c.dx, py = gy + c.dy;
+        const px = gx + c.dx * fx, py = gy + c.dy;
         i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
       });
       ctx.closePath();
@@ -9720,17 +10035,50 @@
   }
   addTypeBaseSelect.addEventListener('change', syncAddTypeFootprintField);
 
+  // v3.144: any custom type is eligible as a source template for ANOTHER
+  // custom type. v3.144 originally excluded box-maker sized boxes here
+  // (isSizedBoxType) because this modal didn't copy spanX/spanY/
+  // heightUnits/snapStep, so picking one would've produced a watered-down
+  // clone (OBJECT_TYPES.footprint='small' inherits fine via
+  // registerCustomType's Object.assign, but the new customTypes entry had
+  // no .spanX, so isSizedBoxType(newKey) stayed false and it fell through
+  // to the plain quadrant system). v3.145 closes that gap — see the create
+  // handler below, which now copies those exact fields when the picked
+  // baseType is itself a sized box — so the exclusion is gone; พี่แยม
+  // confirmed wanting box-maker types selectable here too.
+  function eligibleCustomBaseTypes(group){
+    return Object.values(customTypes).filter(d => d.group === group);
+  }
+  function isValidBaseType(group, baseType){
+    return CLONABLE_BASE_TYPES[group].includes(baseType) ||
+      (!!customTypes[baseType] && customTypes[baseType].group === group);
+  }
   function openAddTypeModal(group){
     addTypeModalGroup = group;
     document.getElementById('addTypeModalTitle').textContent =
       `เพิ่มชนิดใหม่จากแม่แบบ — ${group === 'foundation' ? 'Foundation' : 'Furniture'}`;
     addTypeBaseSelect.innerHTML = '';
+    const builtinGroup = document.createElement('optgroup');
+    builtinGroup.label = 'ชนิดติดเกม';
     CLONABLE_BASE_TYPES[group].forEach(t=>{
       const opt = document.createElement('option');
       opt.value = t;
       opt.textContent = OBJECT_TYPES[t].label;
-      addTypeBaseSelect.appendChild(opt);
+      builtinGroup.appendChild(opt);
     });
+    addTypeBaseSelect.appendChild(builtinGroup);
+    const customBases = eligibleCustomBaseTypes(group);
+    if (customBases.length){
+      const customGroup = document.createElement('optgroup');
+      customGroup.label = 'ชนิดที่สร้างเอง';
+      customBases.forEach(d=>{
+        const opt = document.createElement('option');
+        opt.value = d.key;
+        opt.textContent = d.label;
+        customGroup.appendChild(opt);
+      });
+      addTypeBaseSelect.appendChild(customGroup);
+    }
     addTypeIdInput.value = '';
     addTypeNameInput.value = '';
     addTypeModalError.textContent = '';
@@ -9773,7 +10121,7 @@
     const label = sanitizeLabel(addTypeNameInput.value);
     addTypeModalError.classList.remove('show');
 
-    if (!CLONABLE_BASE_TYPES[addTypeModalGroup].includes(baseType)){
+    if (!isValidBaseType(addTypeModalGroup, baseType)){
       showAddTypeError('แม่แบบต้นทางไม่ถูกต้อง');
       return;
     }
@@ -9797,9 +10145,19 @@
     // must match that narrower footprint too, or an uploaded image would
     // still contain-fit into a full-tile-wide box and overflow the quadrant.
     const footprintOverride = FOOTPRINT_OVERRIDE_BASE_TYPES.has(baseType) ? addTypeFootprintSelect.value : 'full';
+    // v3.145: cloning a box-maker sized box needs its exact spanX/spanY/
+    // heightUnits/snapStep carried over too — those are what actually make
+    // isSizedBoxType(newKey) true and drive its real multi-cell shape;
+    // without them the clone would inherit only 'small' footprint and fall
+    // through to the plain 1-quadrant system instead (see v3.144's history
+    // comment above eligibleCustomBaseTypes for the exact failure mode this
+    // closes). Every other baseType (built-in or a regular custom clone)
+    // is unaffected — parentSizedBox stays null and def is built exactly
+    // as before.
+    const parentSizedBox = isSizedBoxType(baseType) ? customTypes[baseType] : null;
     const def = {
       key: rawKey, baseType, group: addTypeModalGroup, label,
-      footprint: footprintOverride,
+      footprint: parentSizedBox ? 'small' : footprintOverride,
       w: footprintOverride === 'small' ? TILE_W / 2 : getObjectSpriteMaxW(baseType),
       h: getImageMaxH(baseType),
       // v3.123: matches drawSprite's own TILE_H*0.3 default exactly, so a
@@ -9807,6 +10165,12 @@
       // พี่แยม actually adjusts "Offset พื้น (px)" in its settings card
       groundOffset: TILE_H * 0.3
     };
+    if (parentSizedBox){
+      def.spanX = parentSizedBox.spanX;
+      def.spanY = parentSizedBox.spanY;
+      def.heightUnits = parentSizedBox.heightUnits;
+      if (parentSizedBox.snapStep != null) def.snapStep = parentSizedBox.snapStep;
+    }
     registerCustomType(def);
 
     // move any image already staged under the scratch '__pendingNewType__'
@@ -9841,6 +10205,7 @@
   const addSizedBoxZInput = document.getElementById('addSizedBoxZInput');
   const addSizedBoxIdInput = document.getElementById('addSizedBoxIdInput');
   const addSizedBoxNameInput = document.getElementById('addSizedBoxNameInput');
+  const addSizedBoxSnap05Checkbox = document.getElementById('addSizedBoxSnap05Checkbox');
 
   function showAddSizedBoxError(msg){
     addSizedBoxModalError.textContent = msg;
@@ -9852,6 +10217,7 @@
     addSizedBoxZInput.value = '0.25';
     addSizedBoxIdInput.value = '';
     addSizedBoxNameInput.value = '';
+    addSizedBoxSnap05Checkbox.checked = false;
     addSizedBoxModalError.textContent = '';
     addSizedBoxModalError.classList.remove('show');
     clearThumbnail('object', '__pendingSizedBox__');
@@ -9909,10 +10275,15 @@
     // to guard against a typo producing an invisible or absurdly tall box
     const z = Math.min(3, Math.max(0.1, zRaw));
 
+    // v3.143: decided once, here, at creation — never editable after (same
+    // as spanX/spanY/heightUnits already are). Old types loaded from a
+    // previous session have no snapStep field at all; every reader falls
+    // back to 0.25, so they're unaffected.
+    const snapStep = addSizedBoxSnap05Checkbox.checked ? 0.5 : 0.25;
     const def = {
       key: rawKey, baseType: 'box', group: 'foundation', label,
       footprint: 'small',
-      spanX, spanY, heightUnits: z,
+      spanX, spanY, heightUnits: z, snapStep,
       w: spanX * (TILE_W / 4),
       h: z * TILE_H,
       groundOffset: TILE_H * 0.3
@@ -10125,8 +10496,14 @@
         alert('ไฟล์ไม่ถูกต้อง (ไม่พบข้อมูลชนิดที่คาดไว้ — ต้องเป็นไฟล์จากปุ่ม "Export ชนิดนี้")');
         return;
       }
-      if (!CLONABLE_BASE_TYPES[def.group] || !CLONABLE_BASE_TYPES[def.group].includes(def.baseType)){
-        alert('ไฟล์นี้อ้างอิงแม่แบบต้นทางที่ไม่รองรับแล้ว นำเข้าไม่ได้');
+      // v3.144: def.baseType may now be ANOTHER custom type's key (not just
+      // a built-in) — same isValidBaseType check the create-modal uses, so
+      // importing a "child" type onto a fresh machine correctly fails with
+      // a clear message until its parent is imported first, rather than
+      // silently producing a broken clone (Object.assign against an
+      // undefined base) or a false rejection of a now-legitimate baseType.
+      if (!def.group || !isValidBaseType(def.group, def.baseType)){
+        alert('ไฟล์นี้อ้างอิงแม่แบบต้นทางที่ไม่รองรับ หรือยังไม่มีอยู่ในเครื่องนี้ — ถ้าอ้างอิงชนิดที่สร้างเอง ต้องนำเข้าแม่แบบต้นทางนั้นเข้าเครื่องนี้ก่อน แล้วค่อยนำเข้าไฟล์นี้อีกครั้ง');
         return;
       }
       if (isTypeKeyTaken(def.key)){
@@ -10248,7 +10625,10 @@
     return snapHalf(player.col) === c && snapHalf(player.row) === r;
   }
 
-  function isPlacementValid(kind, type, c, r, sub, layer){
+  // v3.142: trailing `state` is optional — only read for sized boxes, to
+  // pick up state.rot90 when re-validating an already-rotated box. A fresh
+  // palette drop passes nothing and gets the template's un-rotated spans.
+  function isPlacementValid(kind, type, c, r, sub, layer, state){
     if (!inBounds(c, r)) return false;
     if (kind === 'terrain'){
       if (type === 'water' && isPlayerCell(c, r)) return false;
@@ -10299,9 +10679,9 @@
         // against every OTHER sized box AND every plain 16-cell object
         // (shortFence) sharing that same coordinate space
         if (isSizedBoxType(type)){
-          const def = customTypes[type];
+          const spans = getSizedBoxSpans(type, state);
           const a = parseSizedBoxSub(sub);
-          return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, def.spanX, def.spanY, null);
+          return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, spans.spanX, spans.spanY, null);
         }
         // v3.138: shortFence (the only OTHER type sharing the 16-cell
         // coordinate space) also needs to check no sized box already
@@ -10367,7 +10747,10 @@
   // that matches the given type: "small" footprint objects (the vase) snap to
   // a whole tile plus a cosmetic quadrant "sub"; everything else snaps freely
   // to a half-step, matching each object's own footprint/guide size
-  function resolveCell(e, type){
+  // v3.142: trailing `state` — a rotated box must snap to an anchor sized
+  // for its ROTATED span (getSizedBoxAnchor clamps against it), or dragging
+  // it near a board edge would resolve to an out-of-bounds anchor
+  function resolveCell(e, type, state){
     const { mx, my } = getCanvasPoint(e);
     const { wx, wy } = toWorldPoint(mx, my);
     if (isWallMountFootprint(type)){
@@ -10416,8 +10799,8 @@
       // anchor and never stacks (layer always 0 — isSizedBoxSpanFree, not
       // findFreeLayer, is what decides if this spot is actually free)
       if (isSizedBoxType(type)){
-        const def = customTypes[type];
-        const sub = getSizedBoxAnchor(wx, wy, c, r, def.spanX, def.spanY);
+        const spans = getSizedBoxSpans(type, state);
+        const sub = getSizedBoxAnchor(wx, wy, c, r, spans.spanX, spans.spanY, customTypes[type].snapStep);
         return { c, r, sub, layer: 0, mx: wx, my: wy };
       }
       // v3.134: รั้วเตี้ย snaps into 1 of 16 finer sub-cells instead of the
@@ -10485,7 +10868,10 @@
   }
 
   // used when relocating an already-placed object: target must also be unoccupied
-  function isMoveValid(type, c, r, sub, layer){
+  // v3.142: trailing `state` — same purpose as isPlacementValid's, and here
+  // it genuinely matters: moving an already-rotated box must validate
+  // against its ROTATED footprint, not its template's
+  function isMoveValid(type, c, r, sub, layer, state){
     if (!inBounds(c, r)) return false;
     const info = OBJECT_TYPES[type];
     if (!info) return false;
@@ -10518,9 +10904,9 @@
       // (objects.delete(k)) by the time this runs, so no "exclude self"
       // bookkeeping is needed here.
       if (isSizedBoxType(type)){
-        const def = customTypes[type];
+        const spans = getSizedBoxSpans(type, state);
         const a = parseSizedBoxSub(sub);
-        return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, def.spanX, def.spanY, null);
+        return !!a && isSizedBoxSpanFree(c, r, a.qx, a.qy, spans.spanX, spans.spanY, null);
       }
       if (type === 'shortFence' && scanSizedBoxOccupiedCells(c, r, null).has(sub)) return false;
       return !objects.get(layerKey(c, r, sub, layer || 0));
@@ -10701,9 +11087,9 @@
       return;
     }
     if (movingObj){
-      const { c, r, sub, layer } = resolveCell(e, movingObj.type);
+      const { c, r, sub, layer } = resolveCell(e, movingObj.type, movingObj.state);
       if (inBounds(c, r)){
-        dragPreview = { col: c, row: r, sub, layer, type: movingObj.type, flip: movingObj.state && movingObj.state.flip, valid: isMoveValid(movingObj.type, c, r, sub, layer) };
+        dragPreview = { col: c, row: r, sub, layer, type: movingObj.type, flip: movingObj.state && movingObj.state.flip, rot90: movingObj.state && movingObj.state.rot90, valid: isMoveValid(movingObj.type, c, r, sub, layer, movingObj.state) };
       } else {
         dragPreview = null;
       }
@@ -10938,7 +11324,7 @@
       return;
     }
     if (!movingObj) return;
-    const { c, r, sub, layer } = resolveCell(e, movingObj.type);
+    const { c, r, sub, layer } = resolveCell(e, movingObj.type, movingObj.state);
     const passengers = movingObj.passengers || [];
     // a table-topper drop has nowhere to put riding passengers (toppers are
     // a single slot per corner, not a layered stack), so a base that's
@@ -10950,7 +11336,7 @@
     // too — if anything blocks even one of those layers, reject the whole
     // stack move instead of dropping the base and orphaning the rest
     const passengersFit = passengers.length === 0 || (!wouldBecomeTopper && passengers.every((p, i) => !objects.get(layerKey(c, r, sub, layer + 1 + i))));
-    const valid = isMoveValid(movingObj.type, c, r, sub, layer) && passengersFit;
+    const valid = isMoveValid(movingObj.type, c, r, sub, layer, movingObj.state) && passengersFit;
     let moved = false;
     if (valid){
       if (isWallMountFootprint(movingObj.type)){
@@ -11144,9 +11530,9 @@
     // instead of waiting for the next mouse movement to pick up the new layer
     if (!lastPointerEvent) return;
     if (movingObj){
-      const { c, r, sub, layer } = resolveCell(lastPointerEvent, movingObj.type);
+      const { c, r, sub, layer } = resolveCell(lastPointerEvent, movingObj.type, movingObj.state);
       if (inBounds(c, r)){
-        dragPreview = { col: c, row: r, sub, layer, type: movingObj.type, valid: isMoveValid(movingObj.type, c, r, sub, layer) };
+        dragPreview = { col: c, row: r, sub, layer, type: movingObj.type, flip: movingObj.state && movingObj.state.flip, rot90: movingObj.state && movingObj.state.rot90, valid: isMoveValid(movingObj.type, c, r, sub, layer, movingObj.state) };
       }
     } else if (draggingKind === 'object'){
       const { c, r, sub, layer } = resolveCell(lastPointerEvent, draggingType);
@@ -11228,11 +11614,53 @@
     }
   }
 
+  // v3.141: a non-square (X≠Y) sized box has no real "flip" to speak of — a
+  // plain rectangular box has no front/back, and the generic screen-space
+  // mirror every other object uses (ctx.scale(-1,1) in drawObject) turns out
+  // to algebraically SWAP the box's own width/depth grid axes for a X≠Y
+  // footprint (proven: negating screen-dx while keeping dy solves to
+  // dc'=dr, dr'=dc — an axis swap, not a true mirror) — so a 0.5×0.25 box
+  // rendered as a 0.25×0.5 shape after flip while the RESERVED cells
+  // (scanSizedBoxOccupiedCells) stayed 0.5×0.25 the whole time, visibly
+  // drifting off the 0.25 grid it's supposed to sit on (พี่แยม's "พอ Filp
+  // แล้ว มันก็ไม่ตรง Grid 0.25 เลยจ้า", screenshot showed the box + its
+  // now-correctly-tight v3.140 outline both sitting off-grid together).
+  // Square (X=Y) sized boxes are unaffected — swapping equal axes is a
+  // no-op — so this only disables flip for the genuinely-broken case.
+  // No toast/feedback on the blocked click, matching this codebase's
+  // existing silent-no-op convention for other blocked actions (e.g. a
+  // rotate that would overlap something just doesn't happen either).
+  function isNonSquareSizedBox(type){
+    const def = isSizedBoxType(type) ? customTypes[type] : null;
+    return !!(def && def.spanX !== def.spanY);
+  }
+  // v3.142: can this placed non-square box swap its spans in place? The
+  // ANCHOR cell never moves (so the object's Map key is untouched — the
+  // rotation commit is a pure state.rot90 toggle, no re-keying), but the
+  // rotated footprint sweeps a different set of cells, so it has to clear
+  // the same three hurdles a fresh placement does: in-bounds, no plain
+  // 16-cell object (shortFence) in the way, no OTHER sized box overlapping.
+  // excludeSub = its own anchor, so it never collides with itself.
+  function canRotateSizedBox(c, r, sub, type, state){
+    const a = parseSizedBoxSub(sub);
+    if (!a) return false;
+    const cur = getSizedBoxSpans(type, state);
+    return isSizedBoxSpanFree(c, r, a.qx, a.qy, cur.spanY, cur.spanX, sub);
+  }
   // advances one object's own orientation by one right-click step: full
   // 4-state front/back×flip cycle for FACING_CYCLE_TYPES, plain flip toggle
   // for everything else — shared so the base and any riding passengers
   // (below) get exactly the same step applied
   function applyFlipStep(state, type){
+    // v3.141 fix-of-the-fix: checked FIRST, ahead of FACING_CYCLE_TYPES —
+    // every custom type (registerCustomType, v3.116) is unconditionally
+    // added to FACING_CYCLE_TYPES, including box-maker sized-box types, so
+    // putting this check in the else-if branch below made it unreachable
+    // dead code (FACING_CYCLE_TYPES.has(type) always matched first,
+    // running cycleFacingFlip and still setting state.flip on the very
+    // first click — confirmed by testing after the initial fix attempt
+    // still showed flip=true after one right-click on a 0.5×0.25 box).
+    if (isNonSquareSizedBox(type)) return;
     if (FACING_CYCLE_TYPES.has(type)) cycleFacingFlip(state);
     else state.flip = !(state && state.flip);
   }
@@ -11267,9 +11695,26 @@
     const k = resolveObjectKeyAt(e);
     const obj = k ? objects.get(k) : null;
     if (obj){
+      const { c, r, sub, layer } = parseKey(k);
+      // v3.142: a non-square sized box rotates 90° (swaps its spans) instead
+      // of mirroring — the mirror was never a real operation for it (see
+      // v3.141), and this is what พี่แยม's reference screenshots actually
+      // show: the long side swapping which way it faces. Verified the two
+      // are the same picture — mirroring a non-square iso footprint IS the
+      // span swap — the difference is that this path also swaps the
+      // RESERVED cells, which is exactly what the old flip failed to do.
+      // Blocked (silently, per this file's convention) when the rotated
+      // footprint wouldn't fit; nothing ever stacks on a sized box
+      // (findElevatedBaseAt excludes them), so there are no passengers to
+      // carry along here.
+      if (isNonSquareSizedBox(obj.type)){
+        if (canRotateSizedBox(c, r, sub, obj.type, obj.state)){
+          obj.state.rot90 = !obj.state.rot90;
+        }
+        return;
+      }
       applyFlipStep(obj.state, obj.type);
       if (isSmallFootprint(obj.type)){
-        const { c, r, sub, layer } = parseKey(k);
         getStackAbove(c, r, sub, layer).forEach(above => applyFlipStep(above.state, above.type));
       }
     }

@@ -544,3 +544,21 @@ function bumpProgressDay(sheet, p) {
   cell.setValue(next);
   return json({ ok: true, value: next });
 }
+
+// ---- รันครั้งเดียว: ใส่สูตรคอลัมน์ G/H ใน 🗂️ ListITME ----
+// G = Footage เหลือ (Footage − EP ปัจจุบัน) = ถ่ายแล้วแต่ยังไม่ตัด Draft
+// H = Draft เหลือ (Draft − EP ปัจจุบัน) = ตัด Draft แล้วแต่ยังไม่ Final/โพสต์
+// เป็นสูตรจริง (ไม่ใช่ค่าคงที่) อัปเดตอัตโนมัติเองทุกครั้งที่ EP/Footage/Draft เปลี่ยน ไม่ต้องรันซ้ำ
+// เลือกฟังก์ชัน fillListItmeRemaining แล้วกด Run ในหน้า Apps Script (เหมือน setup/fillCategories)
+function fillListItmeRemaining() {
+  const sheet = SS.getSheetByName(LISTITME_SHEET);
+  if (!sheet) throw new Error('ไม่พบชีต ' + LISTITME_SHEET);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  sheet.getRange(1, 7).setValue('Footage เหลือ');
+  sheet.getRange(1, 8).setValue('Draft เหลือ');
+  for (let r = 2; r <= lastRow; r++) {
+    sheet.getRange(r, 7).setFormula('=IFERROR(VALUE(SUBSTITUTE(E' + r + ',"EP.",""))-C' + r + ',"")');
+    sheet.getRange(r, 8).setFormula('=IFERROR(VALUE(SUBSTITUTE(F' + r + ',"EP.",""))-C' + r + ',"")');
+  }
+}
