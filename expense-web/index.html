@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>💰 รายรับ-รายจ่าย</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d0d12; --card:#17171f; --card2:#1f1f2a; --line:#2c2c3a;
+  --tx:#eaeaf0; --tx2:#9a9ab0;
+  --cyan:#25F4EE; --pink:#FE2C55; --green:#3ddc84; --amber:#ffb020;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",sans-serif;
+  font-size:15px;line-height:1.5}
+header{padding:16px 16px 0;max-width:1100px;margin:0 auto}
+h1{font-size:20px;margin:0 0 12px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px 60px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:16px;overflow-x:auto}
+.tabs button{background:none;border:0;color:var(--tx2);padding:10px 14px;font-size:15px;
+  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit}
+.tabs button.on{color:var(--cyan);border-bottom-color:var(--cyan)}
+.page{display:none}.page.on{display:block}
+
+.cards{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card .lb{color:var(--tx2);font-size:12px;margin-bottom:4px}
+.card .vl{font-size:22px;font-weight:700}
+.vl.in{color:var(--green)} .vl.out{color:var(--pink)} .vl.cy{color:var(--cyan)}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+select,input,button.btn{background:var(--card2);color:var(--tx);border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px;font-size:14px;font-family:inherit}
+input::placeholder{color:#66667a}
+button.btn{cursor:pointer}
+button.primary{background:var(--cyan);color:#08080c;border-color:var(--cyan);font-weight:700}
+button.ghost{background:transparent}
+
+.charts{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-bottom:16px}
+@media(max-width:760px){.charts{grid-template-columns:1fr}}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.chartbox h3{margin:0 0 10px;font-size:14px;color:var(--tx2);font-weight:600}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--tx2);font-size:12px;font-weight:600;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:var(--cyan)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:hover{background:#ffffff08}
+.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;white-space:nowrap}
+
+.grid2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px}
+.field{margin-bottom:10px}
+.field input,.field select{width:100%}
+
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.on{display:flex}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:18px;width:100%;max-width:440px;max-height:90vh;overflow:auto}
+.modal h2{margin:0 0 14px;font-size:17px}
+
+.modal.big{padding:0;align-items:flex-end}
+.modal.big .box{max-width:100%;max-height:94vh;border-radius:20px 20px 0 0;padding:22px 18px calc(18px + env(safe-area-inset-bottom))}
+.modal.big h2{font-size:23px;margin-bottom:20px}
+.modal.big label{font-size:14px;margin-bottom:6px}
+.modal.big .field{margin-bottom:18px}
+.modal.big input,.modal.big select{font-size:18px;padding:15px 14px;border-radius:10px}
+.modal.big button.btn{font-size:17px;padding:16px}
+
+.msg{padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:14px;display:none}
+.msg.on{display:block}
+.msg.warn{background:#ffb02018;border:1px solid #ffb02055;color:#ffcf7a}
+.msg.err{background:#FE2C5518;border:1px solid #FE2C5555;color:#ff8ca4}
+.msg.ok{background:#3ddc8418;border:1px solid #3ddc8455;color:#8ff0bd}
+.muted{color:var(--tx2);font-size:13px}
+code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
+.fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
+  background:var(--cyan);color:#08080c;border:0;font-size:28px;cursor:pointer;
+  box-shadow:0 6px 20px #25f4ee55;z-index:40}
+.fab.big{bottom:84px;background:var(--green);box-shadow:0 6px 20px #3ddc8455}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💰 รายรับ-รายจ่าย</h1>
+  <div class="tabs">
+    <button data-p="dash" class="on">📊 Dashboard</button>
+    <button data-p="list">📝 รายการ</button>
+    <button data-p="set">⚙️ ตั้งค่า</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="msg" class="msg"></div>
+
+  <div class="row">
+    <select id="fMonth"><option value="">ทุกเดือน</option></select>
+    <select id="fType"><option value="">ทุกประเภท</option></select>
+    <select id="fCat"><option value="">ทุกหมวดหมู่</option></select>
+    <input id="fSearch" placeholder="ค้นหารายละเอียด…" style="flex:1;min-width:150px">
+    <button class="btn ghost" id="reload">↻ โหลดใหม่</button>
+  </div>
+
+  <!-- ================= DASHBOARD ================= -->
+  <div class="page on" id="p-dash">
+    <div class="cards">
+      <div class="card"><div class="lb">รายได้</div><div class="vl in" id="cIn">–</div></div>
+      <div class="card"><div class="lb">รายจ่ายรวม</div><div class="vl out" id="cOut">–</div></div>
+      <div class="card"><div class="lb">คงเหลือ</div><div class="vl cy" id="cNet">–</div></div>
+      <div class="card"><div class="lb">จำนวนรายการ</div><div class="vl" id="cCnt">–</div></div>
+    </div>
+    <div class="charts">
+      <div class="chartbox"><h3>รายจ่ายตามหมวดหมู่</h3><canvas id="chCat" height="220"></canvas></div>
+      <div class="chartbox"><h3>รายรับ-รายจ่ายรายวัน</h3><canvas id="chDay" height="220"></canvas></div>
+    </div>
+    <div class="chartbox">
+      <h3>สรุปตามหมวดหมู่</h3>
+      <div class="tablewrap" style="border:0;background:none">
+        <table><thead><tr><th>หมวดหมู่</th><th class="num">จำนวนรายการ</th><th class="num">ยอดรวม</th></tr></thead>
+        <tbody id="sumBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LIST ================= -->
+  <div class="page" id="p-list">
+    <div class="row">
+      <button class="btn primary" id="addBtn">+ เพิ่มรายการ</button>
+      <span class="muted" id="listCount"></span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th data-s="วันที่">วันที่</th>
+          <th data-s="ประเภท">ประเภท</th>
+          <th data-s="รายละเอียด">รายละเอียด</th>
+          <th data-s="หมวดหมู่">หมวดหมู่</th>
+          <th data-s="จำนวนเงิน" class="num">จำนวนเงิน</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ================= SETTINGS ================= -->
+  <div class="page" id="p-set">
+    <div class="card">
+      <h3 style="margin-top:0">เชื่อมต่อ Google Sheet</h3>
+      <p class="muted">วาง <b>Web app URL</b> ที่ได้จากการ deploy Apps Script ตรงนี้ครับ —
+        ใส่แล้วเว็บถึงจะ <b>บันทึกข้อมูลกลับเข้า Sheet</b> ได้<br>
+        (ถ้ายังไม่ใส่ เว็บจะอ่านข้อมูลอย่างเดียว ยังเพิ่มรายการไม่ได้)</p>
+      <div class="field">
+        <label>Apps Script Web App URL</label>
+        <input id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
+      </div>
+      <button class="btn primary" id="saveUrl">บันทึก</button>
+      <button class="btn ghost" id="clearUrl">ล้าง</button>
+      <p class="muted" style="margin-top:14px">
+        ขั้นตอน deploy อยู่ในไฟล์ <code>README.md</code> ที่ให้มาด้วยกันครับ
+      </p>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">แหล่งข้อมูลตอนนี้</h3>
+      <p class="muted" id="srcInfo">–</p>
+      <p class="muted">Sheet ID: <code id="sid"></code></p>
+      <a href="#" id="openSheet" target="_blank" style="color:var(--cyan)">เปิด Google Sheet →</a>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fab" title="เพิ่มรายการ">+</button>
+<button class="fab big" id="fabBig" title="เพิ่มรายการ (จอใหญ่ เหมาะกับมือถือ)">+</button>
+
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="box">
+    <h2 id="mTitle">เพิ่มรายการ</h2>
+    <div class="grid2">
+      <div class="field"><label>วันที่</label><input type="date" id="mDate"></div>
+      <div class="field"><label>จำนวนเงิน (บาท)</label><input type="number" step="0.01" id="mAmt" placeholder="0.00"></div>
+    </div>
+    <div class="field"><label>ประเภท</label><select id="mType"></select></div>
+    <div class="field"><label>หมวดหมู่</label><select id="mCat"></select></div>
+    <div class="field"><label>รายละเอียด</label><input id="mNote" placeholder="เช่น ค่ากาแฟ, AFF Tiktok"></div>
+    <div id="mErr" class="msg err" style="margin-top:4px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn primary" id="mSave" style="flex:1">บันทึกลง Sheet</button>
+      <button class="btn ghost" id="mCancel">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===================== CONFIG ===================== */
+const SHEET_ID   = '1ohWLy3jTuc9WRF35UvTiE9o9HXxXkkIsO2JL7pCV7NY';
+const SHEET_NAME = 'รายการ';           // ชีตใหม่ที่ Apps Script สร้างให้
+const HEAD = { d:'วันที่', a:'จำนวนเงิน', t:'ประเภท', n:'รายละเอียด', c:'หมวดหมู่' };
+
+const TYPES = ['รายได้','รายจ่าย','จ่ายให้อ้วง','จ่ายสินเชื่อ'];
+const CATS  = ['รายได้','ค่ากิน','ออนไลน์','ช้อปออนไลน์','ของใช้','ของรีวิว',
+               'ADS','ลงทุน','สินเชื่อ','จิปาถะ','เดินทาง'];
+const TYPE_COLOR = { 'รายได้':'#3ddc84', 'รายจ่าย':'#FE2C55', 'จ่ายให้อ้วง':'#ffb020', 'จ่ายสินเชื่อ':'#b06cff' };
+const CAT_COLOR  = ['#FE2C55','#25F4EE','#ffb020','#3ddc84','#b06cff','#ff7ab0',
+                    '#4dc3ff','#ffd166','#7ee787','#c792ea','#ff9f7a'];
+
+// ข้อมูลเดิม (ชีตแรก) เป็นของเดือน กรกฎาคม 2026 — ใช้ตอน fallback เท่านั้น
+const LEGACY_YEAR = 2026, LEGACY_MONTH = 7;
+
+/* ===================== STATE ===================== */
+let ROWS = [];          // [{วันที่,จำนวนเงิน,ประเภท,รายละเอียด,หมวดหมู่,_row}]
+let SOURCE = '';        // คำอธิบายแหล่งข้อมูล
+let CAN_WRITE = false;
+let sortKey = HEAD.d, sortDir = -1;
+let chCat, chDay;
+
+const $ = s => document.querySelector(s);
+const api = () => (localStorage.getItem('rjApiUrl') || '').trim();
+const money = n => (Math.round(n*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const num = v => { const x = parseFloat(String(v??'0').replace(/,/g,'')); return isNaN(x)?0:x; };
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());  // local time ไม่เพี้ยน
+
+function say(text, kind){ const m=$('#msg'); m.className='msg on '+(kind||'warn'); m.innerHTML=text; }
+function hush(){ $('#msg').className='msg'; }
+
+/* ===================== LOAD ===================== */
+const csvUrl = name =>
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv` +
+  (name ? `&sheet=${encodeURIComponent(name)}` : '');
+
+async function fetchCsv(name){
+  const res = await fetch(csvUrl(name));
+  const text = await res.text();
+  if (text.trim().startsWith('<')) throw new Error('NOT_SHARED');
+  return text;
+}
+
+async function loadData(){
+  hush();
+  // 1) มี Apps Script URL → อ่านผ่าน API (ได้เลขแถวมาด้วย แก้ไขได้)
+  if (api()){
+    try{
+      const r = await fetch(`${api()}?sheet=${encodeURIComponent(SHEET_NAME)}`);
+      const j = await r.json();
+      if (j.ok){
+        ROWS = j.data.map(normalize).filter(Boolean);
+        SOURCE = 'Apps Script API (อ่าน + เขียนได้)'; CAN_WRITE = true;
+        return;
+      }
+      if (j.error === 'SHEET_NOT_FOUND')
+        say('ยังไม่มีชีต <b>“รายการ”</b> ใน Sheet — ไปที่ Apps Script แล้วรันฟังก์ชัน <code>setupSheet</code> หนึ่งครั้งก่อนครับ (ดู README ข้อ 2)','warn');
+      else say('Apps Script ตอบกลับผิดพลาด: '+j.error,'err');
+    }catch(e){
+      say('เรียก Apps Script ไม่ได้ — เช็ค URL ในหน้า ⚙️ ตั้งค่า ว่าลงท้ายด้วย <code>/exec</code> ครับ','err');
+    }
+  }
+  // 2) ลองอ่านชีต "รายการ" แบบ CSV (อ่านอย่างเดียว)
+  try{
+    const t = await fetchCsv(SHEET_NAME);
+    const d = Papa.parse(t,{header:true,skipEmptyLines:true}).data;
+    if (d.length && HEAD.a in d[0]){
+      ROWS = d.map(normalize).filter(Boolean);
+      SOURCE = 'CSV ชีต “รายการ” (อ่านอย่างเดียว)'; CAN_WRITE = false;
+      if (!api()) say('โหมดอ่านอย่างเดียว — ใส่ Apps Script URL ในหน้า ⚙️ ตั้งค่า เพื่อเพิ่มรายการได้ครับ','warn');
+      return;
+    }
+  }catch(e){ /* ไปต่อที่ fallback */ }
+
+  // 3) fallback — อ่านชีตเดิม (ไม่มีหัวตาราง)
+  try{
+    const t = await fetchCsv('');
+    ROWS = parseLegacy(t);
+    SOURCE = 'ชีตเดิม (รูปแบบเก่า, อ่านอย่างเดียว)'; CAN_WRITE = false;
+    say('กำลังอ่านจาก<b>ชีตเดิม</b> — ถ้าอยากเพิ่มรายการผ่านเว็บ ให้ตั้งค่า Apps Script ตาม README ก่อนครับ','warn');
+  }catch(e){
+    ROWS = []; SOURCE = 'อ่านไม่ได้';
+    say('อ่าน Sheet ไม่ได้ — กดปุ่ม <b>Share</b> ใน Google Sheet แล้วตั้งเป็น <b>Anyone with the link · Viewer</b> ครับ','err');
+  }
+}
+
+function normalize(o){
+  const a = num(o[HEAD.a]);
+  const t = String(o[HEAD.t]||'').trim();
+  if (!t) return null;
+  let d = String(o[HEAD.d]||'').trim();
+  const m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) d = m[0];
+  else { const p = new Date(d); d = isNaN(p) ? '' : ymd(p); }
+  return { [HEAD.d]:d, [HEAD.a]:a, [HEAD.t]:t,
+           [HEAD.n]:String(o[HEAD.n]||'').trim(),
+           [HEAD.c]:String(o[HEAD.c]||'').trim() || '(ไม่ระบุ)',
+           _row: o._row || null };
+}
+
+// ชีตเดิม: A=วัน(เว้นว่างได้) B=เงิน C=ประเภท D=รายละเอียด E=หมวดหมู่
+function parseLegacy(text){
+  const rows = Papa.parse(text,{header:false,skipEmptyLines:true}).data;
+  const out=[]; let day=null;
+  for (let i=1;i<rows.length;i++){
+    const r=rows[i];
+    if (r[0] && !isNaN(Number(r[0]))) day = Number(r[0]);
+    const t = String(r[2]||'').trim();
+    if (!t || !day || r[1]==='' || r[1]==null) continue;
+    const a = num(r[1]); if (!a && a!==0) continue;
+    const dt = new Date(LEGACY_YEAR, LEGACY_MONTH-1, day);
+    out.push({ [HEAD.d]: ymd(dt), [HEAD.a]:a, [HEAD.t]:t,
+               [HEAD.n]:String(r[3]||'').trim(), [HEAD.c]:String(r[4]||'').trim()||'(ไม่ระบุ)', _row:null });
+  }
+  return out;
+}
+
+/* ===================== FILTER ===================== */
+function filtered(){
+  const mo=$('#fMonth').value, ty=$('#fType').value, ca=$('#fCat').value,
+        q=$('#fSearch').value.trim().toLowerCase();
+  return ROWS.filter(r =>
+    (!mo || (r[HEAD.d]||'').slice(0,7)===mo) &&
+    (!ty || r[HEAD.t]===ty) &&
+    (!ca || r[HEAD.c]===ca) &&
+    (!q  || (r[HEAD.n]+' '+r[HEAD.c]).toLowerCase().includes(q))
+  );
+}
+
+function buildFilters(){
+  const months=[...new Set(ROWS.map(r=>(r[HEAD.d]||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  fill('#fMonth','ทุกเดือน', months.map(m=>[m, TH[+m.slice(5,7)]+' '+(+m.slice(0,4)+543)]));
+  fill('#fType','ทุกประเภท', [...new Set(ROWS.map(r=>r[HEAD.t]))].map(v=>[v,v]));
+  fill('#fCat','ทุกหมวดหมู่', [...new Set(ROWS.map(r=>r[HEAD.c]))].sort().map(v=>[v,v]));
+}
+function fill(sel, allLabel, pairs){
+  const el=$(sel), cur=el.value;
+  el.innerHTML = `<option value="">${allLabel}</option>` +
+    pairs.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
+  if ([...el.options].some(o=>o.value===cur)) el.value=cur;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===================== RENDER ===================== */
+function render(){
+  const rows = filtered();
+
+  const income = rows.filter(r=>r[HEAD.t]==='รายได้').reduce((s,r)=>s+r[HEAD.a],0);
+  const expense= rows.filter(r=>r[HEAD.t]!=='รายได้').reduce((s,r)=>s+r[HEAD.a],0);
+  $('#cIn').textContent  = money(income);
+  $('#cOut').textContent = money(expense);
+  $('#cNet').textContent = money(income-expense);
+  $('#cNet').style.color = (income-expense)>=0 ? 'var(--green)' : 'var(--pink)';
+  $('#cCnt').textContent = rows.length.toLocaleString('th-TH');
+
+  // ---- สรุปตามหมวดหมู่ (เฉพาะรายจ่าย) ----
+  const byCat = {};
+  rows.filter(r=>r[HEAD.t]!=='รายได้').forEach(r=>{
+    byCat[r[HEAD.c]] = byCat[r[HEAD.c]] || {n:0,sum:0};
+    byCat[r[HEAD.c]].n++; byCat[r[HEAD.c]].sum += r[HEAD.a];
+  });
+  const catList = Object.entries(byCat).sort((a,b)=>b[1].sum-a[1].sum);
+  $('#sumBody').innerHTML = catList.length
+    ? catList.map(([c,v],i)=>`<tr>
+        <td><span class="pill" style="background:${CAT_COLOR[i%CAT_COLOR.length]}22;color:${CAT_COLOR[i%CAT_COLOR.length]}">${esc(c)}</span></td>
+        <td class="num">${v.n}</td><td class="num">${money(v.sum)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">ไม่มีข้อมูล</td></tr>';
+
+  drawCat(catList);
+  drawDay(rows);
+  drawList(rows);
+}
+
+function drawCat(catList){
+  const pos = catList.filter(([,v])=>v.sum>0);
+  const ctx = $('#chCat'); if (chCat) chCat.destroy();
+  chCat = new Chart(ctx,{ type:'doughnut',
+    data:{ labels:pos.map(([c])=>c),
+           datasets:[{data:pos.map(([,v])=>v.sum),
+             backgroundColor:pos.map((_,i)=>CAT_COLOR[i%CAT_COLOR.length]), borderWidth:0}] },
+    options:{ plugins:{ legend:{ position:'bottom', labels:{color:'#9a9ab0',boxWidth:12,font:{size:11}} },
+      tooltip:{callbacks:{label:c=>` ${c.label}: ${money(c.parsed)} บาท`}} } }
+  });
+}
+
+function drawDay(rows){
+  const days=[...new Set(rows.map(r=>r[HEAD.d]).filter(Boolean))].sort();
+  const inc=days.map(d=>rows.filter(r=>r[HEAD.d]===d&&r[HEAD.t]==='รายได้').reduce((s,r)=>s+r[HEAD.a],0));
+  const exp=days.map(d=>rows.filter(r=>r[HEAD.d]===d&&r[HEAD.t]!=='รายได้').reduce((s,r)=>s+r[HEAD.a],0));
+  const ctx=$('#chDay'); if (chDay) chDay.destroy();
+  chDay = new Chart(ctx,{ type:'bar',
+    data:{ labels:days.map(d=>d.slice(8)+'/'+d.slice(5,7)),
+      datasets:[{label:'รายได้',data:inc,backgroundColor:'#3ddc84'},
+                {label:'รายจ่าย',data:exp,backgroundColor:'#FE2C55'}] },
+    options:{ scales:{ x:{ticks:{color:'#9a9ab0',font:{size:10}},grid:{display:false}},
+                       y:{ticks:{color:'#9a9ab0',font:{size:10}},grid:{color:'#ffffff10'}} },
+      plugins:{ legend:{labels:{color:'#9a9ab0',boxWidth:12,font:{size:11}}},
+        tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${money(c.parsed.y)} บาท`}} } }
+  });
+}
+
+function drawList(rows){
+  const s=[...rows].sort((a,b)=>{
+    const x=a[sortKey], y=b[sortKey];
+    if (typeof x==='number') return (x-y)*sortDir;
+    return String(x).localeCompare(String(y),'th')*sortDir;
+  });
+  $('#listCount').textContent = `${s.length} รายการ`;
+  $('#listBody').innerHTML = s.length ? s.map(r=>{
+    const col = TYPE_COLOR[r[HEAD.t]] || '#9a9ab0';
+    return `<tr>
+      <td style="white-space:nowrap">${esc(r[HEAD.d])}</td>
+      <td><span class="pill" style="background:${col}22;color:${col}">${esc(r[HEAD.t])}</span></td>
+      <td>${esc(r[HEAD.n])}</td>
+      <td class="muted">${esc(r[HEAD.c])}</td>
+      <td class="num" style="color:${r[HEAD.t]==='รายได้'?'var(--green)':'var(--tx)'}">${money(r[HEAD.a])}</td>
+      <td>${r._row&&CAN_WRITE?`<button class="btn ghost" style="padding:3px 8px;font-size:12px" onclick="editRow(${r._row})">แก้</button>`:''}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted">ไม่มีรายการที่ตรงกับตัวกรอง</td></tr>';
+}
+
+/* ===================== MODAL / SAVE ===================== */
+let editing = null;
+
+function openModal(row, big){
+  editing = row || null;
+  $('#mTitle').textContent = row ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
+  $('#mErr').className='msg err';
+  const r = row ? ROWS.find(x=>x._row===row) : null;
+  $('#mDate').value = r ? r[HEAD.d] : ymd(new Date());
+  $('#mAmt').value  = r ? r[HEAD.a] : '';
+  $('#mNote').value = r ? r[HEAD.n] : '';
+  $('#mType').value = r ? r[HEAD.t] : 'รายจ่าย';
+  $('#mCat').value  = r ? r[HEAD.c] : 'ค่ากิน';
+  $('#modal').classList.add('on');
+  $('#modal').classList.toggle('big', !!big);
+  if (!CAN_WRITE) showMErr('ยังบันทึกไม่ได้ — ต้องใส่ Apps Script URL ในหน้า ⚙️ ตั้งค่า ก่อนครับ');
+}
+function showMErr(t){ $('#mErr').className='msg err on'; $('#mErr').innerHTML=t; }
+window.editRow = r => openModal(r);
+
+async function saveEntry(){
+  const d=$('#mDate').value, a=parseFloat($('#mAmt').value),
+        t=$('#mType').value, c=$('#mCat').value, n=$('#mNote').value.trim();
+  if (!d) return showMErr('กรุณาเลือกวันที่ครับ');
+  if (isNaN(a)) return showMErr('กรุณากรอกจำนวนเงินครับ');
+  if (!CAN_WRITE) return showMErr('ยังไม่ได้ตั้งค่า Apps Script URL — ไปที่หน้า ⚙️ ตั้งค่า ครับ');
+
+  const btn=$('#mSave'); btn.disabled=true; btn.textContent='กำลังบันทึก…';
+  const payload = { sheet:SHEET_NAME, action: editing?'update':'add', row:editing,
+    data:{ [HEAD.d]:d, [HEAD.a]:a, [HEAD.t]:t, [HEAD.n]:n, [HEAD.c]:c } };
+  try{
+    await fetch(api(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload) });
+    $('#modal').classList.remove('on');
+    await refresh();
+    say('บันทึกลง Sheet เรียบร้อยครับ ✅','ok');
+    setTimeout(hush, 3000);
+  }catch(e){
+    showMErr('บันทึกไม่สำเร็จ: '+e.message);
+  }finally{ btn.disabled=false; btn.textContent='บันทึกลง Sheet'; }
+}
+
+/* ===================== INIT ===================== */
+async function refresh(){ await loadData(); buildFilters(); render(); $('#srcInfo').textContent=SOURCE; }
+
+function init(){
+  $('#mType').innerHTML = TYPES.map(v=>`<option>${v}</option>`).join('');
+  $('#mCat').innerHTML  = CATS.map(v=>`<option>${v}</option>`).join('');
+  $('#sid').textContent = SHEET_ID;
+  $('#openSheet').href  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+  $('#apiUrl').value    = api();
+
+  document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); $('#p-'+b.dataset.p).classList.add('on');
+    $('.row').style.display = b.dataset.p==='set' ? 'none' : 'flex';
+  });
+  document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{
+    const k=th.dataset.s; sortDir = (k===sortKey) ? -sortDir : -1; sortKey=k; drawList(filtered());
+  });
+  ['#fMonth','#fType','#fCat'].forEach(s=>$(s).onchange=render);
+  $('#fSearch').oninput = render;
+  $('#reload').onclick  = refresh;
+  $('#addBtn').onclick  = ()=>openModal(null);
+  $('#fab').onclick     = ()=>openModal(null);
+  $('#fabBig').onclick  = ()=>openModal(null, true);
+  $('#mCancel').onclick = ()=>$('#modal').classList.remove('on');
+  $('#mSave').onclick   = saveEntry;
+  $('#modal').onclick   = e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
+  $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); refresh(); };
+  $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=''; refresh(); };
+
+  refresh();
+}
+init();
+</script>
+</body>
+</html>

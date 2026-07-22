@@ -13,7 +13,7 @@
     --cyan: #25F4EE; --pink: #FE2C55;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Thai", "Segoe UI Emoji", "Noto Color Emoji", "Apple Color Emoji", sans-serif; min-height: 100vh; }
   header { padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
   header h1 { font-size: 1.25rem; background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
   #status { font-size: .75rem; color: var(--muted); margin-left: auto; }
@@ -69,7 +69,7 @@
   dialog::backdrop { background: rgba(0,0,0,.65); }
   dialog h3 { margin-bottom: 14px; }
   dialog label { display: block; font-size: .78rem; color: var(--muted); margin: 10px 0 4px; }
-  dialog input, dialog select { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: .9rem; font-family: inherit; }
+  dialog input, dialog select, dialog textarea { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 10px; font-size: .9rem; font-family: inherit; box-sizing: border-box; }
   dialog .actions { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
   .empty { text-align: center; color: var(--muted); padding: 30px; font-size: .9rem; }
   .settings label { display: block; font-size: .8rem; color: var(--muted); margin: 14px 0 6px; }
@@ -124,7 +124,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v2.4 · กำลังโหลด…</span>
+  <span id="status">v4.5 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -134,6 +134,7 @@
   <button data-tab="progress">✍️ Progress</button>
   <button data-tab="listitme">🗂️ ListITME</button>
   <button data-tab="progday">📆 Progress-Day</button>
+  <button data-tab="commission">💰 บันทึกค่าคอม</button>
   <button data-tab="settings">⚙️ ตั้งค่า</button>
 </nav>
 <main>
@@ -226,6 +227,7 @@
       <select id="fCat"><option value="">ทุกหมวด</option></select>
       <select id="fStatus"><option value="">ทุกสถานะ</option></select>
       <button class="btn" id="btnAddProd">+ เพิ่มสินค้า</button>
+      <button class="btn pink" id="btnAddProdFull">🆕 เพิ่มสินค้าใหม่ (ครบวงจร)</button>
     </div>
     <div class="tablewrap">
       <table id="prodTable">
@@ -330,6 +332,43 @@
     </div>
   </section>
 
+  <!-- ============ COMMISSION DAY (บันทึกค่าคอมรายวัน TikTok/Shopee) ============ -->
+  <section id="tab-commission" style="display:none">
+    <div class="panel" id="cmForecastPanel" style="margin-bottom:14px;display:none">
+      <h3>📈 คาดการณ์ค่าคอมที่ได้รับทั้งเดือน</h3>
+      <p style="font-size:.8rem;color:var(--muted);margin:-4px 0 10px">ยอดที่ระบบคำนวณให้ตามยอดขาย (TikTok คอลัมน์ C / Shopee คอลัมน์ K) ยังไม่หักอะไร</p>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:6px">📱 TikTok</div>
+      <div class="cards">
+        <div class="card"><div class="label">สะสม (บาท)</div><div class="value cyan" id="cmFcTiktokSum">–</div></div>
+        <div class="card"><div class="label">เฉลี่ย/วัน</div><div class="value" id="cmFcTiktokAvg">–</div></div>
+        <div class="card"><div class="label">คาดการณ์ทั้งเดือน</div><div class="value pink" id="cmFcTiktokProj">–</div></div>
+      </div>
+      <div style="font-size:.85rem;color:var(--muted);margin:14px 0 6px">🛍️ Shopee</div>
+      <div class="cards">
+        <div class="card"><div class="label">สะสม (บาท)</div><div class="value cyan" id="cmFcShopeeSum">–</div></div>
+        <div class="card"><div class="label">เฉลี่ย/วัน</div><div class="value" id="cmFcShopeeAvg">–</div></div>
+        <div class="card"><div class="label">คาดการณ์ทั้งเดือน</div><div class="value pink" id="cmFcShopeeProj">–</div></div>
+      </div>
+      <div style="font-size:.85rem;color:var(--muted);margin:14px 0 6px">📊 รวมทั้งหมด</div>
+      <div class="cards">
+        <div class="card"><div class="label">สะสม (บาท)</div><div class="value cyan" id="cmFcTotalSum">–</div></div>
+        <div class="card"><div class="label">เฉลี่ย/วัน</div><div class="value" id="cmFcTotalAvg">–</div></div>
+        <div class="card"><div class="label">คาดการณ์ทั้งเดือน</div><div class="value pink" id="cmFcTotalProj">–</div></div>
+      </div>
+      <p id="cmFcNote" style="font-size:.78rem;color:var(--muted);margin-top:10px"></p>
+    </div>
+    <div class="toolbar">
+      <label style="align-self:center;color:var(--muted);font-size:.85rem">วันที่</label>
+      <input type="date" id="cmDay">
+      <button class="btn ghost" id="btnCmReload">🔄 โหลดของวันนี้</button>
+    </div>
+    <div id="cmInfo" class="empty" style="padding:10px"></div>
+    <div id="cmForm" style="display:none"></div>
+    <div class="actions" id="cmActions" style="display:none;gap:8px;margin:16px 0">
+      <button class="btn pink" id="btnCmSave">💾 บันทึกทั้งหมด</button>
+    </div>
+  </section>
+
   <!-- ============ SETTINGS ============ -->
   <section id="tab-settings" style="display:none">
     <div class="panel settings">
@@ -371,6 +410,16 @@
       <div class="actions" style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" id="btnSaveTiktokSheetId">💾 บันทึก</button>
       </div>
+
+      <h3 style="margin-top:24px">💰 บันทึกค่าคอม (ชีตเดือนนี้)</h3>
+      <p>พิมพ์หรือเลือกชื่อชีต "บันทึกค่าคอม" ของเดือนปัจจุบัน เพื่อให้แท็บ "💰 บันทึกค่าคอม" อ่าน/เขียนถูกชีต — กด "โหลดรายชื่อชีต" เพื่อดึงชื่อชีตทั้งหมดมาช่วยเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
+      <label>ชื่อชีตบันทึกค่าคอม</label>
+      <input id="commissionSheetInput" list="commissionSheetList" placeholder="เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26">
+      <datalist id="commissionSheetList"></datalist>
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn" id="btnSaveCommissionSheet">💾 บันทึก</button>
+        <button class="btn ghost" id="btnLoadCommissionSheetList">🔄 โหลดรายชื่อชีต</button>
+      </div>
     </div>
   </section>
 </main>
@@ -379,7 +428,7 @@
 <dialog id="dlgProd">
   <h3 id="dlgProdTitle">เพิ่มสินค้า</h3>
   <form method="dialog" id="formProd">
-    <label>SKU (เช่น ITM_240)</label><input name="SKU" required pattern="ITM_\d+" placeholder="ITM_XXX">
+    <label id="lblProdSku">SKU (เช่น ITM_240)</label><input name="SKU" required pattern="ITM_\d+" placeholder="ITM_XXX">
     <label>ชื่อสินค้า</label><input name="ชื่อสินค้า" required>
     <label>หมวดหมู่</label>
     <select name="หมวดหมู่"><option>เมาส์</option><option>คีย์บอร์ด</option><option>หัวชาร์จ</option><option>ยูเอสบี ฮับ</option><option>อุปกรณ์เสริม</option><option>อื่นๆ</option></select>
@@ -392,6 +441,33 @@
     <div class="actions">
       <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
       <button class="btn" value="ok" id="btnProdSave">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ============ NEW PRODUCT FULL MODAL (เพิ่มสินค้าใหม่ครบวงจร — เขียน สินค้า + ⚡️Progress + 🗂️ ListITME + คำอธิบาย/ShopeeLink ถ้ากรอกมา) ============ -->
+<dialog id="dlgProdFull" style="max-height:85vh;overflow-y:auto">
+  <h3>🆕 เพิ่มสินค้าใหม่ (ครบวงจร)</h3>
+  <p style="font-size:.78rem;color:var(--muted);margin-top:-6px">บันทึกครั้งเดียว เขียนเข้า สินค้า + ⚡️Progress + 🗂️ ListITME ให้เลย (คำอธิบาย/ลิงก์ Shopee เขียนเฉพาะช่องที่กรอกมา)</p>
+  <form method="dialog" id="formProdFull">
+    <label id="lblProdFullSku">SKU (เช่น ITM_240)</label><input name="sku" id="prodFullSkuInput" required pattern="ITM_\d+" placeholder="ITM_XXX">
+    <label>ชื่อสินค้า</label><input name="name" required>
+    <label>หมวดหมู่</label>
+    <select name="category"><option>เมาส์</option><option>คีย์บอร์ด</option><option>หัวชาร์จ</option><option>ยูเอสบี ฮับ</option><option>อุปกรณ์เสริม</option><option>อื่นๆ</option></select>
+    <label>ค่าคอม %</label><input name="commissionPct" type="number" step="0.1" min="0">
+    <label>Tier (เข้า 🗂️ ListITME)</label>
+    <select name="tier" required><option value="B">B</option><option value="Bต">Bต</option><option value="C">C</option><option value="Cต">Cต</option></select>
+    <label>คำอธิบาย (ไม่บังคับ)</label>
+    <textarea name="description" rows="3" placeholder="ข้อความคำอธิบายสินค้า…"></textarea>
+    <label>ลิงก์ Shopee (ไม่บังคับ ใส่ได้สูงสุด 5 ลิงก์)</label>
+    <input name="shopeeLink1" type="url" placeholder="https://shopee.co.th/…">
+    <input name="shopeeLink2" type="url" placeholder="https://shopee.co.th/…" style="margin-top:6px">
+    <input name="shopeeLink3" type="url" placeholder="https://shopee.co.th/…" style="margin-top:6px">
+    <input name="shopeeLink4" type="url" placeholder="https://shopee.co.th/…" style="margin-top:6px">
+    <input name="shopeeLink5" type="url" placeholder="https://shopee.co.th/…" style="margin-top:6px">
+    <div class="actions">
+      <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
+      <button class="btn pink" value="ok" id="btnProdFullSave">บันทึกทั้งหมด</button>
     </div>
   </form>
 </dialog>
@@ -470,7 +546,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v2.4';
+const VERSION = 'v4.5';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -485,6 +561,7 @@ const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxssiQazWkQnC20Wtv03ledew7nRrNpaFbxrlQWfKlpBYwP71hsUibfvZxY0UxrXv7X6A/exec';
 const DEFAULT_TODOLIST_SHEET = '7️⃣ 📝 TODOLIST-JULY26';
 const DEFAULT_TIKTOK_SHEET_ID = '1jyBUyofpn1s0Eesh_w0pHdE7eE7iXuANK7qjtSZ8Ts0'; // ไฟล์ยอดขาย TikTok แยกไฟล์ กันไฟล์หลักหนัก
+const DEFAULT_COMMISSION_SHEET = '7️⃣ 📝  บันทึกค่าคอม-JULY26'; // มีเว้นวรรค 2 ที่ระหว่าง 📝 กับ บันทึก ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
 
 /* ================== STATE ================== */
 let products = [], sales = [], catalog = [], range = 'all';
@@ -497,6 +574,7 @@ const apiUrl = () => localStorage.getItem('appsScriptUrl') || DEFAULT_API_URL;
 const todolistSheet = () => localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
 // ถ้าพี่ย้ายชีตยอดขาย TikTok ไปไว้ Google Sheet ไฟล์อื่น (กันไฟล์หลักหนัก) ใส่ Sheet ID ไฟล์นั้นไว้ตรงนี้ — ว่างไว้ = ดึงจากไฟล์หลักเหมือนเดิม
 const tiktokSheetId = () => localStorage.getItem('tiktokSheetId') || DEFAULT_TIKTOK_SHEET_ID;
+const commissionSheet = () => localStorage.getItem('commissionSheet') || DEFAULT_COMMISSION_SHEET;
 const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
 // ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
 const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
@@ -844,7 +922,8 @@ function renderProducts() {
     <td>${p['ราคา'] ? baht(p['ราคา']) : '–'}</td><td>${esc(p['ค่าคอม %'] || '–')}</td><td>${esc(p['จำนวน EP'] || '0')}</td>
     <td><span class="tag ${tagCls(p['สถานะ'])}">${esc(p['สถานะ'] || '–')}</span></td>
     <td>${p['Link สินค้า'] ? `<a href="${esc(p['Link สินค้า'])}" target="_blank">🔗</a>` : ''}
-        <a href="#" data-edit="${esc(p.SKU)}">✏️</a></td>
+        <a href="#" data-edit="${esc(p.SKU)}">✏️</a>
+        <a href="#" data-del="${esc(p.SKU)}" title="ลบแถวนี้ออกจากชีตสินค้า (ไม่กระทบชีตอื่น)">🗑️</a></td>
   </tr>`).join('');
   $('#prodEmpty').style.display = rows.length ? 'none' : 'block';
 
@@ -858,12 +937,23 @@ function fillOptions(sel, vals, first) {
 }
 
 /* ================== MODALS ================== */
+// เลข ITM ตัวถัดไป = เลขสูงสุดที่เจอใน 📝#คำอธิบาย (ผ่าน catalog ที่รวมมาจากชีตนั้นแล้ว) + 1 — ใช้ทำ hint ให้กรอก SKU ใหม่ได้ไว
+function nextSkuNum() {
+  const nums = catalog.map(it => parseInt(String(it.id || '').replace(/\D/g, ''), 10)).filter(n => !isNaN(n));
+  return (nums.length ? Math.max(...nums) : 0) + 1;
+}
+
 let editingSku = null;
 function openProdModal(sku) {
   editingSku = sku || null;
   const f = $('#formProd'); f.reset();
   $('#dlgProdTitle').textContent = sku ? `แก้ไข ${sku}` : 'เพิ่มสินค้า';
   f.SKU.readOnly = !!sku;
+  if (!sku) {
+    const next = nextSkuNum();
+    $('#lblProdSku').textContent = `SKU (เช่น ITM_${next})`;
+    f.SKU.placeholder = `ITM_${next}`;
+  }
   if (sku) {
     const p = products.find(x => x.SKU === sku) || {};
     [...f.elements].forEach(el => { if (el.name && p[el.name] !== undefined) el.value = p[el.name]; });
@@ -876,6 +966,25 @@ $('#formProd').addEventListener('submit', (e) => {
   saveToSheet(editingSku
     ? { sheet: SHEET_PRODUCTS, action: 'update', keyColumn: 'SKU', key: editingSku, data }
     : { sheet: SHEET_PRODUCTS, action: 'add', data });
+});
+
+// เพิ่มสินค้าใหม่ครบวงจร — เขียน สินค้า + ⚡️Progress + 🗂️ ListITME (+ คำอธิบาย/ShopeeLink ถ้ากรอกมา) ในคราวเดียว ผ่าน action เดียว
+$('#btnAddProdFull').onclick = () => {
+  if (!apiUrl()) { switchTab('settings'); toast('เชื่อม Apps Script ก่อนครับ หรือกรอกใน Google Sheet โดยตรง'); return; }
+  const next = nextSkuNum();
+  $('#lblProdFullSku').textContent = `SKU (เช่น ITM_${next})`;
+  $('#prodFullSkuInput').placeholder = `ITM_${next}`;
+  $('#dlgProdFull').showModal();
+};
+$('#formProdFull').addEventListener('submit', (e) => {
+  if (e.submitter?.value !== 'ok') return;
+  const fd = Object.fromEntries(new FormData($('#formProdFull')));
+  const shopeeLinks = [1, 2, 3, 4, 5].map(i => fd['shopeeLink' + i]).filter(Boolean);
+  saveToSheet({
+    sheet: SHEET_PRODUCTS, action: 'addNewProductFull',
+    sku: fd.sku, name: fd.name, category: fd.category, commissionPct: fd.commissionPct,
+    tier: fd.tier, description: fd.description, shopeeLinks,
+  });
 });
 
 function openSaleModal() {
@@ -900,11 +1009,12 @@ $('#formSale').addEventListener('submit', (e) => {
 /* ================== UI WIRING ================== */
 function switchTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'commission', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
   if (name === 'queue') loadQueue();
   if (name === 'progress') loadProgress();
   if (name === 'listitme') loadListItme();
   if (name === 'progday') loadProgDay();
+  if (name === 'commission') { loadCommissionDay(); loadCommissionForecast(); }
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 $('#rangeChips').addEventListener('click', (e) => {
@@ -915,9 +1025,18 @@ $('#rangeChips').addEventListener('click', (e) => {
 });
 $('#btnAddProd').onclick = () => apiUrl() ? openProdModal() : (switchTab('settings'), toast('เชื่อม Apps Script ก่อนครับ หรือกรอกใน Google Sheet โดยตรง'));
 $('#btnAddSale').onclick = () => apiUrl() ? openSaleModal() : (switchTab('settings'), toast('เชื่อม Apps Script ก่อนครับ หรือกรอกใน Google Sheet โดยตรง'));
-$('#prodTable').addEventListener('click', (e) => {
+$('#prodTable').addEventListener('click', async (e) => {
   const ed = e.target.closest('[data-edit]');
-  if (ed) { e.preventDefault(); apiUrl() ? openProdModal(ed.dataset.edit) : window.open(SHEET_URL); }
+  if (ed) { e.preventDefault(); apiUrl() ? openProdModal(ed.dataset.edit) : window.open(SHEET_URL); return; }
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    e.preventDefault();
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    const sku = del.dataset.del;
+    if (!confirm(`ลบ ${sku} ออกจากชีต "สินค้า" เลยไหม?\n\nการกระทำนี้ย้อนกลับไม่ได้ (ไม่กระทบชีตอื่น เช่น Progress/ListITME/คำอธิบาย)`)) return;
+    await saveToSheet({ sheet: SHEET_PRODUCTS, action: 'delete', keyColumn: 'SKU', key: sku });
+    return;
+  }
   const th = e.target.closest('th[data-k]');
   if (th) { sortDir = sortKey === th.dataset.k ? -sortDir : 1; sortKey = th.dataset.k; renderProducts(); }
 });
@@ -954,6 +1073,21 @@ $('#tiktokSheetIdInput').value = tiktokSheetId();
 $('#btnSaveTiktokSheetId').onclick = () => {
   localStorage.setItem('tiktokSheetId', $('#tiktokSheetIdInput').value.trim());
   toast('บันทึก Sheet ID แล้ว ✓ — โหลดเดือนใหม่/รีโหลดครั้งถัดไปจะดึงจากไฟล์นี้');
+};
+$('#commissionSheetInput').value = commissionSheet();
+$('#btnSaveCommissionSheet').onclick = () => {
+  localStorage.setItem('commissionSheet', $('#commissionSheetInput').value.trim());
+  toast('บันทึกชื่อชีตแล้ว ✓'); loadCommissionDay();
+};
+$('#btnLoadCommissionSheetList').onclick = async () => {
+  if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
+  try {
+    const res = await fetch(`${apiUrl()}?list=1`);
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    $('#commissionSheetList').innerHTML = j.sheets.filter(s => s.includes('บันทึกค่าคอม')).map(s => `<option value="${esc(s)}">`).join('');
+    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่อง "ชื่อชีตบันทึกค่าคอม" ได้เลย');
+  } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
 };
 $('#btnLoadSheetList').onclick = async () => {
   if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
@@ -1060,10 +1194,11 @@ function daysLeftInMonth() {
 function renderQueueStats() {
   $('#queueStats').style.display = queueTotal ? '' : 'none';
   if (!queueTotal) return;
-  $('#qDone').textContent = `${queueDone} / ${queueTotal} คลิป`;
+  const goal = num($('#qGoal').value);
+  // มีเป้าหมายแล้ว → เทียบกับเป้าหมาย (ตรงใจกว่า) / ยังไม่ตั้งเป้า → เทียบกับจำนวนคลิปทั้งหมดที่วางคิวไว้เดือนนี้แทน
+  $('#qDone').textContent = goal ? `${queueDone} / ${goal} คลิป` : `${queueDone} / ${queueTotal} คลิป`;
   const daysLeft = daysLeftInMonth();
   $('#qDaysLeft').textContent = daysLeft + ' วัน';
-  const goal = num($('#qGoal').value);
   const remaining = goal - queueDone;
   $('#qAvgPerDay').textContent = !goal
     ? '– ใส่เป้าหมายก่อน'
@@ -1936,6 +2071,160 @@ function celebrate(x, y) {
     setTimeout(() => el.remove(), 700);
   }
 }
+
+/* ================== COMMISSION DAY: บันทึกค่าคอมรายวัน TikTok/Shopee ================== */
+// คีย์แต่ละฟิลด์ต้องตรงกับ COMMISSION_COLS ฝั่ง apps-script.gs เป๊ะๆ (ตัวสะกดคีย์เดียวกัน)
+const COMMISSION_FIELDS = [
+  { group: '📱 TikTok', fields: [
+    { key: 'tiktokSold', label: 'ขายได้กี่รายการ' },
+    { key: 'tiktokCommission', label: 'ค่าคอม (บาท)' },
+    { key: 'tiktokWithdraw', label: 'ถอนเงิน (บาท)', color: '#15803d' },
+    { key: 'tiktokSettledQty', label: 'รายการที่ชำระ (ชิ้น)' },
+    { key: 'tiktokSettledAmt', label: 'ชำระกี่บาท/วัน (ค่าคอมสุทธิจริง)', color: '#4ade80' },
+  ]},
+  { group: '🎬 Shopee VDO', fields: [
+    { key: 'shopeeVdoQty', label: 'ชิ้น' },
+    { key: 'shopeeVdoGmv', label: 'GMVs' },
+    { key: 'shopeeVdoComm', label: 'ค่าคอม' },
+    { key: 'shopeeVdoAds', label: 'ADS' },
+  ]},
+  { group: '🔗 Link', fields: [
+    { key: 'linkAds', label: 'ADS Link' },
+    { key: 'linkExtraQty', label: 'Link Extra — ชิ้น' },
+    { key: 'linkExtraGmv', label: 'Link Extra — GMVs' },
+    { key: 'linkExtraComm', label: 'Link Extra — ค่าคอม' },
+  ]},
+  { group: '🛍️ Shopee สรุป', fields: [
+    { key: 'shopeeWithdraw', label: 'ถอนเงิน (บาท)', color: '#c2410c' },
+    { key: 'shopeeAdsSp', label: 'ADS SP' },
+    { key: 'shopeeAdsFb', label: 'ADS FB' },
+    { key: 'shopeeSettled', label: 'ชำระ (บาท)', color: '#fb923c' },
+  ]},
+];
+const COMMISSION_COL_LETTERS = {
+  tiktokSold: 'B', tiktokCommission: 'C', tiktokWithdraw: 'D', tiktokSettledQty: 'G', tiktokSettledAmt: 'H',
+  shopeeWithdraw: 'L', shopeeAdsSp: 'M', shopeeAdsFb: 'N', shopeeSettled: 'O',
+  shopeeVdoQty: 'W', shopeeVdoGmv: 'X', shopeeVdoComm: 'Y', shopeeVdoAds: 'Z',
+  linkAds: 'AE', linkRuamQty: 'AG', linkRuamGmv: 'AH', linkRuamComm: 'AI',
+  linkExtraQty: 'AJ', linkExtraGmv: 'AK', linkExtraComm: 'AL',
+};
+// แปลงตัวอักษรคอลัมน์ (A, B, ... AL) เป็น index 0-based ไว้อ่านจาก raw row array ที่ได้จาก loadRaw()
+const COL_LETTER_TO_IDX = {};
+(function () {
+  for (let i = 0; i < 40; i++) {
+    let n = i, s = '';
+    do { s = String.fromCharCode(65 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+    COL_LETTER_TO_IDX[s] = i;
+  }
+})();
+
+function renderCommissionForm() {
+  $('#cmForm').innerHTML = COMMISSION_FIELDS.map(g => `
+    <div class="panel settings" style="margin-bottom:12px">
+      <h3>${esc(g.group)}</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:12px">
+        ${g.fields.map(f => `
+          <div style="flex:1;min-width:160px">
+            <label${f.color ? ` style="color:${f.color}"` : ''}>${esc(f.label)}</label>
+            <input type="number" step="any" id="cm-${f.key}">
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+renderCommissionForm();
+
+// เลือกวันที่ผ่าน <input type=date> ตามปกติของเว็บ (เหมือนแท็บ Progress-Day) แล้วดึงแค่ "วันที่ในเดือน" มาจับคู่กับคอลัมน์ A ของชีต
+function cmTodayDateStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function cmSelectedDay() {
+  const v = $('#cmDay').value;
+  if (!v) return 0;
+  return Number(v.split('-')[2]);
+}
+
+// คาดการณ์ค่าคอมที่ได้รับทั้งเดือน แยก TikTok(C) / Shopee(K) / รวม — เฉลี่ยจากวันที่มีข้อมูลจริงของแต่ละส่วนเท่านั้น
+// แล้วคูณด้วยจำนวนวันทั้งหมดที่มีแถวในชีต (ปกติ 31)
+async function loadCommissionForecast() {
+  try {
+    const rows = await loadRaw(commissionSheet());
+    const dayRows = rows.filter(r => { const d = parseInt(r[0], 10); return !isNaN(d) && d >= 1 && d <= 31; });
+    const totalDays = dayRows.length;
+    if (!totalDays) { $('#cmForecastPanel').style.display = 'none'; return; }
+    const at = (r, col) => num(r[COL_LETTER_TO_IDX[col]]);
+
+    function calc(getVal) {
+      let sum = 0, daysWithData = 0;
+      dayRows.forEach(r => { const v = getVal(r); if (v) daysWithData++; sum += v; });
+      const avg = daysWithData ? sum / daysWithData : 0;
+      return { sum, avg, proj: avg * totalDays, daysWithData };
+    }
+    const set = (prefix, res) => {
+      $(`#${prefix}Sum`).textContent = baht(res.sum) + ' ฿';
+      $(`#${prefix}Avg`).textContent = baht(res.avg) + ' ฿';
+      $(`#${prefix}Proj`).textContent = baht(res.proj) + ' ฿';
+    };
+
+    const tiktok = calc(r => at(r, 'C'));
+    const shopee = calc(r => at(r, 'K'));
+    const total = calc(r => at(r, 'C') + at(r, 'K'));
+    set('cmFcTiktok', tiktok);
+    set('cmFcShopee', shopee);
+    set('cmFcTotal', total);
+
+    $('#cmFcNote').textContent = `TikTok มีข้อมูล ${tiktok.daysWithData} วัน · Shopee มีข้อมูล ${shopee.daysWithData} วัน · เทียบเป็น ${totalDays} วันในชีตนี้`;
+    $('#cmForecastPanel').style.display = '';
+  } catch (e) {
+    $('#cmForecastPanel').style.display = 'none';
+  }
+}
+
+async function loadCommissionDay() {
+  if (!$('#cmDay').value) $('#cmDay').value = cmTodayDateStr();
+  $('#cmInfo').textContent = 'กำลังโหลด…';
+  $('#cmForm').style.display = 'none';
+  $('#cmActions').style.display = 'none';
+  COMMISSION_FIELDS.forEach(g => g.fields.forEach(f => { const el = $(`#cm-${f.key}`); if (el) el.value = ''; }));
+  try {
+    const rows = await loadRaw(commissionSheet());
+    const day = cmSelectedDay();
+    const row = rows.find(r => parseInt(r[0], 10) === day);
+    if (row) {
+      COMMISSION_FIELDS.forEach(g => g.fields.forEach(f => {
+        const idx = COL_LETTER_TO_IDX[COMMISSION_COL_LETTERS[f.key]];
+        const v = row[idx];
+        if (v !== undefined && v !== '') $(`#cm-${f.key}`).value = num(v);
+      }));
+    }
+    $('#cmInfo').textContent = row
+      ? `📅 วันที่ ${day} — ค่าที่มีอยู่แล้วในชีตขึ้นให้แล้ว แก้/เติมช่องที่ต้องการแล้วกดบันทึกได้เลย`
+      : `⚠️ ไม่พบแถวของวันที่ ${day} ในชีต (เช็คชื่อชีตในแท็บตั้งค่า)`;
+    $('#cmForm').style.display = '';
+    $('#cmActions').style.display = 'flex';
+  } catch (e) {
+    $('#cmInfo').textContent = '⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet หรือชื่อชีตในแท็บตั้งค่า';
+  }
+}
+
+$('#cmDay').addEventListener('change', loadCommissionDay);
+$('#btnCmReload').onclick = () => { $('#cmDay').value = cmTodayDateStr(); loadCommissionDay(); };
+
+$('#btnCmSave').onclick = async () => {
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  const day = cmSelectedDay();
+  if (!day) { toast('เลือกวันที่ก่อนครับ'); return; }
+  const payload = { sheet: commissionSheet(), action: 'setCommissionDay', day };
+  COMMISSION_FIELDS.forEach(g => g.fields.forEach(f => {
+    const v = $(`#cm-${f.key}`).value;
+    if (v !== '') payload[f.key] = v;
+  }));
+  const btn = $('#btnCmSave'); const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  const ok = await saveToSheet(payload);
+  btn.disabled = false; btn.textContent = original;
+  if (ok) setTimeout(() => { loadCommissionDay(); loadCommissionForecast(); }, 1500);
+};
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';

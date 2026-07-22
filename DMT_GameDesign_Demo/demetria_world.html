@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 Demetria Spirit — Isometric World</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1621;--bg2:#151f2e;--card:#1a2535;--card2:#1f2d40;
+  --border:#273a52;--text:#dde8f5;--dim:#6a85a0;
+  --gold:#f5c842;--green:#56c45a;--red:#e05050;--purple:#a060e0;
+  --r:12px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#070c12;color:var(--text);font-size:13px}
+
+#game{position:fixed;inset:0;display:block;cursor:grab}
+#game:active{cursor:grabbing}
+
+/* ── HUD TOP ── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:20;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:linear-gradient(to bottom,rgba(10,16,24,.92),rgba(10,16,24,0));pointer-events:none}
+#hud > *{pointer-events:auto}
+.logo{font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;text-shadow:0 1px 3px #000}
+.pill{background:rgba(26,37,53,.9);border:1px solid var(--border);padding:4px 11px;border-radius:20px;display:flex;align-items:center;gap:5px;font-size:12px;backdrop-filter:blur(6px)}
+.cl-btn{cursor:pointer;font-family:inherit;color:var(--text)}
+.cl-ver{background:rgba(86,196,90,.18);color:var(--green);border:1px solid rgba(86,196,90,.4);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;margin-left:2px}
+.pill b{color:var(--gold)}
+.zone-pill{font-weight:700}
+.clock-wrap{width:150px}
+.clock-track{height:16px;border-radius:9px;overflow:hidden;position:relative;border:1px solid var(--border);
+  background:linear-gradient(to right,#0a0a20 0%,#1a1a60 10%,#4488cc 25%,#88ccff 38%,#ffe080 50%,#ff9940 70%,#aa3322 82%,#1a1a60 90%,#0a0a20 100%)}
+.clock-knob{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:12px;filter:drop-shadow(0 0 3px rgba(255,255,255,.9));transition:left .2s linear}
+.spd{background:rgba(26,37,53,.9);border:1px solid var(--border);color:var(--dim);padding:3px 8px;border-radius:7px;cursor:pointer;font-size:11px;font-family:inherit}
+.spd.active{background:var(--gold);color:#111;border-color:var(--gold);font-weight:700}
+
+/* ── MINIMAP ── */
+#minimap{position:fixed;top:46px;right:10px;z-index:20;width:132px;height:132px;border-radius:10px;
+  border:1px solid var(--border);background:rgba(10,16,24,.85);backdrop-filter:blur(6px);overflow:hidden}
+#minimap canvas{display:block;width:100%;height:100%}
+.mm-compass{position:absolute;font-size:9px;color:var(--dim);font-weight:700;pointer-events:none;text-shadow:0 1px 2px #000}
+.mm-n{top:2px;left:50%;transform:translateX(-50%)}
+.mm-s{bottom:2px;left:50%;transform:translateX(-50%)}
+.mm-e{right:3px;top:50%;transform:translateY(-50%)}
+.mm-w{left:3px;top:50%;transform:translateY(-50%)}
+#mmZoomBtn{position:absolute;bottom:3px;right:3px;width:18px;height:18px;border-radius:5px;border:1px solid var(--border);
+  background:rgba(10,16,24,.85);color:var(--text);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2;font-family:inherit}
+
+/* ── SIDE PANELS ── */
+.side{position:fixed;top:0;right:0;bottom:0;width:330px;max-width:88vw;z-index:40;background:rgba(14,22,33,.97);
+  border-left:1px solid var(--border);backdrop-filter:blur(10px);transform:translateX(100%);transition:transform .22s ease;
+  display:flex;flex-direction:column}
+.side.open{transform:translateX(0)}
+.side-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.side-title{font-size:13px;font-weight:700;color:var(--gold)}
+.side-body{flex:1;overflow-y:auto;padding:12px 14px}
+.x-btn{background:var(--card);border:1px solid var(--border);color:var(--dim);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:14px;font-family:inherit}
+
+.inv-grid{display:flex;flex-wrap:wrap;gap:5px}
+.chip{display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:3px 9px;font-size:12px}
+.chip.nz{background:#1a2e1a;border-color:#2d5a2d}
+.chip .qty{color:var(--gold);font-weight:700}
+.inv-empty{color:var(--dim);font-size:12px;text-align:center;padding:18px 0}
+
+.qcard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.qcard.can{border-color:var(--green)}
+.qcard.main{border-color:var(--purple)}
+.q-npc{display:flex;align-items:center;gap:6px}
+.q-npc-ico{font-size:17px}
+.q-npc-name{font-size:12px;font-weight:700;flex:1}
+.q-reward{font-size:12px;font-weight:700;color:var(--gold)}
+.q-req{display:flex;flex-wrap:wrap;gap:3px}
+.qr{font-size:11px;padding:2px 6px;border-radius:5px;border:1px solid}
+.qr.ok{background:#112211;border-color:#2a5a2a;color:var(--green)}
+.qr.bad{background:#221111;border-color:#5a2a2a;color:var(--red)}
+.btn-submit{width:100%;padding:6px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,#7a5800,var(--gold));color:#111}
+.btn-submit:disabled{opacity:.3;cursor:not-allowed;background:var(--card2);color:var(--dim)}
+
+/* ── STAGE MODAL ── */
+#modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.72);backdrop-filter:blur(3px);padding:16px}
+#clModal{position:fixed;inset:0;z-index:65;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.72);backdrop-filter:blur(3px);padding:16px}
+#clModal.open{display:flex}
+#mapModal{position:fixed;inset:0;z-index:65;display:none;align-items:center;justify-content:center;background:rgba(4,8,14,.72);backdrop-filter:blur(3px);padding:16px}
+#mapModal.open{display:flex}
+.cl-entry{margin-bottom:14px}
+.cl-entry+.cl-entry{padding-top:14px;border-top:1px solid var(--border)}
+.cl-entry-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cl-entry-head b{font-size:13px}
+.cl-list{padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
+#modal.open{display:flex}
+.mbox{background:var(--card);border:1px solid var(--border);border-radius:14px;width:420px;max-width:100%;max-height:86vh;
+  display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.mhead{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.mhead .em{font-size:28px}
+.mname{font-size:15px;font-weight:700}
+.mmeta{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.tag{font-size:9px;padding:1px 6px;border-radius:8px;border:1px solid}
+.mbody{padding:12px 14px;overflow-y:auto}
+.sect{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin:10px 0 6px;font-weight:700}
+.sect:first-child{margin-top:0}
+.item-row{display:flex;gap:5px;flex-wrap:wrap}
+.item-tag{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--dim);background:var(--bg2);padding:3px 8px;border-radius:6px}
+.prog-bar{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.prog-fill{height:100%;background:linear-gradient(to right,#2a5c2a,var(--green));transition:width .3s}
+.prog-fill.gold{background:linear-gradient(to right,#7a5800,var(--gold))}
+.prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px}
+.ct{font-size:10px;padding:3px 7px;border-radius:5px;border:1px solid;display:inline-block}
+.ct.ok{background:#112211;border-color:#2a5a2a;color:var(--green)}
+.ct.bad{background:#221111;border-color:#5a2a2a;color:var(--red)}
+.rrow{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;margin-bottom:5px}
+.r-ico{font-size:17px}
+.r-name{font-size:11px;font-weight:600;min-width:70px}
+.r-ings{display:flex;flex-wrap:wrap;gap:2px;flex:1}
+.ri{font-size:10px;padding:1px 4px;border-radius:4px;border:1px solid}
+.ri.ok{background:#112211;border-color:#2a5a2a;color:var(--green)}
+.ri.bad{background:#221111;border-color:#5a2a2a;color:var(--red)}
+.mfoot{padding:12px 14px;border-top:1px solid var(--border)}
+.btn{width:100%;padding:9px;border:none;border-radius:9px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+.btn-plant{background:#2d6e30;color:#c8f0c8}
+.btn-wait{background:var(--bg2);color:var(--dim);border:1px solid var(--border);cursor:default}
+.btn-harvest{background:var(--gold);color:#1a0e00}
+.btn-unlock{background:linear-gradient(135deg,#2d1a5c,#5c3aaa);color:#e0d0ff;border:1px solid #7050c0}
+.btn-unlock:disabled{opacity:.35;cursor:not-allowed}
+.btn-craft{background:#4a1a80;color:#d0a0ff;border:none;padding:5px 11px;border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.qty-ctrl{display:flex;align-items:center;gap:3px}
+.qbtn{width:19px;height:19px;border-radius:5px;border:1px solid var(--border);background:var(--card2);color:var(--text);cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit;padding:0}
+.qty-input{width:32px;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;padding:2px 0;font-family:inherit}
+.qty-input::-webkit-inner-spin-button,.qty-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.qty-input{-moz-appearance:textfield}
+.dev-input{background:var(--bg2);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:6px 8px;font-size:12px;font-family:inherit}
+.btn-craft:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── PROMPT / TOAST ── */
+#prompt{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(26,37,53,.94);
+  border:1px solid var(--gold);color:var(--text);padding:7px 16px;border-radius:20px;font-size:12px;display:none;
+  backdrop-filter:blur(6px);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+#prompt.show{display:block}
+#prompt kbd{background:var(--gold);color:#111;border-radius:4px;padding:1px 6px;font-weight:700;font-family:inherit;font-size:11px}
+#toast{position:fixed;bottom:130px;left:50%;transform:translateX(-50%) translateY(14px);padding:8px 20px;border-radius:20px;
+  font-size:13px;font-weight:600;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;z-index:70;
+  text-align:center;border:1px solid;background:rgba(20,30,44,.96);max-width:88vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── BOTTOM BAR ── */
+#bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:10px 12px;display:flex;gap:7px;justify-content:center;
+  background:linear-gradient(to top,rgba(10,16,24,.9),rgba(10,16,24,0));pointer-events:none;flex-wrap:wrap}
+#bottom > *{pointer-events:auto}
+.bbtn{background:rgba(26,37,53,.92);border:1px solid var(--border);color:var(--text);padding:8px 15px;border-radius:10px;
+  cursor:pointer;font-size:12px;font-family:inherit;font-weight:600;backdrop-filter:blur(6px);display:flex;align-items:center;gap:5px}
+.bbtn .k{font-size:9px;color:var(--dim);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:0 4px}
+.bbtn.badge-on{border-color:var(--gold);color:var(--gold)}
+
+#help{position:fixed;bottom:58px;left:12px;z-index:20;font-size:10px;color:var(--dim);line-height:1.7;text-shadow:0 1px 3px #000;pointer-events:none}
+#help b{color:var(--text)}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+@media(max-width:640px){
+  #minimap{width:96px;height:96px}
+  #help{display:none}
+  .clock-wrap{width:96px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="logo">🌸 Demetria</div>
+  <button class="pill cl-btn" onclick="openChangelog()" title="ดูรายละเอียดการอัปเดต">📜 <b>Changelog</b> <span class="cl-ver">v1.2.9</span></button>
+  <div class="pill">วันที่ <b id="hDay">1</b> <span id="hPhase" style="color:var(--dim);font-size:11px">เช้า</span></div>
+  <div class="pill">💰 <b id="hMoney">0</b></div>
+  <div class="pill zone-pill" id="hZone">🏰 เมืองหลวง</div>
+  <div class="pill" id="compassPill" onclick="viewNextStage()" style="cursor:pointer" title="คลิกเพื่อดูเงื่อนไขปลดล็อคด่านต่อไป">
+    <span id="compassArrow" style="display:inline-block;transition:transform .15s linear">➤</span>
+    <b id="compassLabel" style="color:var(--gold)">-</b>
+  </div>
+  <div class="clock-wrap">
+    <div class="clock-track"><div class="clock-knob" id="knob">☀️</div></div>
+  </div>
+  <button class="spd" onclick="setSpeed(1)">1x</button>
+  <button class="spd active" onclick="setSpeed(3)">3x</button>
+  <button class="spd" onclick="setSpeed(8)">8x</button>
+  <button class="spd" onclick="togglePause()" id="pauseBtn">⏸</button>
+  <div class="pill" title="เมาส์สกรอลล์เพื่อซูม">🔍 <b id="hZoom">100%</b></div>
+</div>
+
+<div id="minimap">
+  <canvas id="mmCanvas"></canvas>
+  <span class="mm-compass mm-n">N ❄️</span>
+  <span class="mm-compass mm-s">S 🌋</span>
+  <span class="mm-compass mm-e">E 🌾</span>
+  <span class="mm-compass mm-w">⛏️ W</span>
+  <button id="mmZoomBtn" onclick="openMapModal()" title="ดูแผนที่ขนาดใหญ่">🔍</button>
+</div>
+
+<div id="mapModal" onclick="if(event.target===this)closeMapModal()">
+  <div class="mbox">
+    <div class="mhead">
+      <span class="em">🗺️</span>
+      <div style="flex:1"><div class="mname">แผนที่โลก</div></div>
+      <button class="x-btn" onclick="closeMapModal()">✕</button>
+    </div>
+    <div class="mbody" style="display:flex;justify-content:center">
+      <canvas id="mmCanvasBig"></canvas>
+    </div>
+  </div>
+</div>
+
+<div id="help">
+  <b>WASD</b> / ลูกศร เดิน &nbsp;·&nbsp; <b>E</b> โต้ตอบ<br>
+  <b>I</b> คลังของ &nbsp;·&nbsp; <b>Q</b> เควส &nbsp;·&nbsp; <b>ESC</b> ปิด
+</div>
+
+<div id="prompt"></div>
+<div id="toast"></div>
+
+<div class="side" id="invPanel">
+  <div class="side-head">
+    <span class="side-title">🎒 คลังของ</span>
+    <button class="x-btn" onclick="closePanels()">✕</button>
+  </div>
+  <div class="side-body"><div class="inv-grid" id="invGrid"></div></div>
+</div>
+
+<div class="side" id="questPanel">
+  <div class="side-head">
+    <span class="side-title">📜 เควส <span id="qCount" style="color:var(--dim);font-weight:400;font-size:11px"></span></span>
+    <button class="x-btn" onclick="closePanels()">✕</button>
+  </div>
+  <div class="side-body">
+    <div class="sect" style="margin-top:0">🎯 เควสหลัก: ปลดล็อคด่านต่อไป</div>
+    <div id="mainQuestList"></div>
+    <div class="sect">📜 เควสรับจ้าง (ส่งของ → ได้เงิน)</div>
+    <div id="questList"></div>
+  </div>
+</div>
+
+<div class="side" id="devPanel">
+  <div class="side-head">
+    <span class="side-title">🛠️ Dev Tools (ทดสอบ)</span>
+    <button class="x-btn" onclick="closePanels()">✕</button>
+  </div>
+  <div class="side-body">
+    <div class="sect" style="margin-top:0">📦 ปั้มไอเทมเข้าคลัง</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input type="text" id="devItemInput" list="devItemList" class="dev-input" placeholder="พิมพ์ชื่อไอเทม..." style="flex:1">
+      <input type="number" id="devItemQty" class="dev-input" value="10" min="1" style="width:54px;text-align:center">
+    </div>
+    <datalist id="devItemList"></datalist>
+    <button class="btn btn-unlock" onclick="devAddItem()">➕ เพิ่มเข้าคลัง</button>
+
+    <div class="sect">💰 ปั้มเงิน</div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input type="number" id="devMoneyAmt" class="dev-input" value="1000" min="1" style="flex:1">
+    </div>
+    <button class="btn btn-unlock" onclick="devAddMoney()">💰 เพิ่มเงิน</button>
+
+    <div class="sect">🔓 ปลดล็อคด่าน</div>
+    <button class="btn btn-unlock" style="margin-bottom:8px" onclick="devUnlockNext()">⏭️ ปลดล็อคด่านถัดไป</button>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input type="text" id="devStageInput" list="devStageList" class="dev-input" placeholder="พิมพ์ชื่อด่าน..." style="flex:1">
+    </div>
+    <datalist id="devStageList"></datalist>
+    <button class="btn btn-unlock" onclick="devUnlockStage()">🔓 ปลดล็อคด่านนี้</button>
+  </div>
+</div>
+
+<div id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mbox" id="mbox"></div>
+</div>
+
+<div id="clModal" onclick="if(event.target===this)closeChangelog()">
+  <div class="mbox">
+    <div class="mhead">
+      <span class="em">📜</span>
+      <div style="flex:1"><div class="mname">Changelog</div></div>
+      <button class="x-btn" onclick="closeChangelog()">✕</button>
+    </div>
+    <div class="mbody" id="clBox"></div>
+    <div class="mfoot"><button class="btn btn-wait" onclick="closeChangelog()">ปิด</button></div>
+  </div>
+</div>
+
+<div id="bottom">
+  <button class="bbtn" onclick="togglePanel('invPanel')">🎒 คลังของ <span class="k">I</span></button>
+  <button class="bbtn" id="questBtn" onclick="togglePanel('questPanel')">📜 เควส <span class="k">Q</span></button>
+  <button class="bbtn" onclick="interact()">✋ โต้ตอบ <span class="k">E</span></button>
+  <button class="bbtn" onclick="togglePanel('devPanel')">🛠️ Dev</button>
+</div>
+
+<script>
+const ITEMS={"ข้าวสาลี":"🌾","แครอท":"🥕","หอม":"🧅","มันฝรั่ง":"🥔","กะหล่ำปลี":"🥬","มะเขือเทศ":"🍅","ข้าวโพด":"🌽","ฟักทอง":"🎃","บีทรูท":"🟣","สตรอเบอร์รี่":"🍓","แอปเปิ้ล":"🍎","เชอร์รี่":"🍒","กุหลาบ":"🌹","ทานตะวัน":"🌻","ลาเวนเดอร์":"🪻","โหระพา":"🌿","มิ้นต์":"🍃","ขิง":"🫛","ข้าวเจ้า":"🍚","ข้าวหอม":"✨","ข้าวเหนียว":"🍙","ชาเขียว":"🍵","ชาดำ":"☕","ชาดอกไม้":"🌸","เห็ดหอม":"🍄","เห็ดนางฟ้า":"🌸","เห็ดทรัฟเฟิล":"🍫","ฝ้าย":"🪡","ป่าน":"🧵","ลินิน":"🧶","อ้อย":"🎋","น้ำตาล":"🍬","กากน้ำตาล":"🫗","อาโลเวร่า":"🌵","มังกร":"🐲","น้ำมันเมล็ด":"💧","นม":"🥛","ไข่":"🥚","น้ำผึ้ง":"🍯","ขนแกะ":"🧶","ไข่เป็ด":"🥚","นมแพะ":"🥛","ปลา":"🐟","ไข่ปลา":"🫧","สาหร่าย":"🌿","ขี้ผึ้ง":"🕯️","เกสรดอกไม้":"🌺","ใยไหม":"🧵","ไหมดิบ":"🧶","ดักแด้":"🐛","ขนกระต่าย":"🐰","เนื้อกระต่าย":"🥩","ปุ๋ยอินทรีย์":"🌱","ขนม้า":"🐴","นมม้า":"🥛","หนังม้า":"🪨","กระดอง":"🐢","ไข่เต่า":"🥚","น้ำมันเต่า":"💧","ขนนก":"🪶","ไข่นกหายาก":"🔮","เสียงเพลง":"🎵","หนังจระเข้":"🐊","ฟันจระเข้":"🦷","น้ำมันจระเข้":"💧","เห็ด":"🍄","เบอร์รี่ป่า":"🫐","ไม้":"🪵","สมุนไพร":"🌿","ดอกไม้ป่า":"🌸","หิน":"🪨","คริสตัล":"💎","หินแร่":"⛏️","ฟอสซิล":"🦴","กก":"🌾","ดอกบัว":"🪷","กบเรืองแสง":"🐸","ดินเหนียว":"🟤","เปลือกหอย":"🐚","ทราย":"🏜️","ปะการัง":"🪸","ไผ่":"🎋","หน่อไม้":"🌱","ใบไผ่":"🍃","น้ำแข็งบริสุทธิ์":"🧊","หิมะผลึก":"❄️","คริสตัลน้ำแข็ง":"🔵","มอสส์เรืองแสง":"✨","เรซิ่น":"🫙","รากไม้หายาก":"🌿","ขนมปัง":"🍞","แยมเบอร์รี่":"🫙","สลัด":"🥗","กาแฟ":"☕","ชา":"🍵","เค้ก":"🎂","ไอศครีม":"🍦","มัฟฟิน":"🧁","ทาร์ต":"🥧","ซุปเห็ด":"🍲","สตูว์":"🥘","ต้มยำ":"🍜","เนื้อย่าง":"🥩","ปลาย่าง":"🐠","ผักย่าง":"🌽","น้ำส้ม":"🧃","สมูทตี้":"🥤","น้ำมะนาว":"🍋","พิซซ่า":"🍕","ขนมปังกระเทียม":"🧄","ชีส":"🧀","ราเมน":"🍜","ซุปกระดูก":"🦴","ไข่ต้มยาง":"🥚","เฟอร์นิเจอร์":"🪑","กรอบรูป":"🖼️","ของเล่นไม้":"🪆","อุปกรณ์ฟาร์ม":"⚒️","กุญแจ":"🗝️","เครื่องมือ":"🔧","เสื้อผ้า":"👗","ผ้าห่ม":"🛏️","กระเป๋า":"👜","แหวน":"💍","สร้อย":"📿","ต่างหู":"🔮","ยาบำรุง":"💊","ยาแก้ไข้":"🩺","น้ำหอม":"🧴","เทียนหอม":"🕯️","สบู่":"🧼","น้ำมันนวด":"🫙","สีวาด":"🎨","รูปวาด":"🖼️","รูปปั้น":"🗿","หนังสือ":"📚","แผนที่":"🗺️","บันทึกเก่า":"📜","เมล็ดพืชหายาก":"🌱","ปุ๋ยพิเศษ":"🌿","กระถาง":"🪴","ยาสัตว์":"💊","วิตามิน":"💉","อาหารพิเศษ":"🍖","เครื่องสาย":"🎻","กลอง":"🥁","โน้ตเพลง":"🎼","แผนที่ดาว":"⭐","คริสตัลจักรวาล":"💫","บันทึกความลับ":"📜","ถ่านหิน":"⚫","หินภูเขาไฟ":"🌋","เถ้าภูเขาไฟ":"🌫️","เกล็ดไฟ":"🔥","น้ำมันซาลาแมนเดอร์":"🧪","ถ่านวิเศษ":"✴️","ออบซิเดียน":"⬛","แก้วภูเขาไฟ":"🔺","กำมะถัน":"🟡","เหล็กกล้า":"🗡️","ดาบ":"⚔️","โล่":"🛡️","แก้ว":"🥃","กระจก":"🪞","หลอดแก้ว":"🧫","อัญมณีไฟ":"🔶","เครื่องประดับไฟ":"🧿","ตะเกียงลาวา":"🏮","แร่เหล็ก":"🔩","แร่ทองแดง":"🟠","แร่ดีบุก":"⬜","อเมทิสต์":"💜","โกเมน":"❤️","มรกต":"💚","แร่เงิน":"⚪","แร่ทอง":"🥇","คริสตัลบริสุทธิ์":"🔷","เกราะเหล็ก":"🦺","ขวาน":"🪓","หัวลูกศร":"🏹","แหวนอัญมณี":"💠","มงกุฎ":"👑","กำไล":"🔗","เหรียญทอง":"🪙","เหรียญเงิน":"🥈","ของสะสมหายาก":"🏆"};
+const ZONE_META={"center":{"emoji":"🏰","label":"เมืองหลวง","color":"#f0d880"},"north":{"emoji":"❄️","label":"เหนือ","color":"#9ac8ee"},"east":{"emoji":"🌾","label":"ออก","color":"#68c828"},"south":{"emoji":"🌋","label":"ใต้","color":"#ff8840"},"west":{"emoji":"⛏️","label":"ตก","color":"#c0a878"}};
+const DEF=[{"id":"farm_a","wave":1,"cat":"farm","zone":"east","name":"ฟาร์มพืชผัก","type":"passive","emoji":"🌾","accent":"#3d7d2a","unlocked":true,"growDays":1,"amount":3,"produces":["ข้าวสาลี","แครอท","หอม"]},{"id":"forest_a","wave":1,"cat":"forest","zone":"east","name":"ป่าผืนแรก","type":"passive","emoji":"🌲","accent":"#1e6e45","unlocked":false,"growDays":1,"amount":3,"produces":["เห็ด","เบอร์รี่ป่า","ไม้"],"unlockCost":{"ข้าวสาลี":5,"แครอท":3},"prereq":"farm_a"},{"id":"animal_a","wave":1,"cat":"animal","zone":"east","name":"โรงวัว-ไก่-ผึ้ง","type":"passive","emoji":"🐄","accent":"#8b6020","unlocked":false,"growDays":1,"amount":3,"produces":["นม","ไข่","น้ำผึ้ง"],"unlockCost":{"แครอท":5,"หอม":3},"prereq":"forest_a"},{"id":"npc_bread","wave":1,"cat":"craft","zone":"center","name":"ร้านขนมปัง","type":"craft","emoji":"🏪","accent":"#6030a0","unlocked":false,"recipes":[{"name":"ขนมปัง","emoji":"🍞","ing":{"ข้าวสาลี":2,"นม":1}},{"name":"แยมเบอร์รี่","emoji":"🫙","ing":{"เบอร์รี่ป่า":3}},{"name":"สลัด","emoji":"🥗","ing":{"แครอท":1,"หอม":1,"เห็ด":1}}],"unlockCost":{"ข้าวสาลี":8,"ไข่":5,"เบอร์รี่ป่า":5},"prereq":"animal_a"},{"id":"farm_b","wave":2,"cat":"farm","zone":"east","name":"ไร่ผัก","type":"passive","emoji":"🥬","accent":"#3d7d2a","unlocked":false,"growDays":2,"amount":3,"produces":["มันฝรั่ง","กะหล่ำปลี","มะเขือเทศ"],"unlockCost":{"แยมเบอร์รี่":2,"สลัด":2,"ขนมปัง":3,"นม":5},"moneyCost":300,"prereq":"npc_bread"},{"id":"forest_b","wave":2,"cat":"forest","zone":"east","name":"ป่าลึก","type":"passive","emoji":"🌳","accent":"#1e6e45","unlocked":false,"growDays":1,"amount":3,"produces":["สมุนไพร","ดอกไม้ป่า","หิน"],"unlockCost":{"ขนมปัง":2,"สลัด":2,"แยมเบอร์รี่":2,"ไม้":5,"เห็ด":5},"moneyCost":300,"prereq":"farm_b"},{"id":"animal_b","wave":2,"cat":"animal","zone":"east","name":"โรงแกะ-เป็ด-แพะ","type":"passive","emoji":"🐑","accent":"#8b6020","unlocked":false,"growDays":2,"amount":3,"produces":["ขนแกะ","ไข่เป็ด","นมแพะ"],"unlockCost":{"แยมเบอร์รี่":2,"สลัด":2,"ขนมปัง":3,"น้ำผึ้ง":5},"moneyCost":300,"prereq":"forest_b"},{"id":"animal_fish","wave":2,"cat":"animal","zone":"east","name":"บ่อเลี้ยงปลา","type":"passive","emoji":"🐟","accent":"#1a5a8a","unlocked":false,"growDays":1,"amount":3,"produces":["ปลา","ไข่ปลา","สาหร่าย"],"unlockCost":{"ขนมปัง":2,"แยมเบอร์รี่":2,"สลัด":2,"ไม้":5,"หิน":3},"moneyCost":300,"prereq":"animal_b"},{"id":"npc_soup","wave":2,"cat":"craft","zone":"center","name":"ร้านซุป","type":"craft","emoji":"🍲","accent":"#8b3020","unlocked":false,"recipes":[{"name":"ซุปเห็ด","emoji":"🍲","ing":{"เห็ด":2,"หอม":1,"สมุนไพร":1}},{"name":"สตูว์","emoji":"🥘","ing":{"มันฝรั่ง":1,"แครอท":1,"เนื้อกระต่าย":1}},{"name":"ต้มยำ","emoji":"🍜","ing":{"เห็ดหอม":1,"สมุนไพร":1,"ขิง":1}}],"unlockCost":{"แยมเบอร์รี่":3,"สลัด":3,"ขนมปัง":5,"เห็ด":8,"หอม":5,"สมุนไพร":5},"moneyCost":300,"prereq":"animal_fish"},{"id":"npc_wood","wave":2,"cat":"craft","zone":"center","name":"โรงงานไม้","type":"craft","emoji":"🪵","accent":"#5a3010","unlocked":false,"recipes":[{"name":"เฟอร์นิเจอร์","emoji":"🪑","ing":{"ไม้":3}},{"name":"กรอบรูป","emoji":"🖼️","ing":{"ไม้":2,"คริสตัล":1}},{"name":"ของเล่นไม้","emoji":"🪆","ing":{"ไม้":2,"ขนแกะ":1}}],"unlockCost":{"แยมเบอร์รี่":2,"สลัด":3,"ขนมปัง":3,"ไม้":10,"หิน":5},"moneyCost":300,"prereq":"npc_soup"},{"id":"farm_c","wave":3,"cat":"farm","zone":"east","name":"ไร่ข้าวโพด","type":"passive","emoji":"🌽","accent":"#3d7d2a","unlocked":false,"growDays":2,"amount":3,"produces":["ข้าวโพด","ฟักทอง","บีทรูท"],"unlockCost":{"ซุปเห็ด":2,"ของเล่นไม้":2,"เฟอร์นิเจอร์":2,"กะหล่ำปลี":5,"นมแพะ":5},"moneyCost":600,"prereq":"npc_wood"},{"id":"forest_cave","wave":3,"cat":"forest","zone":"west","name":"ถ้ำแร่","type":"passive","emoji":"⛏️","accent":"#4a3a6a","unlocked":false,"growDays":2,"amount":3,"produces":["คริสตัล","หินแร่","ฟอสซิล"],"unlockCost":{"ซุปเห็ด":2,"ของเล่นไม้":2,"เฟอร์นิเจอร์":2,"หิน":8,"ไม้":5},"moneyCost":600,"prereq":"farm_c"},{"id":"animal_rabbit","wave":3,"cat":"animal","zone":"east","name":"โรงกระต่าย","type":"passive","emoji":"🐰","accent":"#8b6020","unlocked":false,"growDays":2,"amount":3,"produces":["ขนกระต่าย","เนื้อกระต่าย","ปุ๋ยอินทรีย์"],"unlockCost":{"เฟอร์นิเจอร์":2,"ของเล่นไม้":2,"ซุปเห็ด":3,"กะหล่ำปลี":5,"แครอท":5},"moneyCost":600,"prereq":"forest_cave"},{"id":"animal_bee","wave":3,"cat":"animal","zone":"east","name":"โรงผึ้ง","type":"passive","emoji":"🐝","accent":"#8b7020","unlocked":false,"growDays":2,"amount":3,"produces":["น้ำผึ้ง","ขี้ผึ้ง","เกสรดอกไม้"],"unlockCost":{"เฟอร์นิเจอร์":2,"ของเล่นไม้":2,"ซุปเห็ด":2,"ดอกไม้ป่า":8,"น้ำผึ้ง":3},"moneyCost":600,"prereq":"animal_rabbit"},{"id":"npc_coffee","wave":3,"cat":"craft","zone":"center","name":"ร้านกาแฟ","type":"craft","emoji":"☕","accent":"#5a3010","unlocked":false,"recipes":[{"name":"กาแฟ","emoji":"☕","ing":{"เบอร์รี่ป่า":2,"น้ำผึ้ง":1}},{"name":"ชา","emoji":"🍵","ing":{"สมุนไพร":2,"น้ำผึ้ง":1}},{"name":"เค้ก","emoji":"🎂","ing":{"ข้าวสาลี":1,"ไข่":1,"นม":1}}],"unlockCost":{"ซุปเห็ด":2,"เฟอร์นิเจอร์":2,"ขนมปัง":3,"น้ำผึ้ง":5,"นม":5,"เห็ด":3},"moneyCost":600,"prereq":"animal_bee"},{"id":"npc_bbq","wave":3,"cat":"craft","zone":"center","name":"ร้านบาร์บีคิว","type":"craft","emoji":"🔥","accent":"#8b2010","unlocked":false,"recipes":[{"name":"เนื้อย่าง","emoji":"🥩","ing":{"เนื้อกระต่าย":2,"โหระพา":1}},{"name":"ปลาย่าง","emoji":"🐠","ing":{"ปลา":2,"ขิง":1}},{"name":"ผักย่าง","emoji":"🌽","ing":{"ข้าวโพด":1,"มะเขือเทศ":1,"ฟักทอง":1}}],"unlockCost":{"เฟอร์นิเจอร์":2,"ของเล่นไม้":2,"ซุปเห็ด":3,"เนื้อกระต่าย":5,"ข้าวโพด":5,"ปลา":3},"moneyCost":600,"prereq":"npc_coffee"},{"id":"npc_iron","wave":3,"cat":"craft","zone":"west","name":"โรงตีเหล็ก","type":"craft","emoji":"⚒️","accent":"#3a3a3a","unlocked":false,"recipes":[{"name":"อุปกรณ์ฟาร์ม","emoji":"⚒️","ing":{"หินแร่":2,"ไม้":1}},{"name":"กุญแจ","emoji":"🗝️","ing":{"หินแร่":1,"คริสตัล":1}},{"name":"เครื่องมือ","emoji":"🔧","ing":{"หินแร่":3}}],"unlockCost":{"ซุปเห็ด":3,"ของเล่นไม้":2,"เฟอร์นิเจอร์":3,"หินแร่":10,"คริสตัล":3,"ไม้":5},"moneyCost":600,"prereq":"npc_bbq"},{"id":"farm_d","wave":4,"cat":"farm","zone":"east","name":"สวนผลไม้","type":"passive","emoji":"🍎","accent":"#3d7d2a","unlocked":false,"growDays":3,"amount":3,"produces":["สตรอเบอร์รี่","แอปเปิ้ล","เชอร์รี่"],"unlockCost":{"ชา":2,"อุปกรณ์ฟาร์ม":2,"กาแฟ":2,"มะเขือเทศ":5,"น้ำผึ้ง":5},"moneyCost":1200,"prereq":"npc_iron"},{"id":"farm_flower","wave":4,"cat":"farm","zone":"east","name":"สวนดอกไม้","type":"passive","emoji":"🌹","accent":"#7d2a5a","unlocked":false,"growDays":2,"amount":3,"produces":["กุหลาบ","ทานตะวัน","ลาเวนเดอร์"],"unlockCost":{"กาแฟ":2,"ชา":2,"เค้ก":2,"สตรอเบอร์รี่":5,"น้ำผึ้ง":5},"moneyCost":1200,"prereq":"farm_d"},{"id":"forest_swamp","wave":4,"cat":"forest","zone":"east","name":"หนองน้ำ","type":"passive","emoji":"🐸","accent":"#2a5a2a","unlocked":false,"growDays":2,"amount":3,"produces":["กก","ดอกบัว","ดินเหนียว"],"unlockCost":{"กาแฟ":2,"อุปกรณ์ฟาร์ม":2,"เครื่องมือ":2,"เห็ด":5,"สมุนไพร":5},"moneyCost":1200,"prereq":"farm_flower"},{"id":"forest_beach","wave":4,"cat":"forest","zone":"east","name":"ชายหาด","type":"passive","emoji":"🐚","accent":"#1a5a7a","unlocked":false,"growDays":1,"amount":3,"produces":["เปลือกหอย","ทราย","ปะการัง"],"unlockCost":{"เค้ก":2,"เครื่องมือ":2,"ซุปเห็ด":2,"ปลา":5,"สาหร่าย":3},"moneyCost":1200,"prereq":"forest_swamp"},{"id":"animal_horse","wave":4,"cat":"animal","zone":"east","name":"คอกม้า","type":"passive","emoji":"🐴","accent":"#6a4010","unlocked":false,"growDays":2,"amount":3,"produces":["ขนม้า","นมม้า","หนังม้า"],"unlockCost":{"กาแฟ":2,"เค้ก":2,"อุปกรณ์ฟาร์ม":2,"ข้าวโพด":5,"ฟักทอง":3},"moneyCost":1200,"prereq":"forest_beach"},{"id":"animal_silk","wave":4,"cat":"animal","zone":"east","name":"โรงไหม","type":"passive","emoji":"🧵","accent":"#6a2a6a","unlocked":false,"growDays":3,"amount":3,"produces":["ใยไหม","ไหมดิบ","ดักแด้"],"unlockCost":{"กาแฟ":2,"ชา":2,"เค้ก":3,"ดอกไม้ป่า":5,"น้ำผึ้ง":5},"moneyCost":1200,"prereq":"animal_horse"},{"id":"npc_sweet","wave":4,"cat":"craft","zone":"center","name":"ร้านของหวาน","type":"craft","emoji":"🍦","accent":"#8b3070","unlocked":false,"recipes":[{"name":"ไอศครีม","emoji":"🍦","ing":{"นม":1,"น้ำผึ้ง":1,"สตรอเบอร์รี่":1}},{"name":"มัฟฟิน","emoji":"🧁","ing":{"ข้าวสาลี":1,"ไข่":1,"สตรอเบอร์รี่":1}},{"name":"ทาร์ต","emoji":"🥧","ing":{"ข้าวสาลี":1,"ไข่":1,"เชอร์รี่":1}}],"unlockCost":{"เค้ก":2,"ชา":2,"กาแฟ":3,"ไข่":8,"สตรอเบอร์รี่":5,"นม":5},"moneyCost":1200,"prereq":"animal_silk"},{"id":"npc_juice","wave":4,"cat":"craft","zone":"center","name":"ร้านน้ำผลไม้","type":"craft","emoji":"🧃","accent":"#8b6010","unlocked":false,"recipes":[{"name":"น้ำส้ม","emoji":"🧃","ing":{"แอปเปิ้ล":3}},{"name":"สมูทตี้","emoji":"🥤","ing":{"สตรอเบอร์รี่":1,"เบอร์รี่ป่า":1,"นม":1}},{"name":"น้ำมะนาว","emoji":"🍋","ing":{"สมุนไพร":2,"น้ำผึ้ง":1}}],"unlockCost":{"กาแฟ":3,"ชา":2,"เค้ก":3,"สตรอเบอร์รี่":5,"แอปเปิ้ล":5,"เบอร์รี่ป่า":5},"moneyCost":1200,"prereq":"npc_sweet"},{"id":"farm_herb","wave":5,"cat":"farm","zone":"east","name":"สวนสมุนไพร","type":"passive","emoji":"🌿","accent":"#2a6a2a","unlocked":false,"growDays":2,"amount":3,"produces":["โหระพา","มิ้นต์","ขิง"],"unlockCost":{"สมูทตี้":2,"มัฟฟิน":2,"น้ำมะนาว":2,"ดอกไม้ป่า":5,"สมุนไพร":5},"moneyCost":2000,"prereq":"npc_juice"},{"id":"forest_bamboo","wave":5,"cat":"forest","zone":"east","name":"ป่าไผ่","type":"passive","emoji":"🎋","accent":"#2a6a3a","unlocked":false,"growDays":2,"amount":3,"produces":["ไผ่","หน่อไม้","ใบไผ่"],"unlockCost":{"น้ำมะนาว":2,"ทาร์ต":2,"สมูทตี้":2,"สมุนไพร":5,"ดอกไม้ป่า":5},"moneyCost":2000,"prereq":"farm_herb"},{"id":"farm_rice","wave":5,"cat":"farm","zone":"east","name":"นาข้าว","type":"passive","emoji":"🍚","accent":"#4a7a20","unlocked":false,"growDays":3,"amount":3,"produces":["ข้าวเจ้า","ข้าวหอม","ข้าวเหนียว"],"unlockCost":{"สมูทตี้":2,"น้ำส้ม":2,"ไอศครีม":2,"ข้าวโพด":5,"ปุ๋ยอินทรีย์":3},"moneyCost":2000,"prereq":"forest_bamboo"},{"id":"npc_pizza","wave":5,"cat":"craft","zone":"center","name":"ร้านพิซซ่า","type":"craft","emoji":"🍕","accent":"#8b3020","unlocked":false,"recipes":[{"name":"ชีส","emoji":"🧀","ing":{"นมแพะ":3}},{"name":"พิซซ่า","emoji":"🍕","ing":{"ข้าวสาลี":2,"มะเขือเทศ":1,"ชีส":1}},{"name":"ขนมปังกระเทียม","emoji":"🧄","ing":{"ข้าวสาลี":2,"โหระพา":1}}],"unlockCost":{"มัฟฟิน":3,"ทาร์ต":2,"อุปกรณ์ฟาร์ม":3,"มะเขือเทศ":8,"นมแพะ":5,"ข้าวสาลี":5},"moneyCost":2000,"prereq":"farm_rice"},{"id":"npc_ramen","wave":5,"cat":"craft","zone":"center","name":"ร้านราเมน","type":"craft","emoji":"🍜","accent":"#7a2010","unlocked":false,"recipes":[{"name":"ซุปกระดูก","emoji":"🦴","ing":{"เนื้อกระต่าย":1,"หอม":1,"ขิง":1}},{"name":"ราเมน","emoji":"🍜","ing":{"ข้าวเจ้า":2,"ซุปกระดูก":1}},{"name":"ไข่ต้มยาง","emoji":"🥚","ing":{"ไข่":2,"สาหร่าย":1}}],"unlockCost":{"น้ำส้ม":3,"สมูทตี้":2,"ไอศครีม":3,"ข้าวเจ้า":5,"เนื้อกระต่าย":3,"หอม":5},"moneyCost":2000,"prereq":"npc_pizza"},{"id":"animal_turtle","wave":5,"cat":"animal","zone":"east","name":"บ่อเต่า","type":"passive","emoji":"🐢","accent":"#2a5a2a","unlocked":false,"growDays":3,"amount":3,"produces":["กระดอง","ไข่เต่า","น้ำมันเต่า"],"unlockCost":{"ทาร์ต":2,"น้ำมะนาว":2,"สมูทตี้":2,"ปะการัง":3,"ทราย":5},"moneyCost":2000,"prereq":"npc_ramen"},{"id":"farm_tea","wave":5,"cat":"farm","zone":"east","name":"ไร่ชา","type":"passive","emoji":"🍵","accent":"#2a5a3a","unlocked":false,"growDays":2,"amount":3,"produces":["ชาเขียว","ชาดำ","ชาดอกไม้"],"unlockCost":{"ทาร์ต":2,"ไอศครีม":2,"มัฟฟิน":3,"โหระพา":5,"น้ำผึ้ง":8},"moneyCost":2000,"prereq":"animal_turtle"},{"id":"forest_snow","wave":6,"cat":"forest","zone":"north","name":"ภูเขาหิมะ","type":"passive","emoji":"❄️","accent":"#2a4a7a","unlocked":false,"growDays":3,"amount":3,"produces":["น้ำแข็งบริสุทธิ์","หิมะผลึก","คริสตัลน้ำแข็ง"],"unlockCost":{"ชีส":2,"ไข่ต้มยาง":2,"ราเมน":2,"คริสตัล":3,"หินแร่":5},"moneyCost":3000,"prereq":"farm_tea"},{"id":"npc_cloth","wave":6,"cat":"craft","zone":"center","name":"ร้านตัดเย็บ","type":"craft","emoji":"👗","accent":"#7a2a6a","unlocked":false,"recipes":[{"name":"เสื้อผ้า","emoji":"👗","ing":{"ฝ้าย":2,"ใยไหม":1}},{"name":"ผ้าห่ม","emoji":"🛏️","ing":{"ขนแกะ":3}},{"name":"กระเป๋า","emoji":"👜","ing":{"หนังม้า":1,"ฝ้าย":1,"ใยไหม":1}}],"unlockCost":{"พิซซ่า":2,"ราเมน":2,"ไอศครีม":3,"ฝ้าย":8,"ใยไหม":5,"ขนแกะ":3},"moneyCost":3000,"prereq":"forest_snow"},{"id":"farm_cotton","wave":6,"cat":"farm","zone":"east","name":"ไร่ฝ้าย","type":"passive","emoji":"🪡","accent":"#7a7a2a","unlocked":false,"growDays":3,"amount":3,"produces":["ฝ้าย","ป่าน","ลินิน"],"unlockCost":{"ชีส":2,"ขนมปังกระเทียม":2,"ราเมน":2,"ข้าวเจ้า":5,"หน่อไม้":5},"moneyCost":3000,"prereq":"npc_cloth"},{"id":"npc_jewelry","wave":6,"cat":"craft","zone":"center","name":"ร้านเครื่องประดับ","type":"craft","emoji":"💍","accent":"#6a2a8a","unlocked":false,"recipes":[{"name":"แหวน","emoji":"💍","ing":{"คริสตัล":2,"หินแร่":1}},{"name":"สร้อย","emoji":"📿","ing":{"คริสตัล":1,"ใยไหม":2}},{"name":"ต่างหู","emoji":"🔮","ing":{"ดอกไม้ป่า":1,"คริสตัล":1}}],"unlockCost":{"พิซซ่า":2,"ราเมน":2,"เสื้อผ้า":2,"คริสตัล":8,"ดอกไม้ป่า":5,"ใยไหม":3},"moneyCost":3000,"prereq":"farm_cotton"},{"id":"farm_sugarcane","wave":6,"cat":"farm","zone":"east","name":"ไร่อ้อย","type":"passive","emoji":"🎋","accent":"#5a7a1a","unlocked":false,"growDays":2,"amount":3,"produces":["อ้อย","น้ำตาล","กากน้ำตาล"],"unlockCost":{"ชีส":3,"ไข่ต้มยาง":2,"ราเมน":3,"ชาดำ":5,"น้ำผึ้ง":5},"moneyCost":3000,"prereq":"npc_jewelry"},{"id":"npc_herb","wave":6,"cat":"craft","zone":"center","name":"ร้านสมุนไพร","type":"craft","emoji":"💊","accent":"#2a6a3a","unlocked":false,"recipes":[{"name":"ยาบำรุง","emoji":"💊","ing":{"สมุนไพร":2,"น้ำผึ้ง":1,"ดอกไม้ป่า":1}},{"name":"ยาแก้ไข้","emoji":"🩺","ing":{"สมุนไพร":1,"มิ้นต์":1,"ขิง":1}},{"name":"น้ำหอม","emoji":"🧴","ing":{"ลาเวนเดอร์":1,"กุหลาบ":1,"เรซิ่น":1}}],"unlockCost":{"ราเมน":3,"ขนมปังกระเทียม":3,"พิซซ่า":3,"สมุนไพร":10,"น้ำผึ้ง":5,"ดอกไม้ป่า":5},"moneyCost":3000,"prereq":"farm_sugarcane"},{"id":"forest_glow","wave":7,"cat":"forest","zone":"north","name":"ป่าเรืองแสง","type":"passive","emoji":"✨","accent":"#3a2a6a","unlocked":false,"growDays":3,"amount":3,"produces":["มอสส์เรืองแสง","เรซิ่น","รากไม้หายาก"],"unlockCost":{"แหวน":2,"ผ้าห่ม":2,"ยาบำรุง":3,"กบเรืองแสง":3,"คริสตัล":5},"moneyCost":5000,"prereq":"npc_herb"},{"id":"npc_candle","wave":7,"cat":"craft","zone":"center","name":"โรงทำเทียน","type":"craft","emoji":"🕯️","accent":"#7a5a10","unlocked":false,"recipes":[{"name":"เทียนหอม","emoji":"🕯️","ing":{"ขี้ผึ้ง":1,"ลาเวนเดอร์":1}},{"name":"สบู่","emoji":"🧼","ing":{"น้ำมันเต่า":1,"ดอกไม้ป่า":1}},{"name":"น้ำมันนวด","emoji":"🫙","ing":{"น้ำมันเมล็ด":2,"สมุนไพร":1}}],"unlockCost":{"เสื้อผ้า":2,"ต่างหู":2,"ยาบำรุง":3,"ขี้ผึ้ง":5,"ลาเวนเดอร์":5,"ดอกไม้ป่า":5},"moneyCost":5000,"prereq":"forest_glow"},{"id":"animal_parrot","wave":7,"cat":"animal","zone":"east","name":"โรงนกแก้ว","type":"passive","emoji":"🦜","accent":"#2a6a3a","unlocked":false,"growDays":3,"amount":3,"produces":["ขนนก","ไข่นกหายาก","เสียงเพลง"],"unlockCost":{"ยาบำรุง":2,"ผ้าห่ม":2,"แหวน":2,"ดอกบัว":3,"ดอกไม้ป่า":5},"moneyCost":5000,"prereq":"npc_candle"},{"id":"animal_croc","wave":7,"cat":"animal","zone":"south","name":"โรงจระเข้","type":"passive","emoji":"🐊","accent":"#1a5a2a","unlocked":false,"growDays":4,"amount":3,"produces":["หนังจระเข้","ฟันจระเข้","น้ำมันจระเข้"],"unlockCost":{"แหวน":2,"ยาบำรุง":2,"เสื้อผ้า":2,"เนื้อกระต่าย":5,"หนังม้า":3},"moneyCost":5000,"prereq":"animal_parrot"},{"id":"npc_art","wave":7,"cat":"craft","zone":"center","name":"ร้านศิลปะ","type":"craft","emoji":"🎨","accent":"#6a1a6a","unlocked":false,"recipes":[{"name":"สีวาด","emoji":"🎨","ing":{"เบอร์รี่ป่า":2,"คริสตัล":1}},{"name":"รูปวาด","emoji":"🖼️","ing":{"ฝ้าย":2,"สีวาด":2}},{"name":"รูปปั้น","emoji":"🗿","ing":{"ดินเหนียว":3}}],"unlockCost":{"ยาแก้ไข้":2,"กระเป๋า":2,"สร้อย":2,"เบอร์รี่ป่า":5,"คริสตัล":3,"ฝ้าย":5},"moneyCost":5000,"prereq":"animal_croc"},{"id":"npc_book","wave":7,"cat":"craft","zone":"center","name":"ร้านหนังสือ","type":"craft","emoji":"📚","accent":"#2a3a6a","unlocked":false,"recipes":[{"name":"หนังสือ","emoji":"📚","ing":{"ป่าน":2,"สีวาด":1}},{"name":"แผนที่","emoji":"🗺️","ing":{"หนังม้า":1,"สีวาด":2}},{"name":"บันทึกเก่า","emoji":"📜","ing":{"ฝ้าย":1,"ไม้":2}}],"unlockCost":{"ผ้าห่ม":2,"ต่างหู":2,"กระเป๋า":2,"ฝ้าย":5,"ไม้":5,"สีวาด":3},"moneyCost":5000,"prereq":"npc_art"},{"id":"farm_mushroom","wave":8,"cat":"farm","zone":"east","name":"โรงเพาะเห็ด","type":"passive","emoji":"🍄","accent":"#5a3a1a","unlocked":false,"growDays":3,"amount":3,"produces":["เห็ดหอม","เห็ดนางฟ้า","เห็ดทรัฟเฟิล"],"unlockCost":{"เทียนหอม":2,"หนังสือ":2,"สบู่":2,"ดินเหนียว":5,"ไม้":8},"moneyCost":8000,"prereq":"npc_book"},{"id":"npc_seed","wave":8,"cat":"craft","zone":"center","name":"ร้านเมล็ดพันธุ์","type":"craft","emoji":"🌱","accent":"#2a5a2a","unlocked":false,"recipes":[{"name":"เมล็ดพืชหายาก","emoji":"🌱","ing":{"รากไม้หายาก":2,"เกสรดอกไม้":2}},{"name":"ปุ๋ยพิเศษ","emoji":"🌿","ing":{"ปุ๋ยอินทรีย์":3,"เกสรดอกไม้":1}},{"name":"กระถาง","emoji":"🪴","ing":{"ดินเหนียว":3}}],"unlockCost":{"สบู่":2,"หนังสือ":2,"รูปปั้น":2,"รากไม้หายาก":5,"เกสรดอกไม้":5,"ปุ๋ยอินทรีย์":5},"moneyCost":8000,"prereq":"farm_mushroom"},{"id":"npc_vet","wave":8,"cat":"craft","zone":"center","name":"คลินิกสัตว์","type":"craft","emoji":"🩺","accent":"#1a5a5a","unlocked":false,"recipes":[{"name":"ยาสัตว์","emoji":"💊","ing":{"สมุนไพร":2,"น้ำผึ้ง":2}},{"name":"วิตามิน","emoji":"💉","ing":{"รากไม้หายาก":1,"นมแพะ":2}},{"name":"อาหารพิเศษ","emoji":"🍖","ing":{"ปลา":2,"ข้าวเจ้า":1}}],"unlockCost":{"เทียนหอม":2,"รูปปั้น":2,"หนังสือ":2,"ยาบำรุง":3,"ไข่นกหายาก":3,"นมแพะ":5},"moneyCost":8000,"prereq":"npc_seed"},{"id":"farm_cactus","wave":8,"cat":"farm","zone":"south","name":"สวนกระบองเพชร","type":"passive","emoji":"🌵","accent":"#4a6a1a","unlocked":false,"growDays":4,"amount":3,"produces":["อาโลเวร่า","มังกร","น้ำมันเมล็ด"],"unlockCost":{"เทียนหอม":2,"แผนที่":2,"รูปวาด":2,"รากไม้หายาก":3,"ทราย":5},"moneyCost":8000,"prereq":"npc_vet"},{"id":"npc_music","wave":8,"cat":"craft","zone":"center","name":"โรงดนตรี","type":"craft","emoji":"🎵","accent":"#2a2a7a","unlocked":false,"recipes":[{"name":"เครื่องสาย","emoji":"🎻","ing":{"ใยไหม":2,"ไม้":2}},{"name":"กลอง","emoji":"🥁","ing":{"หนังม้า":2,"ไม้":1}},{"name":"โน้ตเพลง","emoji":"🎼","ing":{"ฝ้าย":1,"สีวาด":1}}],"unlockCost":{"รูปวาด":2,"รูปปั้น":2,"แผนที่":2,"ใยไหม":5,"ไม้":5,"หนังม้า":3},"moneyCost":8000,"prereq":"farm_cactus"},{"id":"forest_final","wave":9,"cat":"forest","zone":"north","name":"ป่าเรืองแสง (ลึก)","type":"passive","emoji":"🌟","accent":"#3a1a6a","unlocked":false,"growDays":4,"amount":3,"produces":["กบเรืองแสง","มอสส์เรืองแสง","รากไม้หายาก"],"unlockCost":{"เครื่องสาย":2,"ปุ๋ยพิเศษ":2,"โน้ตเพลง":3,"มอสส์เรืองแสง":5,"คริสตัลน้ำแข็ง":3},"moneyCost":12000,"prereq":"npc_music"},{"id":"npc_observatory","wave":9,"cat":"craft","zone":"center","name":"หอดูดาว","type":"craft","emoji":"⭐","accent":"#1a1a5a","unlocked":false,"recipes":[{"name":"คริสตัลจักรวาล","emoji":"💫","ing":{"คริสตัล":3,"มอสส์เรืองแสง":2}},{"name":"แผนที่ดาว","emoji":"⭐","ing":{"ไม้":2,"คริสตัลจักรวาล":1}},{"name":"บันทึกความลับ","emoji":"📜","ing":{"รากไม้หายาก":3,"คริสตัลจักรวาล":1}}],"unlockCost":{"โน้ตเพลง":3,"กระถาง":2,"ยาสัตว์":3,"มอสส์เรืองแสง":5,"คริสตัล":5,"คริสตัลน้ำแข็ง":3},"moneyCost":12000,"prereq":"forest_final"},{"id":"mine_coal","wave":10,"cat":"forest","zone":"south","name":"เหมืองถ่านหิน","type":"passive","emoji":"⛏️","accent":"#5a2a1a","unlocked":false,"growDays":4,"amount":3,"produces":["ถ่านหิน","หินภูเขาไฟ","เถ้าภูเขาไฟ"],"unlockCost":{"คริสตัลจักรวาล":2,"แผนที่ดาว":2,"มอสส์เรืองแสง":5,"หินแร่":8},"moneyCost":18000,"prereq":"npc_observatory"},{"id":"animal_salamander","wave":10,"cat":"animal","zone":"south","name":"โรงซาลาแมนเดอร์","type":"passive","emoji":"🦎","accent":"#7a2a10","unlocked":false,"growDays":4,"amount":3,"produces":["เกล็ดไฟ","น้ำมันซาลาแมนเดอร์","ถ่านวิเศษ"],"unlockCost":{"คริสตัลจักรวาล":2,"บันทึกความลับ":2,"ถ่านหิน":5,"หินภูเขาไฟ":3},"moneyCost":18000,"prereq":"mine_coal"},{"id":"forest_obsidian","wave":10,"cat":"forest","zone":"south","name":"ทุ่งออบซิเดียน","type":"passive","emoji":"⬛","accent":"#2a1a2a","unlocked":false,"growDays":4,"amount":3,"produces":["ออบซิเดียน","แก้วภูเขาไฟ","กำมะถัน"],"unlockCost":{"แผนที่ดาว":2,"บันทึกความลับ":2,"เถ้าภูเขาไฟ":5,"หินภูเขาไฟ":5},"moneyCost":18000,"prereq":"animal_salamander"},{"id":"npc_smith2","wave":10,"cat":"craft","zone":"south","name":"โรงหลอมเหล็กขั้นสูง","type":"craft","emoji":"⚒️","accent":"#4a4a4a","unlocked":false,"recipes":[{"name":"เหล็กกล้า","emoji":"🗡️","ing":{"ถ่านหิน":2,"หินแร่":2}},{"name":"ดาบ","emoji":"⚔️","ing":{"เหล็กกล้า":2,"ไม้":2}},{"name":"โล่","emoji":"🛡️","ing":{"เหล็กกล้า":2,"หนังจระเข้":1}}],"unlockCost":{"คริสตัลจักรวาล":2,"แผนที่ดาว":2,"บันทึกความลับ":2,"ถ่านหิน":8,"หินแร่":5},"moneyCost":18000,"prereq":"forest_obsidian"},{"id":"npc_glass","wave":10,"cat":"craft","zone":"south","name":"โรงแก้ว","type":"craft","emoji":"🔺","accent":"#3a5a6a","unlocked":false,"recipes":[{"name":"แก้ว","emoji":"🥃","ing":{"ทราย":3,"เถ้าภูเขาไฟ":1}},{"name":"กระจก","emoji":"🪞","ing":{"แก้ว":2,"คริสตัล":1}},{"name":"หลอดแก้ว","emoji":"🧫","ing":{"แก้ว":2,"น้ำมันเมล็ด":1}}],"unlockCost":{"เหล็กกล้า":2,"ดาบ":1,"โล่":1,"ทราย":8,"เถ้าภูเขาไฟ":5},"moneyCost":18000,"prereq":"npc_smith2"},{"id":"npc_gem_fire","wave":10,"cat":"craft","zone":"south","name":"ร้านอัญมณีไฟ","type":"craft","emoji":"🔶","accent":"#8a2a00","unlocked":false,"recipes":[{"name":"อัญมณีไฟ","emoji":"🔶","ing":{"ออบซิเดียน":2,"กำมะถัน":2}},{"name":"เครื่องประดับไฟ","emoji":"🧿","ing":{"อัญมณีไฟ":1,"แก้วภูเขาไฟ":2}},{"name":"ตะเกียงลาวา","emoji":"🏮","ing":{"แก้ว":2,"เกล็ดไฟ":2}}],"unlockCost":{"กระจก":2,"หลอดแก้ว":2,"ดาบ":1,"ออบซิเดียน":5,"กำมะถัน":5},"moneyCost":18000,"prereq":"npc_glass"},{"id":"mine_iron_deep","wave":11,"cat":"forest","zone":"west","name":"เหมืองเหล็กลึก","type":"passive","emoji":"⛏️","accent":"#4a4a5a","unlocked":false,"growDays":4,"amount":3,"produces":["แร่เหล็ก","แร่ทองแดง","แร่ดีบุก"],"unlockCost":{"อัญมณีไฟ":2,"เครื่องประดับไฟ":2,"เหล็กกล้า":5,"หินแร่":8},"moneyCost":26000,"prereq":"npc_gem_fire"},{"id":"mine_gem_cave","wave":11,"cat":"forest","zone":"west","name":"ถ้ำอัญมณีตก","type":"passive","emoji":"💎","accent":"#5a2a6a","unlocked":false,"growDays":4,"amount":3,"produces":["อเมทิสต์","โกเมน","มรกต"],"unlockCost":{"ตะเกียงลาวา":2,"เครื่องประดับไฟ":2,"แร่เหล็ก":5,"คริสตัล":5},"moneyCost":26000,"prereq":"mine_iron_deep"},{"id":"mine_silver_gold","wave":11,"cat":"forest","zone":"west","name":"เหมืองเงิน-ทอง","type":"passive","emoji":"🥇","accent":"#7a6a1a","unlocked":false,"growDays":4,"amount":3,"produces":["แร่เงิน","แร่ทอง","คริสตัลบริสุทธิ์"],"unlockCost":{"อัญมณีไฟ":2,"ตะเกียงลาวา":2,"แร่ทองแดง":5,"แร่ดีบุก":5},"moneyCost":26000,"prereq":"mine_gem_cave"},{"id":"npc_armor","wave":11,"cat":"craft","zone":"west","name":"โรงตีเกราะ","type":"craft","emoji":"🛡️","accent":"#3a3a4a","unlocked":false,"recipes":[{"name":"เกราะเหล็ก","emoji":"🦺","ing":{"แร่เหล็ก":3,"เหล็กกล้า":2}},{"name":"ขวาน","emoji":"🪓","ing":{"แร่เหล็ก":2,"ไม้":2}},{"name":"หัวลูกศร","emoji":"🏹","ing":{"แร่เหล็ก":1,"ไม้":1}}],"unlockCost":{"แร่เหล็ก":8,"แร่ทองแดง":5,"เหล็กกล้า":3,"อเมทิสต์":3},"moneyCost":26000,"prereq":"mine_silver_gold"},{"id":"npc_jeweler2","wave":11,"cat":"craft","zone":"west","name":"ร้านเจียระไนอัญมณี","type":"craft","emoji":"💠","accent":"#6a1a7a","unlocked":false,"recipes":[{"name":"แหวนอัญมณี","emoji":"💠","ing":{"อเมทิสต์":2,"แร่เงิน":1}},{"name":"มงกุฎ","emoji":"👑","ing":{"แร่ทอง":2,"โกเมน":2}},{"name":"กำไล","emoji":"🔗","ing":{"มรกต":2,"แร่เงิน":1}}],"unlockCost":{"อเมทิสต์":3,"โกเมน":3,"มรกต":3,"แร่เงิน":5},"moneyCost":26000,"prereq":"npc_armor"},{"id":"npc_mint","wave":11,"cat":"craft","zone":"west","name":"โรงกษาปณ์","type":"craft","emoji":"🪙","accent":"#8a7a10","unlocked":false,"recipes":[{"name":"เหรียญทอง","emoji":"🪙","ing":{"แร่ทอง":2,"คริสตัลบริสุทธิ์":1}},{"name":"เหรียญเงิน","emoji":"🥈","ing":{"แร่เงิน":3}},{"name":"ของสะสมหายาก","emoji":"🏆","ing":{"เหรียญทอง":2,"เหรียญเงิน":2,"มงกุฎ":1}}],"unlockCost":{"เกราะเหล็ก":2,"แหวนอัญมณี":2,"มงกุฎ":1,"แร่ทอง":5,"คริสตัลบริสุทธิ์":5},"moneyCost":26000,"prereq":"npc_jeweler2"}];
+
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const MAP=50, TW=64, TH=32;           // map size, tile width/height
+const DAY_SECONDS=60;                  // real seconds per in-game day at 1x
+const PLAYER_SPEED=3.4;                // tiles per second
+const INTERACT_DIST=1.9;
+
+// zone anchor points on the grid (iso: screen-up = low x+y, screen-right = high x-y)
+const ZONES={
+  center:{cx:24,cy:24,r:7.5},
+  north :{cx:12,cy:12,r:6.5},
+  east  :{cx:37,cy:12,r:8.5},
+  south :{cx:37,cy:37,r:6.5},
+  west  :{cx:12,cy:37,r:6.5},
+};
+
+// tile palettes per zone: [base, alt1, alt2]
+const TILE_COLORS={
+  center:['#7a6844','#8a7750','#6b5b3a'],   // 🏰 capital — warm stone
+  north :['#cfe3f2','#b9d4ea','#a8c6e0'],   // ❄️ snow
+  east  :['#4f9c34','#5cab3d','#458c2c'],   // 🌾 farmland
+  south :['#5c2a1e','#6b3324','#4a2018'],   // 🌋 volcanic
+  west  :['#6a5c4a','#786a56','#5c4f40'],   // ⛏️ rocky mine
+  road  :['#8a7a5c','#7d6f52','#938263'],   // 🛤️ connecting roads
+  water :['#1d4b70','#22557d','#193f5f'],
+};
+
+const ZONE_ORDER=['center','north','east','south','west'];
+
+// ═══════════════════════════════════════════════════════════
+//  WORLD GENERATION
+// ═══════════════════════════════════════════════════════════
+function hash(x,y){
+  let h=x*374761393+y*668265263;
+  h=(h^(h>>13))*1274126177;
+  return ((h^(h>>16))>>>0)/4294967296;
+}
+// smooth-ish value noise from hashed lattice
+function noise2(x,y,s){
+  const fx=x/s, fy=y/s;
+  const x0=Math.floor(fx), y0=Math.floor(fy);
+  const tx=fx-x0, ty=fy-y0;
+  const sx=tx*tx*(3-2*tx), sy=ty*ty*(3-2*ty);
+  const n00=hash(x0,y0), n10=hash(x0+1,y0), n01=hash(x0,y0+1), n11=hash(x0+1,y0+1);
+  return (n00*(1-sx)+n10*sx)*(1-sy)+(n01*(1-sx)+n11*sx)*sy;
+}
+function distToSeg(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay;
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));
+  return Math.hypot(px-(ax+dx*t), py-(ay+dy*t));
+}
+
+const world=[];   // world[y][x] = {zone} | null
+function genWorld(){
+  const c=ZONES.center;
+  for(let y=0;y<MAP;y++){
+    world[y]=[];
+    for(let x=0;x<MAP;x++){
+      let cell=null;
+      // wobble the radius so blobs look organic rather than perfect circles
+      const wob=(noise2(x,y,7)-0.5)*4.2;
+      let best=null, bestSlack=-Infinity;
+      for(const z of ZONE_ORDER){
+        const Z=ZONES[z];
+        const slack=(Z.r+wob)-Math.hypot(x-Z.cx,y-Z.cy);
+        if(slack>0&&slack>bestSlack){bestSlack=slack;best=z;}
+      }
+      if(best) cell={zone:best};
+      else {
+        // roads connecting capital to each outer zone
+        for(const z of ZONE_ORDER){
+          if(z==='center')continue;
+          const Z=ZONES[z];
+          if(distToSeg(x,y,c.cx,c.cy,Z.cx,Z.cy)<1.4+(noise2(x,y,5)-0.5)*0.9){cell={zone:'road'};break;}
+        }
+      }
+      world[y][x]=cell;
+    }
+  }
+}
+const inMap=(x,y)=>x>=0&&y>=0&&x<MAP&&y<MAP;
+const cellAt=(x,y)=>inMap(x,y)?world[y][x]:null;
+
+// ═══════════════════════════════════════════════════════════
+//  STAGE PLACEMENT
+// ═══════════════════════════════════════════════════════════
+const buildings={};                    // "x,y" -> stage object
+function placeStages(stages){
+  const byZone={};
+  stages.forEach(s=>{(byZone[s.zone]=byZone[s.zone]||[]).push(s)});
+  for(const z in byZone){
+    const Z=ZONES[z];
+    // candidate cells of this zone, nearest-to-anchor first
+    const cands=[];
+    for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
+      const c=world[y][x];
+      if(c&&c.zone===z)cands.push({x,y,d:Math.hypot(x-Z.cx,y-Z.cy)});
+    }
+    cands.sort((a,b)=>a.d-b.d);
+    const taken=[];
+    let spacing=2.6;
+    for(const s of byZone[z]){
+      let spot=null;
+      // relax spacing until every stage in this zone finds a home
+      for(let attempt=0;attempt<8&&!spot;attempt++){
+        const need=spacing-attempt*0.28;
+        spot=cands.find(c=>!buildings[c.x+','+c.y]&&taken.every(t=>Math.hypot(t.x-c.x,t.y-c.y)>=need));
+      }
+      if(!spot)spot=cands.find(c=>!buildings[c.x+','+c.y]);
+      if(!spot){console.warn('no spot for',s.id);continue;}
+      taken.push(spot);
+      s.gx=spot.x; s.gy=spot.y;
+      buildings[spot.x+','+spot.y]=s;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const G={
+  day:1, time:0.25, speed:3, paused:false,
+  money:0, inv:{}, quests:[], qSeq:0, nextQuestIn:12,
+  stages:DEF.map(d=>({...d, planted:false, daysGrown:0, ready:false, gx:0, gy:0})),
+  player:{x:0, y:0, dir:'n', moving:false, anim:0},
+  cam:{x:0,y:0}, near:null, openPanel:null, openStage:null,
+  zoom:1, nextId:null,
+};
+const ZOOM_MIN=0.5, ZOOM_MAX=2.4;
+Object.keys(ITEMS).forEach(k=>G.inv[k]=0);
+
+genWorld();
+placeStages(G.stages);
+// spawn the player right beside the very first stage (farm_a) — the game opens on your doorstep
+const startStage=G.stages[0];
+G.player.x=startStage.gx; G.player.y=startStage.gy+1;
+// make sure the player never spawns inside a building
+while(buildings[Math.round(G.player.x)+','+Math.round(G.player.y)]) G.player.y+=1;
+
+const stageById=id=>G.stages.find(s=>s.id===id);
+const has=cost=>!cost||Object.entries(cost).every(([k,v])=>(G.inv[k]||0)>=v);
+const prereqMet=s=>{if(!s.prereq)return true;const p=stageById(s.prereq);return p&&p.unlocked;};
+const nearEnough=s=>Math.hypot(G.player.x-s.gx,G.player.y-s.gy)<=INTERACT_DIST+0.6;
+
+// the chain is strictly linear (each stage's prereq is the one before it in DEF order),
+// so the first not-yet-unlocked stage is always exactly what the player should go do next
+const nextUnlockStage=()=>G.stages.find(s=>!s.unlocked)||null;
+G.nextId=nextUnlockStage()?.id||null;   // seed silently — first "letter" only fires on the next change
+
+// ═══════════════════════════════════════════════════════════
+//  ISO MATH + CANVAS
+// ═══════════════════════════════════════════════════════════
+const cv=document.getElementById('game'), ctx=cv.getContext('2d');
+let DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  cv.width=innerWidth*DPR; cv.height=innerHeight*DPR;
+  cv.style.width=innerWidth+'px'; cv.style.height=innerHeight+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.imageSmoothingEnabled=false;
+}
+addEventListener('resize',resize); resize();
+
+const toScreen=(x,y)=>({sx:(x-y)*(TW/2), sy:(x+y)*(TH/2)});
+
+function drawDiamond(sx,sy,fill,stroke){
+  ctx.beginPath();
+  ctx.moveTo(sx, sy-TH/2);
+  ctx.lineTo(sx+TW/2, sy);
+  ctx.lineTo(sx, sy+TH/2);
+  ctx.lineTo(sx-TW/2, sy);
+  ctx.closePath();
+  ctx.fillStyle=fill; ctx.fill();
+  if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
+}
+
+function shade(hex,amt){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.max(0,Math.min(255,Math.round(r*amt)));
+  g=Math.max(0,Math.min(255,Math.round(g*amt)));
+  b=Math.max(0,Math.min(255,Math.round(b*amt)));
+  return'#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+
+// draw an isometric box (building body)
+function drawBox(sx,sy,w,h,top,left,right){
+  const hw=w/2, hh=w/4;
+  // top face
+  ctx.beginPath();
+  ctx.moveTo(sx, sy-h-hh);
+  ctx.lineTo(sx+hw, sy-h);
+  ctx.lineTo(sx, sy-h+hh);
+  ctx.lineTo(sx-hw, sy-h);
+  ctx.closePath(); ctx.fillStyle=top; ctx.fill();
+  // left face
+  ctx.beginPath();
+  ctx.moveTo(sx-hw, sy-h); ctx.lineTo(sx, sy-h+hh);
+  ctx.lineTo(sx, sy+hh); ctx.lineTo(sx-hw, sy);
+  ctx.closePath(); ctx.fillStyle=left; ctx.fill();
+  // right face
+  ctx.beginPath();
+  ctx.moveTo(sx+hw, sy-h); ctx.lineTo(sx, sy-h+hh);
+  ctx.lineTo(sx, sy+hh); ctx.lineTo(sx+hw, sy);
+  ctx.closePath(); ctx.fillStyle=right; ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DAY / NIGHT
+// ═══════════════════════════════════════════════════════════
+// time: 0 = midnight, .25 = sunrise-ish morning, .5 = noon, .75 = dusk
+function nightAmount(){
+  const t=G.time;
+  if(t>=0.28&&t<=0.68)return 0;                 // full day
+  if(t>0.68&&t<0.82)return (t-0.68)/0.14;        // dusk
+  if(t>=0.82||t<0.14)return 1;                   // night
+  return 1-(t-0.14)/0.14;                        // dawn
+}
+function phaseName(){
+  const t=G.time;
+  if(t<0.14)return'กลางคืน';
+  if(t<0.28)return'รุ่งเช้า';
+  if(t<0.48)return'เช้า';
+  if(t<0.62)return'กลางวัน';
+  if(t<0.72)return'บ่าย';
+  if(t<0.84)return'พลบค่ำ';
+  return'กลางคืน';
+}
+function knobEmoji(){const n=nightAmount();return n>0.7?'🌙':n>0.25?'🌇':'☀️';}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+function render(){
+  const W=innerWidth, H=innerHeight;
+  const night=nightAmount();
+
+  // sky gradient behind everything
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  if(night>0.5){sky.addColorStop(0,'#070c18');sky.addColorStop(1,'#0d1526');}
+  else if(night>0.15){sky.addColorStop(0,'#2a2340');sky.addColorStop(1,'#173a4d');}
+  else{sky.addColorStop(0,'#0f2436');sky.addColorStop(1,'#123044');}
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+  // camera follows player; zoom scales around the screen center
+  const p=toScreen(G.player.x,G.player.y);
+  const z=G.zoom;
+  G.cam.x=p.sx; G.cam.y=p.sy;
+
+  ctx.save();
+  ctx.translate(W/2,H/2);
+  ctx.scale(z,z);
+  ctx.translate(-p.sx,-p.sy);
+
+  // visible world-screen bounds at current zoom (for culling)
+  const viewHalfW=(W/2)/z, viewHalfH=(H/2)/z;
+  const margin=TW*2;
+  const vx0=p.sx-viewHalfW-margin, vx1=p.sx+viewHalfW+margin;
+  const vy0=p.sy-viewHalfH-margin, vy1=p.sy+viewHalfH+margin;
+
+  // ── ground pass ──
+  for(let y=0;y<MAP;y++){
+    for(let x=0;x<MAP;x++){
+      const c=world[y][x]; if(!c)continue;
+      const{sx,sy}=toScreen(x,y);
+      if(sx<vx0||sx>vx1||sy<vy0||sy>vy1)continue;
+      const pal=TILE_COLORS[c.zone]||TILE_COLORS.water;
+      const v=hash(x,y);
+      let col=pal[v<0.55?0:v<0.82?1:2];
+      // darken at night, plus a touch of variation
+      if(night>0)col=shade(col,1-night*0.62);
+      drawDiamond(sx,sy,col,shade(col,night>0.5?0.9:0.86));
+    }
+  }
+
+  // ── depth-sorted object pass (buildings + player) ──
+  const objs=[];
+  for(const key in buildings){
+    const s=buildings[key];
+    const{sx,sy}=toScreen(s.gx,s.gy);
+    if(sx<vx0-margin||sx>vx1+margin||sy<vy0-margin*1.5||sy>vy1+margin)continue;
+    objs.push({depth:s.gx+s.gy,kind:'b',s,sx,sy});
+  }
+  objs.push({depth:G.player.x+G.player.y+0.01,kind:'p',sx:p.sx,sy:p.sy});
+  objs.sort((a,b)=>a.depth-b.depth);
+
+  for(const o of objs){
+    if(o.kind==='b')drawBuilding(o.s,o.sx,o.sy,night);
+    else drawPlayer(o.sx,o.sy,night);
+  }
+
+  ctx.restore();
+
+  // ── night vignette on top ──
+  if(night>0){
+    const g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.14,W/2,H/2,Math.max(W,H)*0.72);
+    g.addColorStop(0,`rgba(8,14,34,${night*0.10})`);
+    g.addColorStop(1,`rgba(4,8,22,${night*0.55})`);
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  }
+}
+
+function drawBuilding(s,sx,sy,night){
+  const locked=!s.unlocked;
+  const base=locked?'#3a4250':s.accent;
+  const h=s.type==='craft'?30:20;
+  const w=TW*0.78;
+
+  // ground shadow
+  ctx.globalAlpha=0.28; drawDiamond(sx,sy+2,'#000',null); ctx.globalAlpha=1;
+
+  drawBox(sx,sy,w,h,shade(base,locked?1.05:1.35),shade(base,0.62),shade(base,0.88));
+
+  // lit windows at night for unlocked buildings
+  if(!locked&&night>0.25){
+    ctx.globalAlpha=night*0.85;
+    ctx.fillStyle='#ffd870';
+    ctx.fillRect(sx-w*0.20, sy-h*0.55, 5,5);
+    ctx.fillRect(sx+w*0.12, sy-h*0.55, 5,5);
+    ctx.globalAlpha=1;
+    // warm glow pool
+    const g=ctx.createRadialGradient(sx,sy,2,sx,sy,TW*0.95);
+    g.addColorStop(0,`rgba(255,200,110,${night*0.20})`);
+    g.addColorStop(1,'rgba(255,200,110,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,sy,TW*0.95,0,7); ctx.fill();
+  }
+
+  // emoji sign
+  ctx.font='19px system-ui,"Segoe UI Emoji",sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.globalAlpha=locked?0.42:1;
+  ctx.fillText(s.emoji, sx, sy-h-6);
+  ctx.globalAlpha=1;
+
+  // status pip
+  if(locked){
+    ctx.font='11px system-ui,sans-serif';
+    ctx.fillText('🔒', sx+15, sy-h-14);
+  } else if(s.type==='passive'&&s.ready){
+    const bob=Math.sin(performance.now()/300)*2;
+    ctx.font='14px system-ui,"Segoe UI Emoji",sans-serif';
+    ctx.fillText('✨', sx, sy-h-26+bob);
+  }
+
+  // guidance beacon on the one stage the player should head to next
+  if(locked&&s.id===G.nextId){
+    const t=performance.now()/500;
+    const pulse=0.55+Math.sin(t)*0.25;
+    const beamH=100+Math.sin(t*1.3)*6;
+    const grad=ctx.createLinearGradient(sx,sy-h-beamH,sx,sy-h);
+    grad.addColorStop(0,'rgba(255,210,90,0)');
+    grad.addColorStop(1,`rgba(255,210,90,${pulse})`);
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(sx-3,sy-h); ctx.lineTo(sx+3,sy-h);
+    ctx.lineTo(sx+8,sy-h-beamH); ctx.lineTo(sx-8,sy-h-beamH);
+    ctx.closePath(); ctx.fill();
+    ctx.font='16px system-ui,"Segoe UI Emoji",sans-serif';
+    ctx.globalAlpha=pulse+0.3;
+    ctx.fillText('📍', sx, sy-h-beamH-9);
+    ctx.globalAlpha=1;
+  }
+
+  // name plate when player is close (or it's the guidance target — always show it)
+  const d=Math.hypot(G.player.x-s.gx, G.player.y-s.gy);
+  if(d<4.2||s.id===G.nextId){
+    ctx.font='600 10px system-ui,sans-serif';
+    const tw=ctx.measureText(s.name).width+10;
+    ctx.fillStyle='rgba(10,16,24,.82)';
+    ctx.fillRect(sx-tw/2, sy-h-42, tw, 15);
+    ctx.strokeStyle=locked?'#4a5568':'#f5c842'; ctx.lineWidth=1;
+    ctx.strokeRect(sx-tw/2, sy-h-42, tw, 15);
+    ctx.fillStyle=locked?'#8fa3ba':'#f5e6b8';
+    ctx.fillText(s.name, sx, sy-h-34);
+  }
+}
+
+function drawPlayer(sx,sy,night){
+  const bob=G.player.moving?Math.abs(Math.sin(G.player.anim*8))*2.5:0;
+  // shadow
+  ctx.globalAlpha=0.32;
+  ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(sx,sy,9,4.5,0,0,7); ctx.fill();
+  ctx.globalAlpha=1;
+  const y=sy-bob;
+  // body
+  ctx.fillStyle='#e8608a';
+  ctx.beginPath(); ctx.roundRect(sx-6, y-19, 12, 14, 4); ctx.fill();
+  // head
+  ctx.fillStyle='#ffd9b8';
+  ctx.beginPath(); ctx.arc(sx, y-24, 6.5, 0, 7); ctx.fill();
+  // hair
+  ctx.fillStyle='#5a3a28';
+  ctx.beginPath(); ctx.arc(sx, y-26, 6.5, Math.PI, 0); ctx.fill();
+  // facing pip
+  ctx.fillStyle='#3a2418';
+  const fx=G.player.dir==='e'?2:G.player.dir==='w'?-2:0;
+  ctx.beginPath(); ctx.arc(sx+fx, y-23.5, 1.2, 0, 7); ctx.fill();
+  // lantern at night
+  if(night>0.3){
+    const g=ctx.createRadialGradient(sx,y-12,3,sx,y-12,TW*1.5);
+    g.addColorStop(0,`rgba(255,225,150,${night*0.26})`);
+    g.addColorStop(1,'rgba(255,225,150,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(sx,y-12,TW*1.5,0,7); ctx.fill();
+  }
+}
+
+// ── MINIMAP ──
+const mm=document.getElementById('mmCanvas');
+function drawMinimapTo(canvas,S){
+  const ctx=canvas.getContext('2d');
+  if(canvas.width!==S){canvas.width=S;canvas.height=S;}
+  ctx.clearRect(0,0,S,S);
+  const sc=S/MAP, k=S/132;   // k scales fixed-size markers (dots/lines) to match canvas size
+  for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
+    const c=world[y][x]; if(!c)continue;
+    const pal=TILE_COLORS[c.zone]||TILE_COLORS.water;
+    // rotate 45° so the minimap reads as a compass diamond like the world
+    const mxp=(x-y)*0.5+MAP/2, myp=(x+y)*0.5;
+    ctx.fillStyle=pal[0];
+    ctx.fillRect(mxp*sc, myp*sc*0.98, sc*1.4, sc*1.4);
+  }
+  for(const bk in buildings){
+    const s=buildings[bk];
+    const mxp=(s.gx-s.gy)*0.5+MAP/2, myp=(s.gx+s.gy)*0.5;
+    ctx.fillStyle=s.unlocked?'#f5c842':'#4a5568';
+    ctx.fillRect(mxp*sc-1*k, myp*sc*0.98-1*k, 2.6*k,2.6*k);
+    if(s.id===G.nextId){
+      const pulse=(3+Math.sin(performance.now()/300)*1.4)*k;
+      ctx.strokeStyle='#ffd870'; ctx.lineWidth=1.4*k;
+      ctx.beginPath(); ctx.arc(mxp*sc+0.3*k, myp*sc*0.98+0.3*k, pulse, 0, 7); ctx.stroke();
+    }
+  }
+  const px=(G.player.x-G.player.y)*0.5+MAP/2, py=(G.player.x+G.player.y)*0.5;
+  ctx.fillStyle='#ff5a8a';
+  ctx.beginPath(); ctx.arc(px*sc, py*sc*0.98, 3*k, 0, 7); ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=1*k; ctx.stroke();
+}
+function renderMinimap(){
+  drawMinimapTo(mm,132);
+  const mapModal=document.getElementById('mapModal');
+  if(mapModal.classList.contains('open')){
+    const S=Math.floor(Math.min(380,innerWidth*0.8,innerHeight*0.6));
+    drawMinimapTo(document.getElementById('mmCanvasBig'),S);
+  }
+}
+function openMapModal(){document.getElementById('mapModal').classList.add('open');renderMinimap();}
+function closeMapModal(){document.getElementById('mapModal').classList.remove('open');}
+
+// ═══════════════════════════════════════════════════════════
+//  MOVEMENT
+// ═══════════════════════════════════════════════════════════
+const keys={};
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();
+  keys[k]=true;
+  if(k==='e')interact();
+  if(k==='i')togglePanel('invPanel');
+  if(k==='q')togglePanel('questPanel');
+  if(k==='escape'){closeModal();closePanels();closeMapModal();}
+});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+
+function walkable(x,y){
+  const c=cellAt(Math.round(x),Math.round(y));
+  if(!c)return false;
+  return !buildings[Math.round(x)+','+Math.round(y)];
+}
+
+function movePlayer(dt){
+  if(G.openStage)return;                       // freeze while a stage panel is open
+  let dx=0,dy=0;
+  const up=keys['w']||keys['arrowup'], down=keys['s']||keys['arrowdown'];
+  const left=keys['a']||keys['arrowleft'], right=keys['d']||keys['arrowright'];
+  // screen-space directions mapped onto the iso grid
+  if(up){dx-=1;dy-=1}
+  if(down){dx+=1;dy+=1}
+  if(left){dx-=1;dy+=1}
+  if(right){dx+=1;dy-=1}
+  G.player.moving=!!(dx||dy);
+  if(!G.player.moving)return;
+  const len=Math.hypot(dx,dy); dx/=len; dy/=len;
+  if(right&&!left)G.player.dir='e'; else if(left&&!right)G.player.dir='w';
+  else if(down&&!up)G.player.dir='s'; else if(up&&!down)G.player.dir='n';
+
+  const step=PLAYER_SPEED*dt;
+  const nx=G.player.x+dx*step, ny=G.player.y+dy*step;
+  // slide along walls: try full move, then each axis alone
+  if(walkable(nx,ny)){G.player.x=nx;G.player.y=ny;}
+  else if(walkable(nx,G.player.y))G.player.x=nx;
+  else if(walkable(G.player.x,ny))G.player.y=ny;
+  G.player.anim+=dt;
+}
+
+function findNear(){
+  let best=null,bd=INTERACT_DIST;
+  for(const k in buildings){
+    const s=buildings[k];
+    const d=Math.hypot(G.player.x-s.gx,G.player.y-s.gy);
+    if(d<bd){bd=d;best=s;}
+  }
+  return best;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════════════
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000,0.05); last=now;
+  if(!G.paused){
+    movePlayer(dt);
+    const prevDay=G.day;
+    G.time+=dt*G.speed/DAY_SECONDS;
+    while(G.time>=1){G.time-=1;G.day++;}
+    if(G.day!==prevDay)onNewDay();
+    tickQuests(dt*G.speed);
+  }
+  const near=findNear();
+  if(near!==G.near){G.near=near;updatePrompt();}
+  render();
+  renderMinimap();
+  updateHUD();
+  requestAnimationFrame(loop);
+}
+
+function onNewDay(){
+  G.stages.forEach(s=>{
+    if(s.type==='passive'&&s.planted&&!s.ready){
+      s.daysGrown++;
+      if(s.daysGrown>=s.growDays){s.ready=true;}
+    }
+  });
+  if(G.openStage)renderModal();
+}
+
+let hudT=0;
+function updateHUD(){
+  const now=performance.now();
+  if(now-hudT<100)return; hudT=now;
+  document.getElementById('hDay').textContent=G.day;
+  document.getElementById('hPhase').textContent=phaseName();
+  document.getElementById('hMoney').textContent=G.money;
+  const knob=document.getElementById('knob');
+  knob.style.left=(G.time*100)+'%';
+  knob.textContent=knobEmoji();
+  document.getElementById('hZoom').textContent=Math.round(G.zoom*100)+'%';
+  const c=cellAt(Math.round(G.player.x),Math.round(G.player.y));
+  const z=c?c.zone:'road';
+  const zm=ZONE_META[z];
+  const el=document.getElementById('hZone');
+  el.textContent=zm?`${zm.emoji} ${zm.label}`:'🛤️ เส้นทาง';
+  el.style.color=zm?zm.color:'#9a8a6a';
+  const qb=document.getElementById('questBtn');
+  const canAny=G.quests.some(q=>q.requests.every(r=>(G.inv[r.item]||0)>=r.qty));
+  qb.classList.toggle('badge-on',canAny);
+  qb.firstChild.textContent=`📜 เควส (${G.quests.length}) `;
+  updateCompass();
+}
+
+// points at whichever stage the player should unlock next, and fires a "letter"
+// toast the moment that target changes (i.e. right after an unlock)
+function updateCompass(){
+  const nxt=nextUnlockStage();
+  const arrow=document.getElementById('compassArrow');
+  const label=document.getElementById('compassLabel');
+  const nxtId=nxt?nxt.id:null;
+  if(nxtId!==G.nextId){
+    G.nextId=nxtId;
+    if(nxt)announceNext(nxt);
+    else toast('🎉 ปลดล็อคครบทุกด่านแล้ว! เก่งมากค่ะพี่แยม','var(--gold)');
+  }
+  if(!nxt){
+    arrow.style.display='none';
+    label.textContent='ครบทุกด่านแล้ว! 🎉';
+    return;
+  }
+  arrow.style.display='inline-block';
+  const p1=toScreen(G.player.x,G.player.y), p2=toScreen(nxt.gx,nxt.gy);
+  const ang=Math.atan2(p2.sy-p1.sy, p2.sx-p1.sx)*180/Math.PI;
+  arrow.style.transform=`rotate(${ang}deg)`;
+  const dist=Math.round(Math.hypot(nxt.gx-G.player.x, nxt.gy-G.player.y));
+  const zm=ZONE_META[nxt.zone]||{emoji:''};
+  const nm=nxt.name.length>10?nxt.name.slice(0,10)+'…':nxt.name;
+  label.textContent=`${nxt.emoji} ${nm} ${zm.emoji} · ${dist} ก้าว`;
+}
+
+function announceNext(s){
+  const zm=ZONE_META[s.zone]||{emoji:'',label:''};
+  const need=[];
+  if(s.moneyCost)need.push(`💰${s.moneyCost}`);
+  if(s.unlockCost)Object.entries(s.unlockCost).forEach(([k,v])=>need.push(`${ITEMS[k]||''}${k}×${v}`));
+  toast(`📩 ด่านต่อไป: ${s.emoji} ${s.name} (ทิศ${zm.label}${zm.emoji}) ต้องการ ${need.join(' ')}`,'var(--gold)');
+}
+
+function viewNextStage(){
+  const s=nextUnlockStage();
+  if(!s){toast('ปลดล็อคครบทุกด่านแล้ว! เก่งมากค่ะ 🎉','var(--gold)');return;}
+  G.openStage=s;
+  document.getElementById('modal').classList.add('open');
+  renderModal();
+}
+
+function updatePrompt(){
+  const el=document.getElementById('prompt');
+  if(G.near&&!G.openStage){
+    const s=G.near;
+    let verb=!s.unlocked?'ดูเงื่อนไขปลดล็อค':s.type==='craft'?'เปิดร้าน':s.ready?'เก็บเกี่ยว':s.planted?'ดูแปลง':'ปลูก';
+    el.innerHTML=`${s.emoji} <b>${s.name}</b> — กด <kbd>E</kbd> ${verb}`;
+    el.classList.add('show');
+  } else el.classList.remove('show');
+}
+
+function setSpeed(v){
+  G.speed=v; G.paused=false;
+  document.querySelectorAll('.spd').forEach(b=>b.classList.remove('active'));
+  [...document.querySelectorAll('.spd')].find(b=>b.textContent===v+'x')?.classList.add('active');
+  document.getElementById('pauseBtn').textContent='⏸';
+}
+function togglePause(){
+  G.paused=!G.paused;
+  document.getElementById('pauseBtn').textContent=G.paused?'▶':'⏸';
+  document.getElementById('pauseBtn').classList.toggle('active',G.paused);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+let toastT;
+function toast(msg,color='var(--gold)'){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.color=color; el.style.borderColor=color;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PANELS
+// ═══════════════════════════════════════════════════════════
+function togglePanel(id){
+  const el=document.getElementById(id);
+  const wasOpen=el.classList.contains('open');
+  closePanels();
+  if(!wasOpen){el.classList.add('open');G.openPanel=id;renderPanels();}
+}
+function closePanels(){
+  document.querySelectorAll('.side').forEach(e=>e.classList.remove('open'));
+  G.openPanel=null;
+}
+function renderPanels(){
+  // inventory
+  const ig=document.getElementById('invGrid');
+  const owned=Object.entries(G.inv).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  ig.innerHTML=owned.length
+    ? owned.map(([k,v])=>`<span class="chip nz">${ITEMS[k]||''} ${k} <span class="qty">${v}</span></span>`).join('')
+    : '<div class="inv-empty">ยังไม่มีของ — ไปปลูกที่ฟาร์มก่อนนะ 🌱</div>';
+  // main quest (unlock next stage)
+  const mq=document.getElementById('mainQuestList');
+  const nxt=nextUnlockStage();
+  if(!nxt){
+    mq.innerHTML='<div class="inv-empty">🎉 ปลดล็อคครบทุกด่านแล้ว!</div>';
+  } else {
+    const iOK=has(nxt.unlockCost), mOK=!nxt.moneyCost||G.money>=nxt.moneyCost;
+    const tags=[];
+    if(nxt.moneyCost)tags.push(`<span class="qr ${mOK?'ok':'bad'}">💰 ${G.money}/${nxt.moneyCost}</span>`);
+    if(nxt.unlockCost)Object.entries(nxt.unlockCost).forEach(([k,v])=>{
+      const ok=(G.inv[k]||0)>=v;
+      tags.push(`<span class="qr ${ok?'ok':'bad'}">${ITEMS[k]||''} ${k} ${G.inv[k]||0}/${v}</span>`);
+    });
+    mq.innerHTML=`<div class="qcard main">
+      <div class="q-npc"><span class="q-npc-ico">${nxt.emoji}</span><span class="q-npc-name">${nxt.name}</span></div>
+      <div class="q-req">${tags.join('')}</div>
+      <button class="btn-submit" onclick="viewNextStage()">🧭 ดูวิธีไปปลดล็อค</button>
+    </div>`;
+  }
+  // quests
+  const ql=document.getElementById('questList');
+  document.getElementById('qCount').textContent=`${G.quests.length}/${QUEST_MAX}`;
+  ql.innerHTML=G.quests.length?G.quests.map(q=>{
+    const itemsOK=q.requests.every(r=>(G.inv[r.item]||0)>=r.qty);
+    const npc=stageById(q.npcId);
+    const near=npc&&nearEnough(npc);
+    const can=itemsOK&&near;
+    return`<div class="qcard ${can?'can':''}">
+      <div class="q-npc"><span class="q-npc-ico">${q.npcEmoji}</span>
+        <span class="q-npc-name">${q.npcName}</span>
+        <span class="q-reward">💰 ${q.reward}</span></div>
+      <div class="q-req">${q.requests.map(r=>{
+        const ok=(G.inv[r.item]||0)>=r.qty;
+        return`<span class="qr ${ok?'ok':'bad'}">${r.emoji} ${r.item} ${G.inv[r.item]||0}/${r.qty}</span>`;
+      }).join('')}</div>
+      <button class="btn-submit" ${can?'':'disabled'} onclick="submitQuest('${q.id}')">
+        ${!itemsOK?'ของยังไม่ครบ':!near?'🚶 ไปที่ร้านก่อน':'✅ ส่งเควส'}</button>
+    </div>`;
+  }).join(''):'<div class="inv-empty">ยังไม่มีเควส — ปลดล็อคร้าน NPC ก่อนนะ 🏪</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DEV TOOLS (สำหรับพี่แยมทดสอบ ไม่ใช่ระบบเกมจริง)
+// ═══════════════════════════════════════════════════════════
+function initDevPanel(){
+  document.getElementById('devItemList').innerHTML=
+    Object.keys(ITEMS).sort().map(n=>`<option value="${n}">`).join('');
+  document.getElementById('devStageList').innerHTML=
+    G.stages.map(s=>`<option value="${s.name}">`).join('');
+}
+function devAddItem(){
+  const nameEl=document.getElementById('devItemInput');
+  const qtyEl=document.getElementById('devItemQty');
+  const name=nameEl.value.trim();
+  if(!ITEMS[name]){toast('❌ ไม่รู้จักไอเทมนี้ เลือกจากลิสต์นะ','var(--red)');return;}
+  const qty=Math.max(1,Math.round(Number(qtyEl.value))||1);
+  G.inv[name]=(G.inv[name]||0)+qty;
+  toast(`🛠️ ปั้ม ${ITEMS[name]} ${name} ×${qty} เข้าคลัง`,'var(--purple)');
+  nameEl.value='';
+  if(G.openPanel)renderPanels();
+}
+function devAddMoney(){
+  const amtEl=document.getElementById('devMoneyAmt');
+  const amt=Math.max(1,Math.round(Number(amtEl.value))||1);
+  G.money+=amt;
+  toast(`🛠️ ปั้มเงิน 💰+${amt}`,'var(--purple)');
+  if(G.openPanel)renderPanels();
+}
+function devUnlockNext(){
+  const s=nextUnlockStage();
+  if(!s){toast('🎉 ปลดล็อคครบทุกด่านแล้ว','var(--gold)');return;}
+  s.unlocked=true;
+  toast(`🛠️ ปลดล็อค ${s.emoji} ${s.name} แล้ว!`,'var(--purple)');
+  if(G.openStage===s)renderModal();
+  if(G.openPanel)renderPanels();
+}
+function devUnlockStage(){
+  const el=document.getElementById('devStageInput');
+  const name=el.value.trim();
+  const s=G.stages.find(x=>x.name===name);
+  if(!s){toast('❌ ไม่รู้จักด่านนี้ เลือกจากลิสต์นะ','var(--red)');return;}
+  if(s.unlocked){toast(`ℹ️ ${s.name} ปลดล็อคอยู่แล้ว`,'var(--dim)');return;}
+  s.unlocked=true;
+  toast(`🛠️ ปลดล็อค ${s.emoji} ${s.name} แล้ว!`,'var(--purple)');
+  el.value='';
+  if(G.openStage===s)renderModal();
+  if(G.openPanel)renderPanels();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  QUESTS
+// ═══════════════════════════════════════════════════════════
+const QUEST_MAX=12;
+const rndInt=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+function questPool(){
+  const npcs=G.stages.filter(s=>s.type==='craft'&&s.unlocked);
+  const raw=[];
+  G.stages.forEach(s=>{if(s.type==='passive'&&s.unlocked)(s.produces||[]).forEach(i=>raw.push(i))});
+  const obtainable=new Set(raw);
+  let changed=true;
+  while(changed){
+    changed=false;
+    G.stages.forEach(s=>{
+      if(s.type==='craft'&&s.unlocked)(s.recipes||[]).forEach(r=>{
+        if(!obtainable.has(r.name)&&Object.keys(r.ing).every(k=>obtainable.has(k))){obtainable.add(r.name);changed=true;}
+      });
+    });
+  }
+  const crafted=[];
+  G.stages.forEach(s=>{
+    if(s.type==='craft'&&s.unlocked)(s.recipes||[]).forEach(r=>{
+      if(obtainable.has(r.name)&&!raw.includes(r.name))crafted.push(r.name);
+    });
+  });
+  return{npcs,raw:[...new Set(raw)],crafted:[...new Set(crafted)]};
+}
+
+function genQuest(){
+  if(G.quests.length>=QUEST_MAX)return;
+  const{npcs,raw,crafted}=questPool();
+  const all=[...raw,...crafted];
+  if(!npcs.length||!all.length)return;
+  // ร้านแต่ละร้านไม่ขอของที่ตัวเองคราฟอยู่แล้ว (แปลกถ้าร้านขนมปังขอให้เอาขนมปังไปส่ง)
+  const shuffledNpcs=[...npcs].sort(()=>Math.random()-.5);
+  let npc=null,pool=null;
+  for(const cand of shuffledNpcs){
+    const own=new Set((cand.recipes||[]).map(r=>r.name));
+    const filtered=all.filter(i=>!own.has(i));
+    if(filtered.length){npc=cand;pool=filtered;break;}
+  }
+  if(!npc)return;
+  const n=rndInt(1,Math.min(3,pool.length));
+  const pick=[...pool].sort(()=>Math.random()-.5).slice(0,n);
+  const cset=new Set(crafted);
+  const requests=pick.map(item=>({item,qty:cset.has(item)?rndInt(3,8):rndInt(2,6),emoji:ITEMS[item]||'?'}));
+  const reward=requests.reduce((s,r)=>s+r.qty*(cset.has(r.item)?rndInt(15,25):rndInt(8,15)),0);
+  G.qSeq++;
+  G.quests.push({id:'q'+G.qSeq,npcId:npc.id,npcName:npc.name,npcEmoji:npc.emoji,requests,reward});
+  toast(`📜 เควสใหม่! ${npc.emoji} ${npc.name}`);
+  if(G.openPanel)renderPanels();
+}
+
+function tickQuests(dtScaled){
+  G.nextQuestIn-=dtScaled;
+  if(G.nextQuestIn<=0){genQuest();G.nextQuestIn=rndInt(18,42);}
+}
+
+function submitQuest(id){
+  const q=G.quests.find(x=>x.id===id); if(!q)return;
+  const npc=stageById(q.npcId);
+  if(!npc||!nearEnough(npc)){toast(`🚶 ต้องไปที่ ${npc?npc.emoji+' '+npc.name:'ร้าน'} ก่อนถึงจะส่งเควสได้`,'var(--red)');return;}
+  if(!q.requests.every(r=>(G.inv[r.item]||0)>=r.qty)){toast('❌ ของยังไม่ครบ','var(--red)');return;}
+  q.requests.forEach(r=>G.inv[r.item]-=r.qty);
+  G.money+=q.reward;
+  G.quests=G.quests.filter(x=>x.id!==id);
+  toast(`💰 +${q.reward} เหรียญ!`);
+  G.nextQuestIn=Math.min(G.nextQuestIn,rndInt(6,14));
+  renderPanels();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STAGE INTERACTION
+// ═══════════════════════════════════════════════════════════
+function interact(){
+  if(G.openStage){closeModal();return;}
+  const s=G.near;
+  if(!s){toast('ไม่มีอะไรตรงนี้ — เดินเข้าไปใกล้ๆ อาคารก่อนนะ','var(--dim)');return;}
+  G.openStage=s;
+  document.getElementById('modal').classList.add('open');
+  renderModal();
+}
+function closeModal(){
+  G.openStage=null;
+  document.getElementById('modal').classList.remove('open');
+  updatePrompt();
+}
+
+function renderModal(){
+  const s=G.openStage; if(!s)return;
+  const zm=ZONE_META[s.zone]||{emoji:'',label:'',color:'#555'};
+  const waveColors=['','#5a8b3a','#3a6a8b','#7a5a20','#6a3a8b','#8b4a2a','#3a6a5a','#6a2a6a','#4a2a7a','#2a2a7a','#8b3a1a','#5a4a2a'];
+  const wc=waveColors[s.wave]||'#555';
+
+  let body='',foot='';
+
+  if(!s.unlocked){
+    const pOK=prereqMet(s), iOK=has(s.unlockCost), mOK=!s.moneyCost||G.money>=s.moneyCost;
+    body+=`<div class="sect">🔒 เงื่อนไขปลดล็อค</div>`;
+    if(!pOK){
+      const p=stageById(s.prereq);
+      body+=`<span class="ct bad">ต้องปลดล็อค ${p?p.emoji+' '+p.name:s.prereq} ก่อน</span>`;
+    }
+    body+=`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">`;
+    if(s.moneyCost)body+=`<span class="ct ${mOK?'ok':'bad'}">💰 ${G.money}/${s.moneyCost}</span>`;
+    if(s.unlockCost)body+=Object.entries(s.unlockCost).map(([k,v])=>
+      `<span class="ct ${(G.inv[k]||0)>=v?'ok':'bad'}">${ITEMS[k]||''} ${k} ${G.inv[k]||0}/${v}</span>`).join('');
+    body+=`</div>`;
+    if(s.type==='passive'&&s.produces){
+      body+=`<div class="sect">จะผลิตได้</div><div class="item-row">${
+        s.produces.map(i=>`<span class="item-tag">${ITEMS[i]||'?'} ${i}</span>`).join('')}</div>`;
+    }
+    if(s.type==='craft'&&s.recipes){
+      body+=`<div class="sect">จะคราฟได้</div><div class="item-row">${
+        s.recipes.map(r=>`<span class="item-tag">${r.emoji} ${r.name}</span>`).join('')}</div>`;
+    }
+    const near=nearEnough(s), can=pOK&&iOK&&mOK;
+    if(!near&&can)body+=`<div class="sect">🚶 เดินไปที่ด่านนี้เพื่อกดปลดล็อค</div>`;
+    foot=`<button class="btn btn-unlock" ${can?'':'disabled'} onclick="doUnlock()">
+      ${!pOK?'🔒 ต้องปลดล็อคด่านก่อนหน้า':!mOK?'🔒 เงินไม่พอ':!iOK?'🔒 ของยังไม่พอ':!near?'🚶 เดินไปที่นี่ก่อน':'🔓 ปลดล็อค'}</button>`;
+
+  } else if(s.type==='passive'){
+    body+=`<div class="sect">ผลผลิต</div><div class="item-row">${
+      s.produces.map(i=>`<span class="item-tag">${ITEMS[i]||'?'} ${i} ×${s.amount}</span>`).join('')}</div>`;
+    if(s.planted){
+      const pct=Math.min(100,Math.round(s.daysGrown/s.growDays*100));
+      body+=`<div class="sect">การเติบโต</div>
+        <div class="prog-lbl"><span>${s.ready?'พร้อมเก็บเกี่ยว!':'กำลังโต'}</span><span>${s.daysGrown}/${s.growDays} วัน</span></div>
+        <div class="prog-bar"><div class="prog-fill ${s.ready?'gold':''}" style="width:${pct}%"></div></div>`;
+      foot=s.ready
+        ? `<button class="btn btn-harvest" onclick="doHarvest()">🧺 เก็บเกี่ยว</button>`
+        : `<button class="btn btn-wait">⏳ รออีก ${s.growDays-s.daysGrown} วัน</button>`;
+    } else {
+      body+=`<div class="sect">สถานะ</div><span class="ct ok">ว่าง — พร้อมปลูก (ใช้ ${s.growDays} วัน)</span>`;
+      foot=`<button class="btn btn-plant" onclick="doPlant()">🌱 ปลูก</button>`;
+    }
+
+  } else {
+    body+=`<div class="sect">สูตรคราฟ</div>`;
+    s.qty=s.qty||s.recipes.map(()=>1);
+    body+=s.recipes.map((r,i)=>{
+      const qty=s.qty[i]||1;
+      const can=Object.entries(r.ing).every(([k,v])=>(G.inv[k]||0)>=v*qty);
+      return`<div class="rrow">
+        <span class="r-ico">${r.emoji}</span>
+        <span class="r-name">${r.name}</span>
+        <span class="r-ings">${Object.entries(r.ing).map(([k,v])=>
+          `<span class="ri ${(G.inv[k]||0)>=v*qty?'ok':'bad'}">${ITEMS[k]||''}${v*qty}</span>`).join('')}</span>
+        <div class="qty-ctrl">
+          <button class="qbtn" onclick="craftQtyStep(${i},-1)">−</button>
+          <input class="qty-input" type="number" min="1" max="99" value="${qty}" onchange="craftQtySet(${i},this.value)">
+          <button class="qbtn" onclick="craftQtyStep(${i},1)">+</button>
+        </div>
+        <button class="btn-craft" ${can?'':'disabled'} onclick="doCraft(${i})">คราฟ${qty>1?' ×'+qty:''}</button>
+      </div>`;
+    }).join('');
+    const myQ=G.quests.filter(q=>q.npcId===s.id);
+    if(myQ.length){
+      const nearShop=nearEnough(s);
+      body+=`<div class="sect">📜 เควสจากร้านนี้ (${myQ.length})</div>`;
+      if(!nearShop)body+=`<span class="ct bad" style="display:inline-block;margin-bottom:6px">🚶 ต้องเดินมาถึงร้านก่อนถึงจะส่งเควสได้</span>`;
+      body+=myQ.map(q=>{
+        const itemsOK=q.requests.every(r=>(G.inv[r.item]||0)>=r.qty);
+        const can=itemsOK&&nearShop;
+        return`<div class="qcard ${can?'can':''}">
+          <div class="q-npc"><span class="q-npc-name">ขอ ${q.requests.length} อย่าง</span>
+            <span class="q-reward">💰 ${q.reward}</span></div>
+          <div class="q-req">${q.requests.map(r=>{
+            const ok=(G.inv[r.item]||0)>=r.qty;
+            return`<span class="qr ${ok?'ok':'bad'}">${r.emoji} ${r.item} ${G.inv[r.item]||0}/${r.qty}</span>`;
+          }).join('')}</div>
+          <button class="btn-submit" ${can?'':'disabled'} onclick="submitQuest('${q.id}');renderModal()">
+            ${!itemsOK?'ของยังไม่ครบ':!nearShop?'🚶 เดินมาก่อน':'✅ ส่งเควส'}</button>
+        </div>`;
+      }).join('');
+    }
+    foot=`<button class="btn btn-wait" onclick="closeModal()">ปิด</button>`;
+  }
+
+  document.getElementById('mbox').innerHTML=`
+    <div class="mhead" style="border-left:4px solid ${s.accent}">
+      <span class="em">${s.emoji}</span>
+      <div style="flex:1">
+        <div class="mname">${s.name}</div>
+        <div class="mmeta">
+          <span class="tag" style="color:${wc};border-color:${wc}">W${s.wave}</span>
+          <span class="tag" style="color:${zm.color};border-color:${zm.color}">${zm.emoji} ${zm.label}</span>
+          <span class="tag" style="color:var(--dim);border-color:var(--border)">${s.type==='craft'?'🏪 ร้านคราฟ':'🌱 ผลิตเอง'}</span>
+        </div>
+      </div>
+      <button class="x-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">${body}</div>
+    <div class="mfoot">${foot}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHANGELOG MODAL
+// ═══════════════════════════════════════════════════════════
+const CHANGELOG=[
+  {v:'1.2.9',title:'ปุ่มแว่นขยายดูแผนที่ใหญ่',bullets:[
+    'เพิ่มปุ่ม 🔍 มุมล่างขวาของมินิแมพ กดแล้วเปิด modal โชว์แผนที่เวอร์ชันใหญ่ (สูงสุด 380px ปรับตามขนาดจอ) อัปเดตตำแหน่งผู้เล่น/ด่านเป้าหมายสด ๆ ตลอดเวลาที่เปิดอยู่ เหมือนมินิแมพตัวเล็ก',
+    'รีแฟกเตอร์ renderMinimap() เดิมให้เป็น drawMinimapTo(canvas,size) ใช้วาดได้ทั้งมินิแมพตัวเล็กและแผนที่ใหญ่จากโค้ดชุดเดียวกัน ไม่มีจุดซ้ำ',
+    'กด ESC ปิดแผนที่ใหญ่ได้เหมือน modal อื่นๆ',
+  ]},
+  {v:'1.2.8',title:'Dev Panel: ปลดล็อคด่านได้',bullets:[
+    'เพิ่มปุ่ม "⏭️ ปลดล็อคด่านถัดไป" ในแผง Dev — กดทีเดียวปลดล็อคด่านที่ nextUnlockStage() ชี้อยู่ทันที ไม่ต้องหาของ/เงิน/เดินไปให้ถึง',
+    'เพิ่มช่องพิมพ์ชื่อด่าน (autocomplete จากทุกด่านในเกม) + ปุ่ม "🔓 ปลดล็อคด่านนี้" เลือกปลดล็อคด่านไหนก็ได้ตามใจ ข้ามลำดับ chain ได้เลย (เฉพาะเครื่องมือทดสอบ ไม่กระทบระบบเกมจริง)',
+  ]},
+  {v:'1.2.7',title:'Dev Panel: ปั้มเงินได้ด้วย',bullets:[
+    'เพิ่มช่องปั้มเงินในแผง 🛠️ Dev (ต่อจากปั้มไอเทม) ใส่จำนวนแล้วกด "เพิ่มเงิน" เพิ่ม G.money ทันที',
+  ]},
+  {v:'1.2.6',title:'Dev Panel: ปั้มไอเทมทดสอบ',bullets:[
+    'เพิ่มปุ่ม 🛠️ Dev ที่แถบล่าง เปิดแผงทดสอบสำหรับพี่แยม (ไม่ใช่ระบบเกมจริง ไม่มีผลต่อ balance)',
+    'พิมพ์ชื่อไอเทม (มี autocomplete จากไอเทมทั้งหมดในเกม) + ใส่จำนวน กด "เพิ่มเข้าคลัง" ได้ของทันทีไม่ต้องปลูก/คราฟ',
+    'ขั้นแรกทำแค่ปั้มไอเทม — ขั้นต่อไปถ้าต้องการ (ปั้มเงิน / ข้ามวัน / ปลดล็อคด่านทันที) บอกได้เลย',
+  ]},
+  {v:'1.2.5',title:'ระบุจำนวนตอนคราฟได้',bullets:[
+    'ในหน้าต่างร้าน NPC แต่ละสูตรมีตัวปรับจำนวน (− / ช่องพิมพ์ตัวเลข / +) ก่อนกดคราฟ ตั้งได้ 1–99',
+    'วัตถุดิบที่โชว์และเช็คพอ/ไม่พอ จะคูณตามจำนวนที่ตั้งไว้ กดคราฟทีเดียวได้ของหลายชิ้นในคลิกเดียว',
+    'จำจำนวนที่ตั้งไว้ต่อสูตรต่อร้าน (เก็บใน stage object เอง) จนกว่าจะรีเฟรชหน้า',
+  ]},
+  {v:'1.2.4',title:'เควสรับจ้างไม่ขอของที่ร้านตัวเองคราฟ',bullets:[
+    'genQuest() สุ่มร้าน NPC ก่อน แล้วกรองพูลของที่จะขอให้ตัด item ที่อยู่ใน recipes ของร้านนั้นออก (เฉพาะของที่คราฟเอง ไม่แตะวัตถุดิบที่ใช้คราฟ)',
+    'ถ้าร้านไหนกรองแล้วพูลว่าง ข้ามไปลองร้านถัดไปแบบสุ่ม ถ้าไม่มีร้านไหนมีพูลพอ รอบนั้นไม่ออกเควส (ไม่ error ไม่ค้าง)',
+  ]},
+  {v:'1.2.3',title:'ส่งเควสรับจ้างต้องไปถึงร้านก่อน',bullets:[
+    'เพิ่ม nearEnough() guard ใน submitQuest() — ก่อนหน้านี้กดส่งเควสจากแผงเควส (Q) ได้จากทุกที่บนแมพ ไม่ต้องเดินไปร้าน',
+    'ปุ่มส่งเควสในแผง Q จะโชว์ "🚶 ไปที่ร้านก่อน" ถ้าของครบแต่ยังไม่ถึงร้าน แยกจาก "ของยังไม่ครบ"',
+    'เควสในหน้าต่างร้าน (กด E ที่ NPC) เพิ่ม guard เดียวกันไว้ด้วยเพื่อความสม่ำเสมอของกฎ',
+  ]},
+  {v:'1.2.2',title:'แผงเควสหลัก + เควสรับจ้าง',bullets:[
+    'แยกแผงเควส (กด Q) เป็น 2 ก้อน: "🎯 เควสหลัก" โชว์ด่านล็อคถัดไปพร้อมของ/เงินที่ต้องใช้ กับ "📜 เควสรับจ้าง" (ระบบสุ่มขอของ→ได้เงินเดิม)',
+    'เควสหลักอ่านจาก nextUnlockStage() สด ๆ ทุกครั้งที่เปิดแผง กดปุ่ม "🧭 ดูวิธีไปปลดล็อค" เพื่อเปิด modal เดิม (viewNextStage) — ปลดล็อคจริงยังต้องเดินไปถึงก่อนตามกฎ nearEnough() เดิม ไม่ได้เลี่ยง guard',
+  ]},
+  {v:'1.2.1',title:'ปุ่ม Changelog บน HUD',bullets:[
+    'เพิ่มปุ่ม 📜 Changelog มุมซ้ายบน คลิกเปิด modal นี้ดูประวัติอัปเดตได้ทันทีในเกม',
+    'เนื้อหา changelog ฝังในไฟล์ (array CHANGELOG) ไม่ต้องพึ่งไฟล์ .md แยก เปิดแบบ file:// ได้ปกติ',
+  ]},
+  {v:'1.2.0',title:'Spawn ที่ด่านแรก + ระบบนำทางด่านต่อไป',bullets:[
+    'ผู้เล่นเริ่มเกมยืนติดกับ farm_a (ด่านแรกสุด) แทนที่จะสปอนกลางเมืองหลวงลอยๆ',
+    'เข็มทิศ HUD ชี้ทิศไปด่านเป้าหมาย + ระยะ "N ก้าว" คลิกดูเงื่อนไขปลดล็อคจากระยะไกลได้',
+    'จดหมาย 📩 แจ้งอัตโนมัติทันทีหลังปลดล็อคสำเร็จ บอกด่านต่อไป + ทิศ + ของที่ต้องใช้',
+    'บีคอนแสงทองพุ่งขึ้นจากด่านเป้าหมาย + วงแหวนทองบนมินิแมพ',
+  ]},
+  {v:'1.1.0',title:'Mouse Wheel Zoom',bullets:[
+    'สกรอลล์เมาส์ซูมเข้า-ออก ช่วง 50%–240% ยึดกึ่งกลางจอ',
+    'แก้สมการแปลงพิกัดคลิกเมาส์ → พิกัดโลกเกม ให้รองรับทุกระดับซูม',
+  ]},
+  {v:'1.0.0',title:'Isometric World Release',bullets:[
+    'World Map 5 โซนตามเข็มทิศ ด้วย value noise ให้ขอบโซนเป็นธรรมชาติ + ถนนเชื่อมเมืองหลวง',
+    'วางด่านอัตโนมัติจากข้อมูล 63 stage ของ eco_demo.html เดินถึงได้ทุกด่าน (verify ด้วย flood-fill)',
+    'เดิน WASD ชนอาคารไม่ได้ กล้องตามตัวละครแบบ smooth',
+    'กลางวัน-กลางคืนเต็มระบบ, Inventory, Quest, โต้ตอบด่าน (ปลูก/คราฟ/ปลดล็อค), มินิแมพ',
+  ]},
+];
+
+function openChangelog(){
+  document.getElementById('clBox').innerHTML=CHANGELOG.map(c=>`
+    <div class="cl-entry">
+      <div class="cl-entry-head"><span class="tag" style="color:var(--green);border-color:var(--green)">v${c.v}</span><b>${c.title}</b></div>
+      <ul class="cl-list">${c.bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+    </div>`).join('');
+  document.getElementById('clModal').classList.add('open');
+}
+function closeChangelog(){
+  document.getElementById('clModal').classList.remove('open');
+}
+
+function doPlant(){
+  const s=G.openStage;
+  if(!nearEnough(s)){toast('เดินไปให้ถึงก่อนนะ 🚶','var(--dim)');return;}
+  s.planted=true; s.daysGrown=0; s.ready=false;
+  toast(`🌱 ปลูกที่ ${s.name} แล้ว`,'var(--green)');
+  renderModal();
+}
+function doHarvest(){
+  const s=G.openStage;
+  if(!nearEnough(s)){toast('เดินไปให้ถึงก่อนนะ 🚶','var(--dim)');return;}
+  s.produces.forEach(i=>G.inv[i]=(G.inv[i]||0)+s.amount);
+  s.planted=false; s.daysGrown=0; s.ready=false;
+  toast(`🧺 เก็บได้ ${s.produces.map(i=>ITEMS[i]||'').join('')} อย่างละ ${s.amount}`,'var(--green)');
+  renderModal(); if(G.openPanel)renderPanels();
+}
+function craftQtyStep(i,delta){
+  const s=G.openStage; if(!s)return;
+  s.qty=s.qty||s.recipes.map(()=>1);
+  s.qty[i]=Math.max(1,Math.min(99,(s.qty[i]||1)+delta));
+  renderModal();
+}
+function craftQtySet(i,val){
+  const s=G.openStage; if(!s)return;
+  s.qty=s.qty||s.recipes.map(()=>1);
+  const n=Math.round(Number(val));
+  s.qty[i]=Number.isFinite(n)?Math.max(1,Math.min(99,n)):1;
+  renderModal();
+}
+function doCraft(i){
+  const s=G.openStage, r=s.recipes[i];
+  if(!nearEnough(s)){toast('เดินไปให้ถึงก่อนนะ 🚶','var(--dim)');return;}
+  const qty=(s.qty&&s.qty[i])||1;
+  if(!Object.entries(r.ing).every(([k,v])=>(G.inv[k]||0)>=v*qty)){toast('❌ วัตถุดิบไม่พอ','var(--red)');return;}
+  Object.entries(r.ing).forEach(([k,v])=>G.inv[k]-=v*qty);
+  G.inv[r.name]=(G.inv[r.name]||0)+qty;
+  toast(`${r.emoji} คราฟ ${r.name} ×${qty} สำเร็จ!`,'var(--purple)');
+  renderModal(); if(G.openPanel)renderPanels();
+}
+function doUnlock(){
+  const s=G.openStage;
+  if(!nearEnough(s)){toast('เดินไปให้ถึงก่อนนะ 🚶','var(--dim)');return;}
+  if(!prereqMet(s)||!has(s.unlockCost)||(s.moneyCost&&G.money<s.moneyCost)){toast('❌ เงื่อนไขยังไม่ครบ','var(--red)');return;}
+  if(s.unlockCost)Object.entries(s.unlockCost).forEach(([k,v])=>G.inv[k]-=v);
+  if(s.moneyCost)G.money-=s.moneyCost;
+  s.unlocked=true;
+  toast(`🔓 ปลดล็อค ${s.name} แล้ว!`,'var(--purple)');
+  renderModal(); if(G.openPanel)renderPanels();
+}
+
+// mouse-wheel zoom, centered on screen (camera re-centers on player every frame anyway)
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const factor=e.deltaY<0?1.1:1/1.1;
+  G.zoom=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,G.zoom*factor));
+},{passive:false});
+
+// click a building on the canvas to walk-check + open it
+cv.addEventListener('click',e=>{
+  const mx=(e.clientX-innerWidth/2)/G.zoom+G.cam.x, my=(e.clientY-innerHeight/2)/G.zoom+G.cam.y;
+  let best=null,bd=1e9;
+  for(const k in buildings){
+    const s=buildings[k];
+    const{sx,sy}=toScreen(s.gx,s.gy);
+    const d=Math.hypot(mx-sx,my-(sy-18));
+    if(d<34&&d<bd){bd=d;best=s;}
+  }
+  if(!best)return;
+  const pd=Math.hypot(G.player.x-best.gx,G.player.y-best.gy);
+  if(pd>INTERACT_DIST+2.2){toast('เดินเข้าไปใกล้ๆ ก่อนนะ 🚶','var(--dim)');return;}
+  G.openStage=best;
+  document.getElementById('modal').classList.add('open');
+  renderModal();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  START
+// ═══════════════════════════════════════════════════════════
+initDevPanel();
+renderPanels();
+toast('🌸 ยินดีต้อนรับสู่ Demetria! ใช้ WASD เดิน กด E โต้ตอบ');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
