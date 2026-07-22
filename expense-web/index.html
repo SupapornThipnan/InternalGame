@@ -154,15 +154,14 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
   <div class="page" id="p-set">
     <div class="card">
       <h3 style="margin-top:0">เชื่อมต่อ Google Sheet</h3>
-      <p class="muted">วาง <b>Web app URL</b> ที่ได้จากการ deploy Apps Script ตรงนี้ครับ —
-        ใส่แล้วเว็บถึงจะ <b>บันทึกข้อมูลกลับเข้า Sheet</b> ได้<br>
-        (ถ้ายังไม่ใส่ เว็บจะอ่านข้อมูลอย่างเดียว ยังเพิ่มรายการไม่ได้)</p>
+      <p class="muted"><b>ผูก URL ไว้ในตัวเว็บให้แล้ว</b> เปิดมาก็บันทึกข้อมูลได้เลยไม่ต้องตั้งค่าอะไรเพิ่ม —
+        ช่องด้านล่างใช้กรณีอยากเปลี่ยนไปเชื่อมกับ Apps Script เส้นอื่นเท่านั้นครับ</p>
       <div class="field">
         <label>Apps Script Web App URL</label>
         <input id="apiUrl" placeholder="https://script.google.com/macros/s/…/exec">
       </div>
       <button class="btn primary" id="saveUrl">บันทึก</button>
-      <button class="btn ghost" id="clearUrl">ล้าง</button>
+      <button class="btn ghost" id="clearUrl">ล้าง (กลับไปใช้ค่าเริ่มต้น)</button>
       <p class="muted" style="margin-top:14px">
         ขั้นตอน deploy อยู่ในไฟล์ <code>README.md</code> ที่ให้มาด้วยกันครับ
       </p>
@@ -202,6 +201,7 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
 /* ===================== CONFIG ===================== */
 const SHEET_ID   = '1ohWLy3jTuc9WRF35UvTiE9o9HXxXkkIsO2JL7pCV7NY';
 const SHEET_NAME = 'รายการ';           // ชีตใหม่ที่ Apps Script สร้างให้
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxhvf2MjgJitPYG0djgeklJ-FQkqN4uLa8dJc2eth--tPej-VlAAUtEVCu1qWEDO9O4kQ/exec';
 const HEAD = { d:'วันที่', a:'จำนวนเงิน', t:'ประเภท', n:'รายละเอียด', c:'หมวดหมู่' };
 
 const TYPES = ['รายได้','รายจ่าย','จ่ายให้อ้วง','จ่ายสินเชื่อ'];
@@ -222,7 +222,7 @@ let sortKey = HEAD.d, sortDir = -1;
 let chCat, chDay;
 
 const $ = s => document.querySelector(s);
-const api = () => (localStorage.getItem('rjApiUrl') || '').trim();
+const api = () => (localStorage.getItem('rjApiUrl') || DEFAULT_API_URL).trim();
 const money = n => (Math.round(n*100)/100).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const num = v => { const x = parseFloat(String(v??'0').replace(/,/g,'')); return isNaN(x)?0:x; };
 const pad = n => String(n).padStart(2,'0');
@@ -493,7 +493,7 @@ function init(){
   $('#mSave').onclick   = saveEntry;
   $('#modal').onclick   = e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
   $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); refresh(); };
-  $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=''; refresh(); };
+  $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=api(); refresh(); };
 
   refresh();
 }
