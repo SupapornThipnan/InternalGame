@@ -23,6 +23,8 @@
   main { padding: 12px 16px 60px; max-width: 1100px; margin: 0 auto; }
   .banner { background: #3a2a12; border: 1px solid #7a5a22; color: #ffce7a; padding: 10px 14px; border-radius: 10px; font-size: .85rem; margin-bottom: 14px; }
   .banner a { color: var(--cyan); }
+  .reminderBanner { background: #3a1030; border: 1px solid #7a2a5a; color: #ff9adb; padding: 10px 14px; border-radius: 10px; font-size: .88rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .reminderBanner button { background: none; border: none; color: inherit; font-size: 1.15rem; cursor: pointer; line-height: 1; padding: 0 2px; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
   .card .label { font-size: .75rem; color: var(--muted); }
@@ -124,7 +126,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v4.5 · กำลังโหลด…</span>
+  <span id="status">v5.0 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -135,6 +137,7 @@
   <button data-tab="listitme">🗂️ ListITME</button>
   <button data-tab="progday">📆 Progress-Day</button>
   <button data-tab="commission">💰 บันทึกค่าคอม</button>
+  <button data-tab="reminders">🔔 แจ้งเตือน</button>
   <button data-tab="settings">⚙️ ตั้งค่า</button>
 </nav>
 <main>
@@ -142,6 +145,8 @@
     🔒 โหมดอ่านอย่างเดียว — ยังไม่ได้เชื่อม Apps Script จึงเพิ่ม/แก้ข้อมูลจากเว็บไม่ได้
     ไปที่แท็บ ⚙️ ตั้งค่า เพื่อเชื่อมต่อ หรือ <a id="bannerSheetLink" target="_blank">แก้ใน Google Sheet โดยตรง</a>
   </div>
+  <!-- อยู่นอก section ของแต่ละแท็บ เลยโชว์ค้างได้ทุกแท็บจนกว่าจะกดปิดเอง (ไม่ผูกกับ tab ที่เปิดอยู่) -->
+  <div id="reminderBanners"></div>
 
   <!-- ============ DASHBOARD ============ -->
   <section id="tab-dash">
@@ -369,6 +374,15 @@
     </div>
   </section>
 
+  <!-- ============ REMINDERS (แจ้งเตือน — ตั้งไว้ 1 ครั้งหรือรายเดือนก็ได้) ============ -->
+  <section id="tab-reminders" style="display:none">
+    <div class="toolbar">
+      <button class="btn pink" id="btnAddReminder">➕ เพิ่มแจ้งเตือนใหม่</button>
+    </div>
+    <div id="reminderListInfo" class="empty" style="padding:10px"></div>
+    <div id="reminderList"></div>
+  </section>
+
   <!-- ============ SETTINGS ============ -->
   <section id="tab-settings" style="display:none">
     <div class="panel settings">
@@ -472,6 +486,25 @@
   </form>
 </dialog>
 
+<!-- ============ REMINDER MODAL ============ -->
+<dialog id="dlgReminder">
+  <h3 id="dlgReminderTitle">🔔 เพิ่มแจ้งเตือนใหม่</h3>
+  <form method="dialog" id="formReminder">
+    <label>ข้อความแจ้งเตือน</label><input name="text" required placeholder="เช่น จ่ายค่าคอม TikTok">
+    <label>ประเภท</label>
+    <select name="type" id="reminderType">
+      <option value="once">ครั้งเดียว (เลือกวันที่)</option>
+      <option value="monthly">ทุกเดือน (เลือกวันในเดือน)</option>
+    </select>
+    <div id="reminderOnceField"><label>วันที่</label><input type="date" name="onceDate"></div>
+    <div id="reminderMonthlyField" style="display:none"><label>วันที่ในเดือน (1-31)</label><input type="number" name="monthlyDay" min="1" max="31"></div>
+    <div class="actions">
+      <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
+      <button class="btn pink" value="ok">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- ============ SALE MODAL ============ -->
 <dialog id="dlgSale">
   <h3>บันทึกยอดขาย</h3>
@@ -546,7 +579,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v4.5';
+const VERSION = 'v5.0';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -584,8 +617,10 @@ const shopeeCopyText = () => localStorage.getItem('shopeeCopyText') || SHOPEE_TA
 const csvUrl = (name, sheetId = SHEET_ID) =>
   `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
 
+// ทุกฟังก์ชันอ่านข้อมูลด้านล่างนี้แปะ &_=timestamp กันเบราว์เซอร์ cache คำตอบ GET เดิมไว้แล้วเสิร์ฟข้อมูลเก่าซ้ำ
+// (เจอบั๊กจริงจากเรื่องนี้: กดปิด/เปิดแจ้งเตือนแล้วโหลดใหม่ทันที ปุ่มไม่เปลี่ยนเพราะได้ข้อมูลแคชเก่ากลับมา)
 async function loadCsv(name) {
-  const res = await fetch(csvUrl(name));
+  const res = await fetch(csvUrl(name) + '&_=' + Date.now(), { cache: 'no-store' });
   const text = await res.text();
   if (text.trim().startsWith('<')) throw new Error('SHEET_NOT_SHARED');
   return Papa.parse(text, { header: true, skipEmptyLines: true }).data;
@@ -593,21 +628,21 @@ async function loadCsv(name) {
 
 // อ่านแบบไม่มี header (ชีตคำอธิบาย/ลิงก์ไม่มีหัวคอลัมน์มาตรฐาน)
 async function loadCsvRaw(name, sheetId = SHEET_ID) {
-  const res = await fetch(csvUrl(name, sheetId));
+  const res = await fetch(csvUrl(name, sheetId) + '&_=' + Date.now(), { cache: 'no-store' });
   const text = await res.text();
   if (text.trim().startsWith('<')) throw new Error('SHEET_NOT_SHARED');
   return Papa.parse(text, { header: false, skipEmptyLines: true }).data;
 }
 
 async function loadApi(name) {
-  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}`);
+  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&_=${Date.now()}`, { cache: 'no-store' });
   const j = await res.json();
   if (!j.ok) throw new Error(j.error);
   return j.data;
 }
 
 async function loadApiRaw(name) {
-  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&raw=1`);
+  const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&raw=1&_=${Date.now()}`, { cache: 'no-store' });
   const j = await res.json();
   if (!j.ok || !j.rows) throw new Error(j.error || 'OLD_SCRIPT_VERSION');
   return j.rows;
@@ -1009,12 +1044,13 @@ $('#formSale').addEventListener('submit', (e) => {
 /* ================== UI WIRING ================== */
 function switchTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'commission', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'commission', 'reminders', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
   if (name === 'queue') loadQueue();
   if (name === 'progress') loadProgress();
   if (name === 'listitme') loadListItme();
   if (name === 'progday') loadProgDay();
   if (name === 'commission') { loadCommissionDay(); loadCommissionForecast(); }
+  if (name === 'reminders') loadReminders();
 }
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
 $('#rangeChips').addEventListener('click', (e) => {
@@ -2226,6 +2262,152 @@ $('#btnCmSave').onclick = async () => {
   if (ok) setTimeout(() => { loadCommissionDay(); loadCommissionForecast(); }, 1500);
 };
 
+/* ================== REMINDERS: แจ้งเตือนแบบครั้งเดียว/รายเดือน โชว์แบนเนอร์ค้างทุกแท็บจนกว่าจะกดปิดเอง ================== */
+const SHEET_REMINDERS = '🔔 Reminders';
+let reminders = [];
+
+function reminderTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// key ผูกกับวันที่ปัจจุบันด้วย — แจ้งเตือนรายเดือนกดปิดวันนี้แล้ว เดือนหน้าถึงรอบใหม่จะกลับมาเตือนอีกครั้ง
+function reminderDismissKey(id) { return `reminderDismissed:${id}:${reminderTodayStr()}`; }
+
+// Sheets มัก auto-แปลงเซลล์ที่มีคำว่า TRUE/FALSE เป็น boolean จริงให้เอง (ไม่ใช่ข้อความ) เทียบ === 'FALSE' เฉยๆ
+// เลยพลาดได้ (boolean false !== string 'FALSE' เสมอ) ฟังก์ชันนี้เช็คให้ครอบคลุมทั้ง boolean และ string
+function reminderIsActive(r) {
+  const v = r['เปิดใช้งาน'];
+  return v !== false && v !== 'FALSE' && v !== 'false';
+}
+
+function reminderIsDueToday(r) {
+  if (!reminderIsActive(r)) return false;
+  const d = new Date();
+  if (r['ประเภท'] === 'monthly') return Number(r['ค่าวันที่']) === d.getDate();
+  return r['ค่าวันที่'] === reminderTodayStr();
+}
+
+async function loadReminders() {
+  try {
+    reminders = await loadApi(SHEET_REMINDERS);
+  } catch (e) { reminders = []; }
+  renderReminderBanners();
+  renderReminderList();
+}
+
+function renderReminderBanners() {
+  const due = reminders.filter(r => reminderIsDueToday(r) && !localStorage.getItem(reminderDismissKey(r.ID)));
+  $('#reminderBanners').innerHTML = due.map(r => `
+    <div class="reminderBanner">
+      <span>🔔 ${esc(r['ข้อความ'])}</span>
+      <button data-dismiss="${esc(r.ID)}" title="ปิดแจ้งเตือนนี้">✕</button>
+    </div>`).join('');
+}
+
+$('#reminderBanners').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-dismiss]'); if (!btn) return;
+  localStorage.setItem(reminderDismissKey(btn.dataset.dismiss), '1');
+  renderReminderBanners();
+});
+
+function renderReminderList() {
+  $('#reminderListInfo').textContent = reminders.length ? '' : 'ยังไม่มีแจ้งเตือน กด "➕ เพิ่มแจ้งเตือนใหม่" เพื่อเริ่มค่ะ';
+  $('#reminderList').innerHTML = reminders.map(r => {
+    const isMonthly = r['ประเภท'] === 'monthly';
+    const dateLabel = isMonthly ? `🔁 ทุกวันที่ ${esc(r['ค่าวันที่'])} ของเดือน` : `📅 ${esc(r['ค่าวันที่'])}`;
+    const active = reminderIsActive(r);
+    // ถึงกำหนดวันนี้ + เคยกดกากบาทปิดแบนเนอร์ไปแล้ว → โชว์ติ๊กสถานะ + ปุ่มเปิดกลับมาให้เห็นแบนเนอร์อีกครั้ง
+    const dismissedToday = reminderIsDueToday(r) && !!localStorage.getItem(reminderDismissKey(r.ID));
+    return `<div class="item" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div>
+        <div style="${active ? '' : 'color:var(--muted);text-decoration:line-through'}">${esc(r['ข้อความ'])}</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:2px">${dateLabel}</div>
+        ${dismissedToday ? `<div style="font-size:.78rem;color:#4ade80;margin-top:4px">✅ ปิดแบนเนอร์วันนี้ไปแล้ว</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        ${dismissedToday ? `<button class="btn ghost" data-reopen-reminder="${esc(r.ID)}">🔄 เปิดกลับมา</button>` : ''}
+        <button class="btn ghost" data-edit-reminder="${esc(r.ID)}">✏️ แก้ไข</button>
+        <button class="btn ghost" data-toggle-reminder="${esc(r.ID)}">${active ? '⏸️ ปิด' : '▶️ เปิด'}</button>
+        <button class="btn ghost" data-del-reminder="${esc(r.ID)}" style="color:#f87171">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#reminderList').addEventListener('click', async (e) => {
+  const reopenBtn = e.target.closest('[data-reopen-reminder]');
+  if (reopenBtn) {
+    localStorage.removeItem(reminderDismissKey(reopenBtn.dataset.reopenReminder));
+    renderReminderBanners();
+    renderReminderList();
+    toast('เปิดแบนเนอร์กลับมาแล้ว ✓');
+    return;
+  }
+  const editBtn = e.target.closest('[data-edit-reminder]');
+  if (editBtn) {
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    openReminderModal(editBtn.dataset.editReminder);
+    return;
+  }
+  const toggleBtn = e.target.closest('[data-toggle-reminder]');
+  if (toggleBtn) {
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    const r = reminders.find(x => x.ID === toggleBtn.dataset.toggleReminder);
+    const newActive = r && reminderIsActive(r) ? 'FALSE' : 'TRUE';
+    const ok = await saveToSheet({ sheet: SHEET_REMINDERS, action: 'update', keyColumn: 'ID', key: toggleBtn.dataset.toggleReminder, data: { 'เปิดใช้งาน': newActive } });
+    if (ok) loadReminders();
+    return;
+  }
+  const delBtn = e.target.closest('[data-del-reminder]');
+  if (delBtn) {
+    if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+    if (!confirm('ลบแจ้งเตือนนี้เลยไหม? ย้อนกลับไม่ได้นะคะ')) return;
+    const ok = await saveToSheet({ sheet: SHEET_REMINDERS, action: 'delete', keyColumn: 'ID', key: delBtn.dataset.delReminder });
+    if (ok) loadReminders();
+  }
+});
+
+$('#reminderType').addEventListener('change', () => {
+  const isMonthly = $('#reminderType').value === 'monthly';
+  $('#reminderOnceField').style.display = isMonthly ? 'none' : '';
+  $('#reminderMonthlyField').style.display = isMonthly ? '' : 'none';
+});
+
+let editingReminderId = null;
+function openReminderModal(id) {
+  editingReminderId = id || null;
+  const f = $('#formReminder'); f.reset();
+  $('#dlgReminderTitle').textContent = id ? '✏️ แก้ไขแจ้งเตือน' : '🔔 เพิ่มแจ้งเตือนใหม่';
+  if (id) {
+    const r = reminders.find(x => x.ID === id);
+    if (r) {
+      f.text.value = r['ข้อความ'];
+      f.type.value = r['ประเภท'];
+      if (r['ประเภท'] === 'monthly') f.monthlyDay.value = r['ค่าวันที่']; else f.onceDate.value = r['ค่าวันที่'];
+    }
+  }
+  const isMonthly = $('#reminderType').value === 'monthly';
+  $('#reminderOnceField').style.display = isMonthly ? 'none' : '';
+  $('#reminderMonthlyField').style.display = isMonthly ? '' : 'none';
+  $('#dlgReminder').showModal();
+}
+$('#btnAddReminder').onclick = () => {
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return; }
+  openReminderModal();
+};
+$('#formReminder').addEventListener('submit', async (e) => {
+  if (e.submitter?.value !== 'ok') return;
+  const fd = Object.fromEntries(new FormData($('#formReminder')));
+  const isMonthly = fd.type === 'monthly';
+  const value = isMonthly ? fd.monthlyDay : fd.onceDate;
+  if (!value) { toast('กรอกวันที่ก่อนครับ'); return; }
+  const data = { 'ข้อความ': fd.text, 'ประเภท': fd.type, 'ค่าวันที่': value };
+  const ok = editingReminderId
+    ? await saveToSheet({ sheet: SHEET_REMINDERS, action: 'update', keyColumn: 'ID', key: editingReminderId, data })
+    : await saveToSheet({ sheet: SHEET_REMINDERS, action: 'add', data: { 'ID': 'rem_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ...data, 'เปิดใช้งาน': 'TRUE' } });
+  if (ok) loadReminders();
+});
+
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
   clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3000);
@@ -2233,6 +2415,7 @@ function toast(msg) {
 function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBanner(); }
 
 loadAll();
+loadReminders(); // เช็คแจ้งเตือนตั้งแต่เปิดเว็บครั้งแรก โชว์แบนเนอร์ได้ทุกแท็บไม่ต้องรอกดเข้าแท็บ 🔔 ก่อน
 </script>
 </body>
 </html>
