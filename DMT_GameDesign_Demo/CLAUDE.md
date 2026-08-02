@@ -21,11 +21,13 @@
 ├── GAME_DESIGN.md              ← ดีไซน์เกม gameplay สมดุล ศิลป์ (อ่านก่อน)
 ├── CLAUDE.md                   ← ไฟล์นี้ — สถาปัตยกรรมโค้ด
 │
-├── eco_demo.html               ← [v0.7.1] Prototype ระบบเศรษฐกิจ (ไม่มีแมพ)
+├── eco_demo.html               ← [v0.7.3] Prototype ระบบเศรษฐกิจ (ไม่มีแมพ)
 ├── eco_demo_changelog.md
 │
-├── demetria_world.html         ← [v1.2.0] เกมไอโซเมตริกเดินได้จริง
-└── demetria_world_changelog.md
+├── demetria_world.html         ← [v1.8.0] เกมไอโซเมตริกเดินได้จริง
+├── demetria_world_changelog.md
+│
+└── renovation_mockup.html      ← mockup ภาพนิ่ง ระบบบูรณะด่าน (ไม่ใช่โค้ดเกม ไม่ต้องแก้)
 ```
 
 ทั้งสองไฟล์เป็น **single-file HTML** (HTML + CSS + Vanilla JS ในไฟล์เดียว)
@@ -158,9 +160,11 @@ console.log('const DEF='+JSON.stringify(clean)+';');
 | `MOVEMENT` | `walkable()` `movePlayer()` `findNear()` |
 | `GAME LOOP` | `loop()` → move, เดินเวลา, ตรวจวันใหม่, tick เควส, render |
 | `GUIDANCE` | `nextUnlockStage()` `updateCompass()` `announceNext()` |
-| `PANELS` | inventory + quest (side panel) |
-| `QUESTS` | `questPool()` `genQuest()` `submitQuest()` |
-| `INTERACTION` | `interact()` `renderModal()` `doPlant/doHarvest/doCraft/doUnlock` |
+| `MINIMAP` | `drawMinimapTo(canvas,size)` ใช้ร่วมกันทั้งมินิแมพเล็ก (132px) และแผนที่ใหญ่ (`#mapModal`, `openMapModal()`/`closeMapModal()`) — วาดโค้ดชุดเดียว ไม่มี logic ซ้ำ |
+| `PANELS` | inventory + quest (main quest การ์ดบนสุด + hired quest) + **Dev Panel** (side panel เดียวกัน) |
+| `QUESTS` | `questPool()` `genQuest()` `submitQuest()` — กรอง item ที่ NPC ร้านนั้นคราฟเองออกจากพูลก่อนสุ่มเสมอ |
+| `INTERACTION` | `interact()` `renderModal()` `doPlant/doHarvest/doCraft/doUnlock` — `doCraft` รับจำนวนจาก `s.qty[i]` (ตัวปรับ 1–99 ต่อสูตร) |
+| `DEV TOOLS` | `devAddItem()` `devAddMoney()` `devUnlockNext()` `devUnlockStage()` — ข้าม guard ทั้งหมดโดยเจตนา (ดู "สิ่งที่ห้ามทำ") |
 
 ### Isometric projection
 
@@ -259,6 +263,8 @@ const mx=(e.clientX-innerWidth/2)/G.zoom+G.cam.x;
 | แก้ข้อมูลด่านที่เดียวแล้วไม่ sync อีกไฟล์ | ข้อมูล 2 ไฟล์จะไม่ตรงกัน |
 | ส่งงานโดยไม่ตรวจ syntax | ไฟล์พังแล้วพี่แยมเปิดไม่ได้ |
 | ขยับเวอร์ชั่นแล้วไม่เขียน changelog | พี่แยมขอไว้ชัดเจนว่าต้องมีทุกครั้ง |
+| แก้ changelog แล้วอัปเดตแค่ array `CHANGELOG` ในเกม ไม่แก้ไฟล์ `.md` คู่กัน (หรือกลับกัน) | สองที่ต้องตรงกันเสมอ เคยเกิดแล้วที่ `.md` ตกหล่นไป 1 เวอร์ชั่น |
+| ปล่อยปุ่ม 🛠️ Dev Panel ติดไปกับ build ที่ให้คนอื่นเล่นจริง | ปั้มไอเทม/เงิน/ปลดล็อคด่านข้าม chain ได้ฟรีทั้งหมด ไม่ใช่ฟีเจอร์เกม ต้องซ่อน/ถอดก่อนแจกจ่าย |
 
 ---
 

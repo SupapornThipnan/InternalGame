@@ -53,6 +53,13 @@ tbody tr:hover{background:#ffffff08}
 .tablewrap{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:auto}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;white-space:nowrap}
 
+.chipwrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 6px 4px 11px;border-radius:99px;
+  font-size:12px;font-weight:600;white-space:nowrap;background:var(--card2);border:1px solid var(--line)}
+.chip button{background:none;border:0;color:inherit;cursor:pointer;font-size:14px;line-height:1;
+  padding:2px 5px;opacity:.6;border-radius:50%;font-family:inherit}
+.chip button:hover{opacity:1;background:#ffffff18}
+
 .grid2{display:grid;gap:10px;grid-template-columns:1fr 1fr}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}
 label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px}
@@ -101,7 +108,7 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
   <div id="msg" class="msg"></div>
 
   <div class="row">
-    <select id="fMonth"><option value="">ทุกเดือน</option></select>
+    <select id="fPage"><option value="">ทุกหน้า</option></select>
     <select id="fType"><option value="">ทุกประเภท</option></select>
     <select id="fCat"><option value="">ทุกหมวดหมู่</option></select>
     <input id="fSearch" placeholder="ค้นหารายละเอียด…" style="flex:1;min-width:150px">
@@ -125,6 +132,13 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
       <div class="tablewrap" style="border:0;background:none">
         <table><thead><tr><th>หมวดหมู่</th><th class="num">จำนวนรายการ</th><th class="num">ยอดรวม</th></tr></thead>
         <tbody id="sumBody"></tbody></table>
+      </div>
+    </div>
+    <div class="chartbox" style="margin-top:12px">
+      <h3>สรุปตามประเภท</h3>
+      <div class="tablewrap" style="border:0;background:none">
+        <table><thead><tr><th>ประเภท</th><th class="num">จำนวนรายการ</th><th class="num">ยอดรวม</th></tr></thead>
+        <tbody id="sumTypeBody"></tbody></table>
       </div>
     </div>
   </div>
@@ -167,8 +181,39 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
       </p>
     </div>
     <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">จัดการหน้า</h3>
+      <p class="muted">แต่ละ "หน้า" คือชีตหนึ่งใน Google Sheet ตั้งชื่อเองได้อิสระ (เช่น "7️⃣ รจ-กรกฎา 2569")
+        พิมพ์ชื่อแล้วกดสร้าง เว็บจะสร้างชีตนั้นให้อัตโนมัติพร้อมหัวตารางเรียบร้อย —
+        กด + เพิ่มรายการจะเข้าหน้าที่เลือกอยู่ตอนนั้นเสมอ ไม่มีการสลับหน้าให้เองตามวันที่</p>
+      <div class="chipwrap" id="pageChips"></div>
+      <div class="row" style="margin-bottom:0">
+        <input id="newPage" placeholder="ชื่อหน้าใหม่…" style="flex:1;min-width:160px">
+        <button class="btn primary" id="addPageBtn">+ สร้างหน้า</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">จัดการประเภท</h3>
+      <p class="muted">เพิ่ม/ลบตัวเลือก "ประเภท" ที่ใช้ตอนเพิ่มรายการได้เองครับ — รายการเก่าที่บันทึกไว้แล้วไม่หายไปไหน
+        แค่ตัวเลือกจะไม่โผล่ในช่องเพิ่มรายการอีก</p>
+      <div class="chipwrap" id="typeChips"></div>
+      <div class="row" style="margin-bottom:0">
+        <input id="newType" placeholder="ชื่อประเภทใหม่…" style="flex:1;min-width:140px">
+        <button class="btn primary" id="addTypeBtn">+ เพิ่ม</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h3 style="margin-top:0">จัดการหมวดหมู่</h3>
+      <p class="muted">เพิ่ม/ลบตัวเลือก "หมวดหมู่" ได้เช่นกันครับ</p>
+      <div class="chipwrap" id="catChips"></div>
+      <div class="row" style="margin-bottom:0">
+        <input id="newCat" placeholder="ชื่อหมวดหมู่ใหม่…" style="flex:1;min-width:140px">
+        <button class="btn primary" id="addCatBtn">+ เพิ่ม</button>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
       <h3 style="margin-top:0">แหล่งข้อมูลตอนนี้</h3>
       <p class="muted" id="srcInfo">–</p>
+      <p class="muted" id="sheetInfo"></p>
       <p class="muted">Sheet ID: <code id="sid"></code></p>
       <a href="#" id="openSheet" target="_blank" style="color:var(--cyan)">เปิด Google Sheet →</a>
     </div>
@@ -204,22 +249,36 @@ const SHEET_NAME = 'รายการ';           // ชีตใหม่ท�
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxhvf2MjgJitPYG0djgeklJ-FQkqN4uLa8dJc2eth--tPej-VlAAUtEVCu1qWEDO9O4kQ/exec';
 const HEAD = { d:'วันที่', a:'จำนวนเงิน', t:'ประเภท', n:'รายละเอียด', c:'หมวดหมู่' };
 
-const TYPES = ['รายได้','รายจ่าย','จ่ายให้อ้วง','จ่ายสินเชื่อ'];
-const CATS  = ['รายได้','ค่ากิน','ออนไลน์','ช้อปออนไลน์','ของใช้','ของรีวิว',
+const DEFAULT_TYPES = ['รายได้','รายจ่าย','จ่ายให้อ้วง','จ่ายสินเชื่อ'];
+const DEFAULT_CATS  = ['รายได้','ค่ากิน','ออนไลน์','ช้อปออนไลน์','ของใช้','ของรีวิว',
                'ADS','ลงทุน','สินเชื่อ','จิปาถะ','เดินทาง'];
-const TYPE_COLOR = { 'รายได้':'#3ddc84', 'รายจ่าย':'#FE2C55', 'จ่ายให้อ้วง':'#ffb020', 'จ่ายสินเชื่อ':'#b06cff' };
+const DEFAULT_TYPE_COLOR = { 'รายได้':'#3ddc84', 'รายจ่าย':'#FE2C55', 'จ่ายให้อ้วง':'#ffb020', 'จ่ายสินเชื่อ':'#b06cff' };
 const CAT_COLOR  = ['#FE2C55','#25F4EE','#ffb020','#3ddc84','#b06cff','#ff7ab0',
                     '#4dc3ff','#ffd166','#7ee787','#c792ea','#ff9f7a'];
+
+// ประเภท/หมวดหมู่ แก้ไขได้เองในหน้า ⚙️ ตั้งค่า — เก็บไว้ใน localStorage แยกจากค่าเริ่มต้น
+const loadJSON = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key)); return v || fallback; } catch { return fallback; } };
+let TYPES = loadJSON('rjTypes', [...DEFAULT_TYPES]);
+let CATS  = loadJSON('rjCats',  [...DEFAULT_CATS]);
+let TYPE_COLOR = loadJSON('rjTypeColor', {...DEFAULT_TYPE_COLOR});
+const saveTypes = () => localStorage.setItem('rjTypes', JSON.stringify(TYPES));
+const saveCats  = () => localStorage.setItem('rjCats', JSON.stringify(CATS));
+const saveTypeColor = () => localStorage.setItem('rjTypeColor', JSON.stringify(TYPE_COLOR));
 
 // ข้อมูลเดิม (ชีตแรก) เป็นของเดือน กรกฎาคม 2026 — ใช้ตอน fallback เท่านั้น
 const LEGACY_YEAR = 2026, LEGACY_MONTH = 7;
 
 /* ===================== STATE ===================== */
-let ROWS = [];          // [{วันที่,จำนวนเงิน,ประเภท,รายละเอียด,หมวดหมู่,_row}]
+let ROWS = [];          // [{วันที่,จำนวนเงิน,ประเภท,รายละเอียด,หมวดหมู่,_row,_sheet}]
 let SOURCE = '';        // คำอธิบายแหล่งข้อมูล
 let CAN_WRITE = false;
 let sortKey = HEAD.d, sortDir = -1;
 let chCat, chDay;
+let editing = null;     // null (เพิ่มใหม่) | {row, sheet} (แก้ไขแถวเดิม)
+
+// "หน้า" = ชีตหนึ่งใน Google Sheet พี่แยมตั้งชื่อ/สร้างเองทั้งหมด ไม่มีการสลับ/สร้างหน้าอัตโนมัติตามวันที่
+let PAGES = [];             // [{sheet:'7️⃣ รจ-กรกฎา 2569'}, …] ตามลำดับแท็บจริงใน Sheet จาก listPages
+let CUR_PAGE = null;        // null = ยังไม่เลือก (ใช้หน้าล่าสุด/ที่จำไว้) · '' = เลือก "ทุกหน้า" ชัดเจน · ชื่อชีต = หน้านั้น
 
 const $ = s => document.querySelector(s);
 const api = () => (localStorage.getItem('rjApiUrl') || DEFAULT_API_URL).trim();
@@ -243,31 +302,67 @@ async function fetchCsv(name){
   return text;
 }
 
+async function fetchApiSheet(sheetName){
+  const r = await fetch(`${api()}?sheet=${encodeURIComponent(sheetName)}`);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'FETCH_FAILED');
+  return j.data.map(o=>normalize(o, sheetName)).filter(Boolean);
+}
+
 async function loadData(){
   hush();
-  // 1) มี Apps Script URL → อ่านผ่าน API (ได้เลขแถวมาด้วย แก้ไขได้)
+  // 1) มี Apps Script URL → ดึงรายชื่อ "หน้า" ที่มีจริง (พี่แยมสร้าง/ตั้งชื่อเอง ไม่มีสร้างอัตโนมัติตามวันที่)
   if (api()){
     try{
-      const r = await fetch(`${api()}?sheet=${encodeURIComponent(SHEET_NAME)}`);
-      const j = await r.json();
-      if (j.ok){
-        ROWS = j.data.map(normalize).filter(Boolean);
+      const pr = await fetch(`${api()}?action=listPages`);
+      const pj = await pr.json();
+      if (pj.ok && Array.isArray(pj.pages)){
+        PAGES = pj.pages;
+        if (!PAGES.length){
+          ROWS = []; SOURCE = 'Apps Script API (ยังไม่มีหน้า)'; CAN_WRITE = false;
+          say('ยังไม่มีหน้าเลย — ไปที่ ⚙️ ตั้งค่า สร้างหน้าแรกกันก่อนครับ (หรือรัน <code>setupSheet</code> ใน Apps Script ถ้ายังไม่เคยตั้งค่าตามขั้นที่ 2)','warn');
+          return;
+        }
+        // null (ยังไม่เคยเลือก) หรือเลือกหน้าที่ไม่มีอยู่จริงแล้ว → กลับไปหน้าที่จำไว้ล่าสุด (ไม่งั้นหน้าท้ายสุด) — แต่ถ้าตั้งใจเลือก "ทุกหน้า" ('') ไว้ ให้คงไว้
+        if (CUR_PAGE === null || (CUR_PAGE !== '' && !PAGES.some(p=>p.sheet===CUR_PAGE))){
+          const remembered = localStorage.getItem('rjCurPage');
+          CUR_PAGE = (remembered && PAGES.some(p=>p.sheet===remembered)) ? remembered : PAGES[PAGES.length-1].sheet;
+        }
+        if (CUR_PAGE === ''){
+          const all = await Promise.all(PAGES.map(p=>fetchApiSheet(p.sheet)));
+          ROWS = all.flat();
+        } else {
+          ROWS = await fetchApiSheet(CUR_PAGE);
+          localStorage.setItem('rjCurPage', CUR_PAGE);
+        }
         SOURCE = 'Apps Script API (อ่าน + เขียนได้)'; CAN_WRITE = true;
         return;
       }
-      if (j.error === 'SHEET_NOT_FOUND')
+    }catch(e){ /* listPages ใช้ไม่ได้ (เดพลอยเวอร์ชันเก่า/เน็ตหลุด) — ลองอ่านชีต default ตรงๆ ต่อ */ }
+
+    // 1b) listPages ใช้ไม่ได้ → ลองอ่านชีต default ตรงๆ (backward compat กับเดพลอยเวอร์ชันเก่า)
+    try{
+      const j2 = await (await fetch(`${api()}?sheet=${encodeURIComponent(SHEET_NAME)}`)).json();
+      if (j2.ok){
+        PAGES = [{sheet: SHEET_NAME}]; CUR_PAGE = SHEET_NAME;
+        ROWS = j2.data.map(o=>normalize(o, SHEET_NAME)).filter(Boolean);
+        SOURCE = 'Apps Script API (อ่าน + เขียนได้)'; CAN_WRITE = true;
+        return;
+      }
+      if (j2.error === 'SHEET_NOT_FOUND')
         say('ยังไม่มีชีต <b>“รายการ”</b> ใน Sheet — ไปที่ Apps Script แล้วรันฟังก์ชัน <code>setupSheet</code> หนึ่งครั้งก่อนครับ (ดู README ข้อ 2)','warn');
-      else say('Apps Script ตอบกลับผิดพลาด: '+j.error,'err');
+      else say('Apps Script ตอบกลับผิดพลาด: '+j2.error,'err');
     }catch(e){
       say('เรียก Apps Script ไม่ได้ — เช็ค URL ในหน้า ⚙️ ตั้งค่า ว่าลงท้ายด้วย <code>/exec</code> ครับ','err');
     }
   }
-  // 2) ลองอ่านชีต "รายการ" แบบ CSV (อ่านอย่างเดียว)
+  // 2) ลองอ่านชีต "รายการ" แบบ CSV (อ่านอย่างเดียว — ไม่รู้จักหน้าอื่น ใช้ตอน Apps Script เรียกไม่ได้เท่านั้น)
+  PAGES = []; CUR_PAGE = null;
   try{
     const t = await fetchCsv(SHEET_NAME);
     const d = Papa.parse(t,{header:true,skipEmptyLines:true}).data;
     if (d.length && HEAD.a in d[0]){
-      ROWS = d.map(normalize).filter(Boolean);
+      ROWS = d.map(o=>normalize(o, SHEET_NAME)).filter(Boolean);
       SOURCE = 'CSV ชีต “รายการ” (อ่านอย่างเดียว)'; CAN_WRITE = false;
       if (!api()) say('โหมดอ่านอย่างเดียว — ใส่ Apps Script URL ในหน้า ⚙️ ตั้งค่า เพื่อเพิ่มรายการได้ครับ','warn');
       return;
@@ -286,7 +381,7 @@ async function loadData(){
   }
 }
 
-function normalize(o){
+function normalize(o, sheetName){
   const a = num(o[HEAD.a]);
   const t = String(o[HEAD.t]||'').trim();
   if (!t) return null;
@@ -297,7 +392,7 @@ function normalize(o){
   return { [HEAD.d]:d, [HEAD.a]:a, [HEAD.t]:t,
            [HEAD.n]:String(o[HEAD.n]||'').trim(),
            [HEAD.c]:String(o[HEAD.c]||'').trim() || '(ไม่ระบุ)',
-           _row: o._row || null };
+           _row: o._row || null, _sheet: sheetName || null };
 }
 
 // ชีตเดิม: A=วัน(เว้นว่างได้) B=เงิน C=ประเภท D=รายละเอียด E=หมวดหมู่
@@ -312,17 +407,17 @@ function parseLegacy(text){
     const a = num(r[1]); if (!a && a!==0) continue;
     const dt = new Date(LEGACY_YEAR, LEGACY_MONTH-1, day);
     out.push({ [HEAD.d]: ymd(dt), [HEAD.a]:a, [HEAD.t]:t,
-               [HEAD.n]:String(r[3]||'').trim(), [HEAD.c]:String(r[4]||'').trim()||'(ไม่ระบุ)', _row:null });
+               [HEAD.n]:String(r[3]||'').trim(), [HEAD.c]:String(r[4]||'').trim()||'(ไม่ระบุ)', _row:null, _sheet:null });
   }
   return out;
 }
 
 /* ===================== FILTER ===================== */
 function filtered(){
-  const mo=$('#fMonth').value, ty=$('#fType').value, ca=$('#fCat').value,
+  const ty=$('#fType').value, ca=$('#fCat').value,
         q=$('#fSearch').value.trim().toLowerCase();
+  // ไม่มีการกรอง "หน้า" ตรงนี้ — ROWS คือข้อมูลของหน้าที่เลือกอยู่ (หรือรวมทุกหน้า) มาจาก loadData() แล้ว
   return ROWS.filter(r =>
-    (!mo || (r[HEAD.d]||'').slice(0,7)===mo) &&
     (!ty || r[HEAD.t]===ty) &&
     (!ca || r[HEAD.c]===ca) &&
     (!q  || (r[HEAD.n]+' '+r[HEAD.c]).toLowerCase().includes(q))
@@ -330,11 +425,16 @@ function filtered(){
 }
 
 function buildFilters(){
-  const months=[...new Set(ROWS.map(r=>(r[HEAD.d]||'').slice(0,7)).filter(Boolean))].sort().reverse();
-  const TH=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  fill('#fMonth','ทุกเดือน', months.map(m=>[m, TH[+m.slice(5,7)]+' '+(+m.slice(0,4)+543)]));
+  fill('#fPage','ทุกหน้า', PAGES.map(p=>[p.sheet, p.sheet]));
+  if (CUR_PAGE) $('#fPage').value = CUR_PAGE;
   fill('#fType','ทุกประเภท', [...new Set(ROWS.map(r=>r[HEAD.t]))].map(v=>[v,v]));
   fill('#fCat','ทุกหมวดหมู่', [...new Set(ROWS.map(r=>r[HEAD.c]))].sort().map(v=>[v,v]));
+}
+
+// สลับหน้า = โหลดข้อมูลชีตนั้นใหม่จาก server เสมอ (ไม่ใช่แค่กรองฝั่งเว็บ) — ไม่มีการสลับหน้าอัตโนมัติตามวันที่
+async function onPageChange(){
+  CUR_PAGE = $('#fPage').value;
+  await refresh();
 }
 function fill(sel, allLabel, pairs){
   const el=$(sel), cur=el.value;
@@ -367,6 +467,22 @@ function render(){
     ? catList.map(([c,v],i)=>`<tr>
         <td><span class="pill" style="background:${CAT_COLOR[i%CAT_COLOR.length]}22;color:${CAT_COLOR[i%CAT_COLOR.length]}">${esc(c)}</span></td>
         <td class="num">${v.n}</td><td class="num">${money(v.sum)}</td></tr>`).join('')
+    : '<tr><td colspan="3" class="muted">ไม่มีข้อมูล</td></tr>';
+
+  // ---- สรุปตามประเภท (ทุกประเภท รวมรายได้ด้วย) ----
+  const byType = {};
+  rows.forEach(r=>{
+    byType[r[HEAD.t]] = byType[r[HEAD.t]] || {n:0,sum:0};
+    byType[r[HEAD.t]].n++; byType[r[HEAD.t]].sum += r[HEAD.a];
+  });
+  const typeList = Object.entries(byType).sort((a,b)=>b[1].sum-a[1].sum);
+  $('#sumTypeBody').innerHTML = typeList.length
+    ? typeList.map(([t,v])=>{
+        const col = TYPE_COLOR[t] || '#9a9ab0';
+        return `<tr>
+          <td><span class="pill" style="background:${col}22;color:${col}">${esc(t)}</span></td>
+          <td class="num">${v.n}</td><td class="num">${money(v.sum)}</td></tr>`;
+      }).join('')
     : '<tr><td colspan="3" class="muted">ไม่มีข้อมูล</td></tr>';
 
   drawCat(catList);
@@ -417,19 +533,18 @@ function drawList(rows){
       <td>${esc(r[HEAD.n])}</td>
       <td class="muted">${esc(r[HEAD.c])}</td>
       <td class="num" style="color:${r[HEAD.t]==='รายได้'?'var(--green)':'var(--tx)'}">${money(r[HEAD.a])}</td>
-      <td>${r._row&&CAN_WRITE?`<button class="btn ghost" style="padding:3px 8px;font-size:12px" onclick="editRow(${r._row})">แก้</button>`:''}</td>
+      <td>${r._row&&CAN_WRITE?`<button class="btn ghost" style="padding:3px 8px;font-size:12px" onclick="editRow(${r._row},'${String(r._sheet||'').replace(/'/g,"\\'")}')">แก้</button>`:''}</td>
     </tr>`;
   }).join('') : '<tr><td colspan="6" class="muted">ไม่มีรายการที่ตรงกับตัวกรอง</td></tr>';
 }
 
 /* ===================== MODAL / SAVE ===================== */
-let editing = null;
 
-function openModal(row, big){
-  editing = row || null;
-  $('#mTitle').textContent = row ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
+function openModal(editRef, big){
+  editing = editRef || null;   // editRef: null (เพิ่มใหม่) | {row, sheet} (แก้ไข)
+  $('#mTitle').textContent = editing ? 'แก้ไขรายการ' : 'เพิ่มรายการ';
   $('#mErr').className='msg err';
-  const r = row ? ROWS.find(x=>x._row===row) : null;
+  const r = editing ? ROWS.find(x=>x._row===editing.row && x._sheet===editing.sheet) : null;
   $('#mDate').value = r ? r[HEAD.d] : ymd(new Date());
   $('#mAmt').value  = r ? r[HEAD.a] : '';
   $('#mNote').value = r ? r[HEAD.n] : '';
@@ -440,7 +555,7 @@ function openModal(row, big){
   if (!CAN_WRITE) showMErr('ยังบันทึกไม่ได้ — ต้องใส่ Apps Script URL ในหน้า ⚙️ ตั้งค่า ก่อนครับ');
 }
 function showMErr(t){ $('#mErr').className='msg err on'; $('#mErr').innerHTML=t; }
-window.editRow = r => openModal(r);
+window.editRow = (row, sheet) => openModal({row, sheet: sheet || null});
 
 async function saveEntry(){
   const d=$('#mDate').value, a=parseFloat($('#mAmt').value),
@@ -448,9 +563,13 @@ async function saveEntry(){
   if (!d) return showMErr('กรุณาเลือกวันที่ครับ');
   if (isNaN(a)) return showMErr('กรุณากรอกจำนวนเงินครับ');
   if (!CAN_WRITE) return showMErr('ยังไม่ได้ตั้งค่า Apps Script URL — ไปที่หน้า ⚙️ ตั้งค่า ครับ');
+  // เพิ่มรายการใหม่ต้องมีหน้าที่เลือกอยู่ชัดเจน — ไม่มีการเดา/สร้างหน้าอัตโนมัติจากวันที่
+  if (!editing && !CUR_PAGE) return showMErr('เลือกหน้าที่จะเพิ่มรายการก่อนครับ (ตอนดู "ทุกหน้า" เพิ่มรายการไม่ได้)');
 
   const btn=$('#mSave'); btn.disabled=true; btn.textContent='กำลังบันทึก…';
-  const payload = { sheet:SHEET_NAME, action: editing?'update':'add', row:editing,
+  // เพิ่มใหม่ → เข้าหน้าที่เลือกอยู่ตอนนั้นเสมอ (CUR_PAGE) ไม่ว่าจะพิมพ์วันที่อะไรก็ตาม
+  // แก้ไข → ต้องส่ง sheet ของแถวเดิมไปด้วยเพราะเลขแถวอย่างเดียวกำกวมข้ามหน้ากันได้
+  const payload = { sheet: editing ? editing.sheet : CUR_PAGE, action: editing?'update':'add', row: editing?editing.row:null,
     data:{ [HEAD.d]:d, [HEAD.a]:a, [HEAD.t]:t, [HEAD.n]:n, [HEAD.c]:c } };
   try{
     await fetch(api(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -464,12 +583,94 @@ async function saveEntry(){
   }finally{ btn.disabled=false; btn.textContent='บันทึกลง Sheet'; }
 }
 
-/* ===================== INIT ===================== */
-async function refresh(){ await loadData(); buildFilters(); render(); $('#srcInfo').textContent=SOURCE; }
-
-function init(){
+/* ===================== ประเภท / หมวดหมู่ ===================== */
+function renderTypeCatUI(){
+  $('#typeChips').innerHTML = TYPES.map(t=>{
+    const c = TYPE_COLOR[t] || '#9a9ab0';
+    return `<span class="chip" style="background:${c}22;color:${c}">${esc(t)}
+      <button onclick="removeType('${esc(t).replace(/'/g,"\\'")}')" title="ลบ">×</button></span>`;
+  }).join('');
+  $('#catChips').innerHTML = CATS.map(c=>
+    `<span class="chip">${esc(c)}
+      <button onclick="removeCat('${esc(c).replace(/'/g,"\\'")}')" title="ลบ">×</button></span>`
+  ).join('');
   $('#mType').innerHTML = TYPES.map(v=>`<option>${v}</option>`).join('');
   $('#mCat').innerHTML  = CATS.map(v=>`<option>${v}</option>`).join('');
+}
+function addType(){
+  const el=$('#newType'); const v=el.value.trim();
+  if (!v) return;
+  if (TYPES.includes(v)) { el.value=''; return say('มีประเภทนี้อยู่แล้วครับ','warn'); }
+  TYPES.push(v);
+  TYPE_COLOR[v] = CAT_COLOR[(TYPES.length-1) % CAT_COLOR.length];
+  saveTypes(); saveTypeColor();
+  el.value=''; renderTypeCatUI(); hush();
+}
+function removeType(v){
+  if (TYPES.length<=1) return say('ต้องเหลือประเภทอย่างน้อย 1 อย่างครับ','warn');
+  TYPES = TYPES.filter(x=>x!==v);
+  delete TYPE_COLOR[v];
+  saveTypes(); saveTypeColor();
+  renderTypeCatUI();
+}
+function addCat(){
+  const el=$('#newCat'); const v=el.value.trim();
+  if (!v) return;
+  if (CATS.includes(v)) { el.value=''; return say('มีหมวดหมู่นี้อยู่แล้วครับ','warn'); }
+  CATS.push(v);
+  saveCats();
+  el.value=''; renderTypeCatUI(); hush();
+}
+function removeCat(v){
+  if (CATS.length<=1) return say('ต้องเหลือหมวดหมู่อย่างน้อย 1 อย่างครับ','warn');
+  CATS = CATS.filter(x=>x!==v);
+  saveCats();
+  renderTypeCatUI();
+}
+window.removeType = removeType;
+window.removeCat  = removeCat;
+
+/* ===================== หน้า (ชีต) ===================== */
+function renderPageChips(){
+  $('#pageChips').innerHTML = PAGES.length
+    ? PAGES.map(p=>`<span class="chip">${esc(p.sheet)}</span>`).join('')
+    : '<span class="muted">ยังไม่มีหน้าเลยครับ — พิมพ์ชื่อด้านล่างเพื่อสร้างหน้าแรก</span>';
+}
+async function createPage(){
+  const el=$('#newPage'); const name=el.value.trim();
+  if (!name) return;
+  if (!CAN_WRITE) return say('ต้องตั้งค่า Apps Script URL ก่อนถึงจะสร้างหน้าได้ครับ','warn');
+  const btn=$('#addPageBtn'); btn.disabled=true; btn.textContent='กำลังสร้าง…';
+  try{
+    const r = await fetch(api(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({ action:'createPage', name }) });
+    const j = await r.json();
+    if (!j.ok){
+      if (j.error==='PAGE_EXISTS') say('มีหน้าชื่อนี้อยู่แล้วครับ','warn');
+      else say('สร้างหน้าไม่สำเร็จ: '+j.error,'err');
+      return;
+    }
+    el.value='';
+    CUR_PAGE = j.sheet;   // สร้างแล้วสลับไปดูหน้าใหม่นี้เลย
+    await refresh();
+    say(`สร้างหน้า "${esc(j.sheet)}" เรียบร้อยครับ ✅`,'ok');
+    setTimeout(hush, 3000);
+  }catch(e){
+    say('สร้างหน้าไม่สำเร็จ: '+e.message,'err');
+  }finally{ btn.disabled=false; btn.textContent='+ สร้างหน้า'; }
+}
+
+/* ===================== INIT ===================== */
+async function refresh(){
+  await loadData(); buildFilters(); render(); renderPageChips();
+  $('#srcInfo').textContent = SOURCE;
+  $('#sheetInfo').textContent = CUR_PAGE
+    ? `กำลังดูหน้า: "${CUR_PAGE}"`
+    : (PAGES.length ? 'กำลังดู: ทุกหน้า (รวมทุกชีต)' : '');
+}
+
+function init(){
+  renderTypeCatUI();
   $('#sid').textContent = SHEET_ID;
   $('#openSheet').href  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
   $('#apiUrl').value    = api();
@@ -483,7 +684,8 @@ function init(){
   document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{
     const k=th.dataset.s; sortDir = (k===sortKey) ? -sortDir : -1; sortKey=k; drawList(filtered());
   });
-  ['#fMonth','#fType','#fCat'].forEach(s=>$(s).onchange=render);
+  ['#fType','#fCat'].forEach(s=>$(s).onchange=render);
+  $('#fPage').onchange = onPageChange;
   $('#fSearch').oninput = render;
   $('#reload').onclick  = refresh;
   $('#addBtn').onclick  = ()=>openModal(null);
@@ -494,6 +696,12 @@ function init(){
   $('#modal').onclick   = e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
   $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); refresh(); };
   $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=api(); refresh(); };
+  $('#addTypeBtn').onclick = addType;
+  $('#addCatBtn').onclick  = addCat;
+  $('#newType').onkeydown = e=>{ if(e.key==='Enter') addType(); };
+  $('#newCat').onkeydown  = e=>{ if(e.key==='Enter') addCat(); };
+  $('#addPageBtn').onclick = createPage;
+  $('#newPage').onkeydown = e=>{ if(e.key==='Enter') createPage(); };
 
   refresh();
 }

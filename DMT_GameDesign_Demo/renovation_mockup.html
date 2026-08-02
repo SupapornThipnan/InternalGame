@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 Demetria — Mockup ระบบบูรณะด่าน</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:#bfe3a0;
+  background:radial-gradient(circle at 50% 35%, #d4eeb8 0%, #a9d685 70%, #8ec46a 100%);
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;
+  color:#5a4326;overflow:hidden;
+}
+.frame{position:relative;width:960px;max-width:100%;height:560px;border-radius:22px;overflow:hidden;
+  box-shadow:0 18px 50px rgba(90,67,38,.35);border:3px solid #7fae5a}
+
+/* ===== ฉากไอโซเมตริก ===== */
+.scene{position:absolute;inset:0;
+  background:radial-gradient(circle at 42% 42%, #d8f0bd 0%, #a9d685 68%, #86bd63 100%)}
+.deco{position:absolute;font-size:34px;filter:drop-shadow(0 3px 2px rgba(80,60,30,.18))}
+.tree1{top:24px;left:30px;font-size:56px}
+.tree2{top:60px;left:120px;font-size:44px}
+.tree3{bottom:130px;left:26px;font-size:50px}
+.bush1{bottom:60px;left:150px}
+.rock1{top:150px;left:60px;font-size:26px}
+.flower1{bottom:100px;left:90px;font-size:22px}
+.pond{bottom:24px;left:40px;font-size:60px}
+
+/* แปลงบูรณะ (isometric plot) กลางฉาก */
+.plot{position:absolute;top:150px;left:290px;width:340px;height:250px;transform:rotateX(0)}
+.grid{position:absolute;top:60px;left:40px;
+  transform:rotate(0);display:grid;grid-template-columns:repeat(4,64px);grid-template-rows:repeat(3,38px);gap:4px;
+  transform:perspective(600px) rotateX(55deg) rotateZ(-45deg)}
+.cell{width:64px;height:38px;border:2px dashed rgba(120,90,50,.5);border-radius:6px;
+  background:rgba(180,140,90,.28);display:flex;align-items:center;justify-content:center;font-size:22px}
+.cell.filled{background:rgba(150,110,60,.55);border-style:solid;border-color:rgba(110,80,40,.7)}
+.cell.ghost{background:rgba(245,220,150,.5);border-color:#e8b84a;border-style:solid;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,184,74,.6)}50%{box-shadow:0 0 0 6px rgba(232,184,74,0)}}
+
+/* มาสคอต น้องโคโค่ */
+.coco{position:absolute;bottom:120px;left:250px;text-align:center;z-index:5;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.coco .body{font-size:64px;filter:drop-shadow(0 4px 3px rgba(80,60,30,.25))}
+.bubble{position:absolute;bottom:190px;left:210px;max-width:230px;background:#fffdf5;border:2.5px solid #cbb083;
+  border-radius:16px;padding:11px 14px;font-size:13px;line-height:1.5;color:#6a5334;z-index:6;
+  box-shadow:0 6px 16px rgba(90,67,38,.2)}
+.bubble b{color:#c47a2a}
+.bubble::after{content:'';position:absolute;bottom:-13px;left:44px;border:8px solid transparent;border-top-color:#fffdf5;border-bottom:0}
+.bubble::before{content:'';position:absolute;bottom:-17px;left:42px;border:9px solid transparent;border-top-color:#cbb083;border-bottom:0}
+
+/* ===== HUD บน ===== */
+.topbar{position:absolute;top:14px;left:16px;right:16px;display:flex;align-items:center;gap:10px;z-index:10}
+.coin{background:#fbf0d4;border:2.5px solid #e0b967;border-radius:22px;padding:5px 14px;font-weight:800;
+  color:#b5791f;font-size:15px;display:flex;align-items:center;gap:5px;box-shadow:0 3px 8px rgba(120,90,40,.2)}
+.steps{flex:1;display:flex;align-items:center;justify-content:center;gap:6px}
+.step{display:flex;align-items:center;gap:6px;background:rgba(255,253,245,.6);border:2px solid #cbb083;
+  border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:#9a835c}
+.step.done{background:#c8e6a6;border-color:#8fb865;color:#5a7d32}
+.step.active{background:#fbe6b0;border-color:#e8b84a;color:#a5731a;transform:scale(1.06);box-shadow:0 3px 10px rgba(200,150,40,.3)}
+.step .n{width:18px;height:18px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:11px}
+.step.done .n{background:#8fb865;color:#fff}
+.step.active .n{background:#e8b84a;color:#fff}
+.arrow{color:#9a835c;font-size:12px}
+
+/* ===== แผงแคตตาล็อกเฟอร์ (ขวา) ===== */
+.catalog{position:absolute;top:56px;right:16px;bottom:16px;width:280px;background:#e8d5ac;
+  border:3px solid #b8965f;border-radius:18px;padding:12px;z-index:10;display:flex;flex-direction:column;
+  box-shadow:0 10px 26px rgba(90,67,38,.3)}
+.cat-head{display:flex;align-items:center;gap:8px;padding:6px 8px 12px;border-bottom:2px solid #c9ad78}
+.cat-head .ic{font-size:20px}
+.cat-head b{font-size:15px;color:#6a5334}
+.cat-tabs{display:flex;gap:5px;padding:10px 2px}
+.tab{flex:1;text-align:center;padding:5px;border-radius:10px;font-size:11px;font-weight:700;cursor:default;
+  background:#d8c193;color:#8a7048;border:2px solid transparent}
+.tab.on{background:#fbf0d4;border-color:#e0b967;color:#b5791f}
+.cat-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:hidden;align-content:start;margin-top:4px}
+.furn{background:#fbf6e8;border:2px solid #cbb083;border-radius:12px;padding:8px 6px;text-align:center;position:relative}
+.furn.req{border-color:#e0955a;background:#fce9d6}
+.furn .fem{font-size:30px;display:block;margin-bottom:3px}
+.furn .fn{font-size:10px;color:#6a5334;font-weight:600;line-height:1.2;display:block;min-height:24px}
+.furn .cost{font-size:11px;color:#b5791f;font-weight:800;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:2px}
+.furn .badge{position:absolute;top:-7px;right:-6px;background:#e0955a;color:#fff;font-size:8px;font-weight:800;
+  padding:2px 6px;border-radius:8px}
+.furn.locked{opacity:.5}
+.furn.locked .fem{filter:grayscale(1)}
+
+/* ปุ่มล่าง */
+.btn-done{position:absolute;bottom:14px;left:16px;background:#8fb865;border:2.5px solid #6d9647;color:#fff;
+  font-weight:800;font-size:14px;padding:10px 22px;border-radius:14px;z-index:10;cursor:default;
+  box-shadow:0 5px 14px rgba(90,130,50,.35);display:flex;align-items:center;gap:6px}
+
+/* side toolbar เดิม (ซ้าย) จำลอง */
+.side{position:absolute;top:120px;left:16px;width:44px;background:#e8d5ac;border:2.5px solid #b8965f;
+  border-radius:14px;padding:7px 0;display:flex;flex-direction:column;gap:8px;align-items:center;z-index:9}
+.side .si{font-size:20px;width:32px;height:32px;border-radius:9px;background:#fbf6e8;border:1.5px solid #cbb083;
+  display:flex;align-items:center;justify-content:center}
+.side .si.on{background:#fbe6b0;border-color:#e8b84a}
+
+.tag{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:10px;color:#6a5334;
+  background:rgba(255,253,245,.7);padding:3px 12px;border-radius:10px;z-index:10;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="scene">
+    <!-- ธรรมชาติรอบๆ -->
+    <div class="deco tree1">🌳</div>
+    <div class="deco tree2">🌲</div>
+    <div class="deco tree3">🌳</div>
+    <div class="deco bush1">🌿</div>
+    <div class="deco rock1">🪨</div>
+    <div class="deco flower1">🌸</div>
+    <div class="deco pond">💧</div>
+
+    <!-- HUD บน: เหรียญ + 4 ขั้นบูรณะ -->
+    <div class="topbar">
+      <div class="coin">🪙 1,240</div>
+      <div class="steps">
+        <div class="step done"><span class="n">✓</span> 🧹 สะอาด</div>
+        <span class="arrow">›</span>
+        <div class="step done"><span class="n">✓</span> 🔨 รีโนเวท</div>
+        <span class="arrow">›</span>
+        <div class="step active"><span class="n">3</span> 🪑 วางเฟอร์</div>
+        <span class="arrow">›</span>
+        <div class="step"><span class="n">4</span> 📖 ไดอารี่</div>
+      </div>
+    </div>
+
+    <!-- toolbar ซ้าย (จำลองของเกมจริง) -->
+    <div class="side">
+      <div class="si">🎒</div>
+      <div class="si">📜</div>
+      <div class="si on">🪑</div>
+      <div class="si">🗺️</div>
+    </div>
+
+    <!-- แปลงบูรณะ + กริดวางเฟอร์ -->
+    <div class="plot">
+      <div class="grid">
+        <div class="cell filled">🌱</div>
+        <div class="cell filled">🌱</div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell filled">🌱</div>
+        <div class="cell ghost">🥕</div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell"></div>
+        <div class="cell filled">🪧</div>
+        <div class="cell"></div>
+      </div>
+    </div>
+
+    <!-- มาสคอต + ไดอารี่บับเบิล -->
+    <div class="bubble">โคโค่: มาช่วยกันวาง <b>แปลงผัก</b> กับ <b>รั้วไม้</b> ให้ครบก่อนนะ~ แล้วค่อยแต่งเพิ่มตามใจเลย! ✨</div>
+    <div class="coco"><div class="body">🌱</div></div>
+
+    <!-- แคตตาล็อกเฟอร์ (ขวา) แบบ Serenitea Pot -->
+    <div class="catalog">
+      <div class="cat-head"><span class="ic">🪑</span><b>แคตตาล็อกเฟอร์นิเจอร์</b></div>
+      <div class="cat-tabs">
+        <div class="tab on">ชุดหลัก</div>
+        <div class="tab">ตกแต่ง</div>
+        <div class="tab">ปลูก</div>
+      </div>
+      <div class="cat-grid">
+        <div class="furn req"><span class="badge">บังคับ</span><span class="fem">🌱</span><span class="fn">แปลงผัก</span><span class="cost">✓ วางแล้ว</span></div>
+        <div class="furn req"><span class="badge">บังคับ</span><span class="fem">🪵</span><span class="fn">รั้วไม้</span><span class="cost">🪙 ×2</span></div>
+        <div class="furn req"><span class="badge">บังคับ</span><span class="fem">🪧</span><span class="fn">ป้ายฟาร์ม</span><span class="cost">✓ วางแล้ว</span></div>
+        <div class="furn"><span class="fem">🚿</span><span class="fn">บัวรดน้ำ</span><span class="cost">🪙 120</span></div>
+        <div class="furn"><span class="fem">🪺</span><span class="fn">ตะกร้าเก็บของ</span><span class="cost">🪙 200</span></div>
+        <div class="furn"><span class="fem">🏮</span><span class="fn">โคมไฟสวน</span><span class="cost">🪙 350</span></div>
+        <div class="furn locked"><span class="fem">🌻</span><span class="fn">กระถางทานตะวัน</span><span class="cost">🔒 ล็อค</span></div>
+        <div class="furn locked"><span class="fem">🪑</span><span class="fn">ม้านั่งไม้</span><span class="cost">🔒 ล็อค</span></div>
+      </div>
+    </div>
+
+    <!-- ปุ่มจบขั้น -->
+    <div class="btn-done">✓ วางครบแล้ว → เขียนไดอารี่</div>
+
+    <div class="tag">🖼️ Mockup — ขั้นที่ 3 "วางเฟอร์นิเจอร์" ของวงจรบูรณะด่าน farm_a (ด่านบทเรียน)</div>
+  </div>
+</div>
+</body>
+</html>

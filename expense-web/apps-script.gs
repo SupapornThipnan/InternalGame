@@ -8,20 +8,13 @@
  */
 
 var SS = SpreadsheetApp.getActiveSpreadsheet();
-var SHEET_NAME = 'รายการ';
+var SHEET_NAME = 'รายการ';           // ชื่อชีต default ตอน setupSheet ครั้งแรก
 var HEADERS = ['วันที่', 'จำนวนเงิน', 'ประเภท', 'รายละเอียด', 'หมวดหมู่'];
 
-/* ============================================================
-   1) ตั้งค่าครั้งแรก — รันฟังก์ชันนี้ 1 ครั้งก่อน deploy
-   สร้างชีต "รายการ" + ย้ายข้อมูลเดิมจากชีตเก่ามาให้อัตโนมัติ
-   ============================================================ */
-function setupSheet() {
-  var sheet = SS.getSheetByName(SHEET_NAME);
-  if (sheet) {
-    SpreadsheetApp.getUi().alert('มีชีต "' + SHEET_NAME + '" อยู่แล้ว ไม่ได้สร้างซ้ำครับ');
-    return;
-  }
-  sheet = SS.insertSheet(SHEET_NAME);
+/**
+ * จัดฟอร์แมตหัวตาราง/คอลัมน์ให้ชีตใหม่ — ใช้ร่วมกันทั้ง setupSheet และ createPage
+ */
+function formatNewSheet_(sheet) {
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
     .setFontWeight('bold').setBackground('#222').setFontColor('#25F4EE');
   sheet.setFrozenRows(1);
@@ -32,10 +25,51 @@ function setupSheet() {
   sheet.setColumnWidth(3, 110);
   sheet.setColumnWidth(4, 220);
   sheet.setColumnWidth(5, 130);
+}
+
+/**
+ * เช็คว่าชีตนี้ "เป็นหน้ารายรับ-รายจ่าย" ไหม — ดูจากหัวตารางแถวแรกว่าตรงกับ HEADERS เป๊ะ
+ * ใช้แทนการเดาชื่อชีต เพราะพี่แยมตั้งชื่อหน้าเองได้อิสระ (เช่น "7️⃣ รจ-กรกฎา 2569")
+ */
+function headersMatch_(sheet) {
+  if (sheet.getLastColumn() < HEADERS.length) return false;
+  var row1 = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
+  for (var i = 0; i < HEADERS.length; i++) {
+    if (String(row1[i]).trim() !== HEADERS[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * รายชื่อ "หน้า" ทั้งหมดที่มีอยู่จริง เรียงตามลำดับแท็บใน Google Sheet (พี่แยมคุมลำดับเองได้)
+ */
+function listPages_() {
+  var sheets = SS.getSheets();
+  var out = [];
+  for (var i = 0; i < sheets.length; i++) {
+    if (headersMatch_(sheets[i])) out.push({ sheet: sheets[i].getName() });
+  }
+  return out;
+}
+
+/* ============================================================
+   1) ตั้งค่าครั้งแรก — รันฟังก์ชันนี้ 1 ครั้งก่อน deploy (สำหรับติดตั้งใหม่)
+   สร้างชีต "รายการ" + ย้ายข้อมูลเดิมจากชีตเก่ามาให้อัตโนมัติ
+   หลังจากนี้จะสร้าง "หน้า" เพิ่มได้เองจากหน้า ⚙️ ตั้งค่า ในเว็บ (ไม่ต้องรันฟังก์ชันอะไรอีก)
+   ============================================================ */
+function setupSheet() {
+  var sheet = SS.getSheetByName(SHEET_NAME);
+  if (sheet) {
+    SpreadsheetApp.getUi().alert('มีชีต "' + SHEET_NAME + '" อยู่แล้ว ไม่ได้สร้างซ้ำครับ');
+    return;
+  }
+  sheet = SS.insertSheet(SHEET_NAME);
+  formatNewSheet_(sheet);
 
   var moved = migrateOldSheet_(sheet);
   SpreadsheetApp.getUi().alert(
-    'สร้างชีต "' + SHEET_NAME + '" เรียบร้อย\nย้ายข้อมูลเดิมมาให้ ' + moved + ' รายการครับ'
+    'สร้างชีต "' + SHEET_NAME + '" เรียบร้อย\nย้ายข้อมูลเดิมมาให้ ' + moved + ' รายการครับ\n\n' +
+    'จะเปลี่ยนชื่อชีตนี้ หรือสร้างหน้าใหม่เพิ่มทีหลังจากในเว็บก็ได้เลยครับ (⚙️ ตั้งค่า → จัดการหน้า)'
   );
 }
 
@@ -115,10 +149,17 @@ function migrateAdsTypeToExpense() {
 }
 
 /* ============================================================
-   2) อ่านข้อมูล — GET ?sheet=รายการ
+   2) อ่านข้อมูล
+   - GET ?action=listPages   → รายชื่อ "หน้า" (ชีต) ที่มีอยู่จริง ตามลำดับแท็บใน Sheet
+   - GET ?sheet=<ชื่อหน้า>    → ข้อมูลของหน้านั้น
    ============================================================ */
 function doGet(e) {
   try {
+    var action = e && e.parameter && e.parameter.action;
+    if (action === 'listPages') {
+      return json({ ok: true, pages: listPages_() });
+    }
+
     var name = (e && e.parameter && e.parameter.sheet) || SHEET_NAME;
     var sheet = SS.getSheetByName(name);
     if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
@@ -145,18 +186,30 @@ function doGet(e) {
 }
 
 /* ============================================================
-   3) เขียนข้อมูล — POST { action:'add'|'update', data:{...}, row:N }
+   3) เขียนข้อมูล — POST { action:'add'|'update'|'createPage', ... }
+   - 'add'/'update' เขียนลง sheet ที่ระบุมาตรงๆ เท่านั้น (หน้าที่พี่แยมเลือกอยู่ตอนนั้น)
+     ไม่มีการเดา/สร้างหน้าใหม่อัตโนมัติจากวันที่ — พี่แยมคุมเองทั้งหมดว่าจะเพิ่มเข้าหน้าไหน
+   - 'createPage' สร้างหน้าใหม่ชื่อที่ระบุ พร้อมฟอร์แมตหัวตารางให้พร้อมใช้
    ไม่มี action ลบ โดยตั้งใจ — กันข้อมูลหายถาวร
    ============================================================ */
 function doPost(e) {
   try {
     var p = JSON.parse(e.postData.contents);
-    var sheet = SS.getSheetByName(p.sheet || SHEET_NAME);
-    if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
 
-    var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    if (p.action === 'createPage') {
+      var name = String(p.name || '').trim();
+      if (!name) return json({ ok: false, error: 'MISSING_NAME' });
+      if (SS.getSheetByName(name)) return json({ ok: false, error: 'PAGE_EXISTS' });
+      var newSheet = SS.insertSheet(name);
+      formatNewSheet_(newSheet);
+      return json({ ok: true, sheet: newSheet.getName() });
+    }
 
     if (p.action === 'add') {
+      if (!p.sheet) return json({ ok: false, error: 'MISSING_SHEET' });
+      var sheet = SS.getSheetByName(p.sheet);
+      if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
       var row = headers.map(function (h) {
         var v = p.data[h];
         if (h === 'วันที่' && v) return new Date(v + 'T00:00:00');
@@ -164,10 +217,13 @@ function doPost(e) {
         return v === undefined ? '' : v;
       });
       sheet.appendRow(row);
-      return json({ ok: true, row: sheet.getLastRow() });
+      return json({ ok: true, sheet: sheet.getName(), row: sheet.getLastRow() });
     }
 
     if (p.action === 'update') {
+      var sheet = SS.getSheetByName(p.sheet);
+      if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
       var rowIdx = Number(p.row);
       if (!rowIdx || rowIdx < 2) return json({ ok: false, error: 'BAD_ROW' });
       headers.forEach(function (h, i) {

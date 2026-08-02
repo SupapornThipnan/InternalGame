@@ -126,7 +126,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.0 · กำลังโหลด…</span>
+  <span id="status">v5.3 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -260,6 +260,7 @@
       <div class="card"><div class="label">เฉลี่ย/วันที่ต้องลง</div><div class="value pink" id="qAvgPerDay">–</div></div>
     </div>
     <div class="toolbar" style="margin-bottom:6px">
+      <select id="queueMonthSelect" style="max-width:220px"></select>
       <button class="btn ghost" id="btnToggleStages">🔽 ซ่อน Scripts/Sounds/Footage/Final</button>
       <button class="btn ghost" id="btnToggleAllGroups">📂 กางวันที่ทั้งหมด</button>
       <button class="btn ghost" id="btnNextTiktok">🎵 คิวลง TIKTOK VDO</button>
@@ -363,6 +364,7 @@
       <p id="cmFcNote" style="font-size:.78rem;color:var(--muted);margin-top:10px"></p>
     </div>
     <div class="toolbar">
+      <select id="commissionMonthSelect" style="max-width:220px"></select>
       <label style="align-self:center;color:var(--muted);font-size:.85rem">วันที่</label>
       <input type="date" id="cmDay">
       <button class="btn ghost" id="btnCmReload">🔄 โหลดของวันนี้</button>
@@ -399,13 +401,13 @@
       </div>
       <p id="testResult"></p>
 
-      <h3 style="margin-top:24px">📅 คิวคลิป (ชีต TODOLIST เดือนนี้)</h3>
-      <p>พิมพ์หรือเลือกชื่อชีต TODOLIST ของเดือนปัจจุบัน เพื่อให้แท็บ "📅 คิวคลิป" ดึงรายการมาแสดง — กด "โหลดรายชื่อชีต" เพื่อดึงชื่อชีตทั้งหมดมาช่วยเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
-      <label>ชื่อชีต TODOLIST</label>
-      <input id="todolistSheet" list="sheetNameList" placeholder="เช่น 7️⃣ 📝 TODOLIST-JULY26">
+      <h3 style="margin-top:24px">📅 คิวคลิป (จับคู่เดือน ↔ ชื่อชีต TODOLIST)</h3>
+      <p>ตั้งชื่อชีต TODOLIST ของแต่ละเดือนไว้ล่วงหน้าได้เลย แล้วไปสลับดูเดือนไหนก็ได้จากช่อง "เลือกเดือน" ในแท็บ 📅 คิวคลิป — กด "โหลดรายชื่อชีต" ช่วยดึงชื่อชีตทั้งหมดมาเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
+      <div id="todolistMonthRows"></div>
       <datalist id="sheetNameList"></datalist>
-      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn" id="btnSaveTodolist">💾 บันทึก</button>
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn ghost" id="btnAddTodolistMonth">➕ เพิ่มเดือน</button>
+        <button class="btn" id="btnSaveTodolistMap">💾 บันทึกทั้งหมด</button>
         <button class="btn ghost" id="btnLoadSheetList">🔄 โหลดรายชื่อชีต</button>
       </div>
 
@@ -425,13 +427,13 @@
         <button class="btn" id="btnSaveTiktokSheetId">💾 บันทึก</button>
       </div>
 
-      <h3 style="margin-top:24px">💰 บันทึกค่าคอม (ชีตเดือนนี้)</h3>
-      <p>พิมพ์หรือเลือกชื่อชีต "บันทึกค่าคอม" ของเดือนปัจจุบัน เพื่อให้แท็บ "💰 บันทึกค่าคอม" อ่าน/เขียนถูกชีต — กด "โหลดรายชื่อชีต" เพื่อดึงชื่อชีตทั้งหมดมาช่วยเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
-      <label>ชื่อชีตบันทึกค่าคอม</label>
-      <input id="commissionSheetInput" list="commissionSheetList" placeholder="เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26">
+      <h3 style="margin-top:24px">💰 บันทึกค่าคอม (จับคู่เดือน ↔ ชื่อชีต)</h3>
+      <p>ตั้งชื่อชีต "บันทึกค่าคอม" ของแต่ละเดือนไว้ล่วงหน้าได้เลย แล้วไปสลับดูเดือนไหนก็ได้จากช่อง "เลือกเดือน" ในแท็บ 💰 บันทึกค่าคอม — กด "โหลดรายชื่อชีต" ช่วยดึงชื่อชีตทั้งหมดมาเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
+      <div id="commissionMonthRows"></div>
       <datalist id="commissionSheetList"></datalist>
-      <div class="actions" style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn" id="btnSaveCommissionSheet">💾 บันทึก</button>
+      <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn ghost" id="btnAddCommissionMonth">➕ เพิ่มเดือน</button>
+        <button class="btn" id="btnSaveCommissionMap">💾 บันทึกทั้งหมด</button>
         <button class="btn ghost" id="btnLoadCommissionSheetList">🔄 โหลดรายชื่อชีต</button>
       </div>
     </div>
@@ -579,7 +581,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.0';
+const VERSION = 'v5.3';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -604,10 +606,58 @@ const $ = (s) => document.querySelector(s);
 const num = (v) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
 const baht = (v) => num(v).toLocaleString('th-TH', { maximumFractionDigits: 0 });
 const apiUrl = () => localStorage.getItem('appsScriptUrl') || DEFAULT_API_URL;
-const todolistSheet = () => localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
+
+/* ---- TODOLIST เดือน ↔ ชื่อชีต: จับคู่หลายเดือนไว้ล่วงหน้า สลับดูได้จากแท็บคิวคลิป ---- */
+const todolistMonthKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+function getTodolistMap() {
+  try { return JSON.parse(localStorage.getItem('todolistSheetMap') || '{}'); } catch (e) { return {}; }
+}
+function saveTodolistMap(map) { localStorage.setItem('todolistSheetMap', JSON.stringify(map)); }
+// ครั้งแรกที่ยังไม่มี map เลย (ผู้ใช้เก่าที่เคยตั้งชื่อชีตเดี่ยวไว้) → ย้ายค่าเดิมเข้า map ให้เดือนปัจจุบัน กันต้องตั้งใหม่หมด
+(function migrateTodolistSheet() {
+  if (Object.keys(getTodolistMap()).length === 0) {
+    const legacy = localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
+    saveTodolistMap({ [todolistMonthKey()]: legacy });
+  }
+})();
+function selectedTodolistMonth() {
+  const map = getTodolistMap();
+  const stored = localStorage.getItem('todolistSelectedMonth');
+  if (stored && map[stored] !== undefined) return stored;
+  const cur = todolistMonthKey();
+  if (map[cur] !== undefined) return cur;
+  const months = Object.keys(map).sort();
+  return months.length ? months[months.length - 1] : cur;
+}
+const todolistSheet = () => getTodolistMap()[selectedTodolistMonth()] || DEFAULT_TODOLIST_SHEET;
 // ถ้าพี่ย้ายชีตยอดขาย TikTok ไปไว้ Google Sheet ไฟล์อื่น (กันไฟล์หลักหนัก) ใส่ Sheet ID ไฟล์นั้นไว้ตรงนี้ — ว่างไว้ = ดึงจากไฟล์หลักเหมือนเดิม
 const tiktokSheetId = () => localStorage.getItem('tiktokSheetId') || DEFAULT_TIKTOK_SHEET_ID;
-const commissionSheet = () => localStorage.getItem('commissionSheet') || DEFAULT_COMMISSION_SHEET;
+
+/* ---- บันทึกค่าคอม เดือน ↔ ชื่อชีต: จับคู่หลายเดือนไว้ล่วงหน้าเหมือน TODOLIST ---- */
+const commissionMonthKey = () => todolistMonthKey(); // รูปแบบเดือนเดียวกัน (YYYY-MM) ใช้ตัวช่วยเดิมได้เลย
+function getCommissionMap() {
+  try { return JSON.parse(localStorage.getItem('commissionSheetMap') || '{}'); } catch (e) { return {}; }
+}
+function saveCommissionMap(map) { localStorage.setItem('commissionSheetMap', JSON.stringify(map)); }
+(function migrateCommissionSheet() {
+  if (Object.keys(getCommissionMap()).length === 0) {
+    const legacy = localStorage.getItem('commissionSheet') || DEFAULT_COMMISSION_SHEET;
+    saveCommissionMap({ [commissionMonthKey()]: legacy });
+  }
+})();
+function selectedCommissionMonth() {
+  const map = getCommissionMap();
+  const stored = localStorage.getItem('commissionSelectedMonth');
+  if (stored && map[stored] !== undefined) return stored;
+  const cur = commissionMonthKey();
+  if (map[cur] !== undefined) return cur;
+  const months = Object.keys(map).sort();
+  return months.length ? months[months.length - 1] : cur;
+}
+const commissionSheet = () => getCommissionMap()[selectedCommissionMonth()] || DEFAULT_COMMISSION_SHEET;
 const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
 // ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
 const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
@@ -1094,10 +1144,42 @@ $('#btnTestUrl').onclick = async () => {
   } catch (e) { r.textContent = '❌ เชื่อมต่อไม่ได้ — เช็คว่า Deploy แบบ Anyone และ copy URL ที่ลงท้าย /exec'; }
 };
 
-$('#todolistSheet').value = todolistSheet();
-$('#btnSaveTodolist').onclick = () => {
-  localStorage.setItem('todolistSheet', $('#todolistSheet').value.trim());
-  toast('บันทึกชื่อชีตแล้ว ✓'); loadQueue();
+function renderTodolistMonthRows() {
+  const map = getTodolistMap();
+  const months = Object.keys(map).sort();
+  $('#todolistMonthRows').innerHTML = (months.length ? months : [todolistMonthKey()]).map(m => `
+    <div class="todolistMonthRow" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="month" class="tlMonth" value="${esc(m)}" style="max-width:160px">
+      <input type="text" class="tlSheetName" list="sheetNameList" placeholder="ชื่อชีต TODOLIST เช่น 7️⃣ 📝 TODOLIST-JULY26" value="${esc(map[m] || '')}" style="flex:1">
+      <button class="btn ghost tlRemove" title="ลบเดือนนี้">🗑️</button>
+    </div>`).join('');
+}
+renderTodolistMonthRows();
+$('#todolistMonthRows').addEventListener('click', (e) => {
+  const btn = e.target.closest('.tlRemove'); if (!btn) return;
+  btn.closest('.todolistMonthRow').remove();
+});
+$('#btnAddTodolistMonth').onclick = () => {
+  const row = document.createElement('div');
+  row.className = 'todolistMonthRow';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+  row.innerHTML = `
+    <input type="month" class="tlMonth" value="${todolistMonthKey()}" style="max-width:160px">
+    <input type="text" class="tlSheetName" list="sheetNameList" placeholder="ชื่อชีต TODOLIST เช่น 7️⃣ 📝 TODOLIST-JULY26" style="flex:1">
+    <button class="btn ghost tlRemove" title="ลบเดือนนี้">🗑️</button>`;
+  $('#todolistMonthRows').appendChild(row);
+};
+$('#btnSaveTodolistMap').onclick = () => {
+  const map = {};
+  document.querySelectorAll('.todolistMonthRow').forEach(row => {
+    const m = row.querySelector('.tlMonth').value;
+    const name = row.querySelector('.tlSheetName').value.trim();
+    if (m && name) map[m] = name;
+  });
+  saveTodolistMap(map);
+  renderTodolistMonthRows();
+  renderQueueMonthSelect();
+  toast('บันทึกรายชื่อชีตแล้ว ✓'); loadQueue();
 };
 $('#shopeeCopyTextInput').value = shopeeCopyText();
 $('#btnSaveShopeeCopyText').onclick = () => {
@@ -1110,10 +1192,42 @@ $('#btnSaveTiktokSheetId').onclick = () => {
   localStorage.setItem('tiktokSheetId', $('#tiktokSheetIdInput').value.trim());
   toast('บันทึก Sheet ID แล้ว ✓ — โหลดเดือนใหม่/รีโหลดครั้งถัดไปจะดึงจากไฟล์นี้');
 };
-$('#commissionSheetInput').value = commissionSheet();
-$('#btnSaveCommissionSheet').onclick = () => {
-  localStorage.setItem('commissionSheet', $('#commissionSheetInput').value.trim());
-  toast('บันทึกชื่อชีตแล้ว ✓'); loadCommissionDay();
+function renderCommissionMonthRows() {
+  const map = getCommissionMap();
+  const months = Object.keys(map).sort();
+  $('#commissionMonthRows').innerHTML = (months.length ? months : [commissionMonthKey()]).map(m => `
+    <div class="commissionMonthRow" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="month" class="cmMonth" value="${esc(m)}" style="max-width:160px">
+      <input type="text" class="cmSheetName" list="commissionSheetList" placeholder="ชื่อชีตบันทึกค่าคอม เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26" value="${esc(map[m] || '')}" style="flex:1">
+      <button class="btn ghost cmRemove" title="ลบเดือนนี้">🗑️</button>
+    </div>`).join('');
+}
+renderCommissionMonthRows();
+$('#commissionMonthRows').addEventListener('click', (e) => {
+  const btn = e.target.closest('.cmRemove'); if (!btn) return;
+  btn.closest('.commissionMonthRow').remove();
+});
+$('#btnAddCommissionMonth').onclick = () => {
+  const row = document.createElement('div');
+  row.className = 'commissionMonthRow';
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+  row.innerHTML = `
+    <input type="month" class="cmMonth" value="${commissionMonthKey()}" style="max-width:160px">
+    <input type="text" class="cmSheetName" list="commissionSheetList" placeholder="ชื่อชีตบันทึกค่าคอม เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26" style="flex:1">
+    <button class="btn ghost cmRemove" title="ลบเดือนนี้">🗑️</button>`;
+  $('#commissionMonthRows').appendChild(row);
+};
+$('#btnSaveCommissionMap').onclick = () => {
+  const map = {};
+  document.querySelectorAll('.commissionMonthRow').forEach(row => {
+    const m = row.querySelector('.cmMonth').value;
+    const name = row.querySelector('.cmSheetName').value.trim();
+    if (m && name) map[m] = name;
+  });
+  saveCommissionMap(map);
+  renderCommissionMonthRows();
+  renderCommissionMonthSelect();
+  toast('บันทึกรายชื่อชีตแล้ว ✓'); loadCommissionDay(); loadCommissionForecast();
 };
 $('#btnLoadCommissionSheetList').onclick = async () => {
   if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
@@ -1122,7 +1236,7 @@ $('#btnLoadCommissionSheetList').onclick = async () => {
     const j = await res.json();
     if (!j.ok) throw new Error(j.error);
     $('#commissionSheetList').innerHTML = j.sheets.filter(s => s.includes('บันทึกค่าคอม')).map(s => `<option value="${esc(s)}">`).join('');
-    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่อง "ชื่อชีตบันทึกค่าคอม" ได้เลย');
+    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่องชื่อชีตแต่ละเดือนได้เลย');
   } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
 };
 $('#btnLoadSheetList').onclick = async () => {
@@ -1132,7 +1246,7 @@ $('#btnLoadSheetList').onclick = async () => {
     const j = await res.json();
     if (!j.ok) throw new Error(j.error);
     $('#sheetNameList').innerHTML = j.sheets.filter(s => s.includes('TODOLIST')).map(s => `<option value="${esc(s)}">`).join('');
-    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่อง "ชื่อชีต TODOLIST" ได้เลย');
+    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่องชื่อชีตแต่ละเดือนได้เลย');
   } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
 };
 function renderBanner() { $('#banner').style.display = apiUrl() ? 'none' : ''; }
@@ -1199,7 +1313,21 @@ $('#btnNextShopee').onclick = () => {
 
 $('#btnCopyShopeeTags').onclick = () => copyText(shopeeCopyText(), $('#btnCopyShopeeTags'));
 
+function renderQueueMonthSelect() {
+  const map = getTodolistMap();
+  const months = Object.keys(map).sort();
+  const monthNames = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  const monthLabel = (m) => { const [y, mo] = m.split('-'); return `${monthNames[Number(mo)] || mo} ${y}`; };
+  $('#queueMonthSelect').innerHTML = months.map(m => `<option value="${esc(m)}">${esc(monthLabel(m))}</option>`).join('');
+  $('#queueMonthSelect').value = selectedTodolistMonth();
+}
+$('#queueMonthSelect').addEventListener('change', () => {
+  localStorage.setItem('todolistSelectedMonth', $('#queueMonthSelect').value);
+  loadQueue();
+});
+
 async function loadQueue() {
+  renderQueueMonthSelect();
   const name = todolistSheet();
   if (!name) {
     $('#queueInfo').textContent = 'ยังไม่ได้เลือกชีต TODOLIST — ไปที่แท็บ ⚙️ ตั้งค่า เพื่อเลือกก่อนครับ';
@@ -1679,8 +1807,11 @@ $('#listNewInfo').addEventListener('click', () => {
 let listitmeItems = []; // แคชไว้ให้ตัวกรอง Tier ใช้กรอง/เรียงใหม่โดยไม่ต้องโหลดซ้ำ
 
 function renderListItme(rows) {
+  // พี่แยมวางแถวคั่น "รีวิวเสร็จแล้ว" ไว้ในคอลัมน์ B เอง — ตัดทุกแถวตั้งแต่จุดนั้นเป็นต้นไป ไม่ต้องโผล่ในเว็บอีก (รีวิวจบแล้ว ไม่ต้องติดตามต่อ)
+  const reviewCutIdx = rows.findIndex(r => String(r[1] || '').indexOf('รีวิว') !== -1);
+  const activeRows = reviewCutIdx === -1 ? rows : rows.slice(0, reviewCutIdx);
   // คอลัมน์ตามชีต 🗂️ ListITME: B=ชื่อ(idx1), C=EP ปัจจุบัน(idx2), D=Tier(idx3), E=Footage(idx4), F=Draft(idx5)
-  const items = rows.map(r => {
+  const items = activeRows.map(r => {
     const p = parseItm(r[1]); if (!p) return null;
     const ep = num(r[2]);
     const tier = String(r[3] || '').trim();
@@ -2216,7 +2347,21 @@ async function loadCommissionForecast() {
   }
 }
 
+function renderCommissionMonthSelect() {
+  const map = getCommissionMap();
+  const months = Object.keys(map).sort();
+  const monthNames = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+  const monthLabel = (m) => { const [y, mo] = m.split('-'); return `${monthNames[Number(mo)] || mo} ${y}`; };
+  $('#commissionMonthSelect').innerHTML = months.map(m => `<option value="${esc(m)}">${esc(monthLabel(m))}</option>`).join('');
+  $('#commissionMonthSelect').value = selectedCommissionMonth();
+}
+$('#commissionMonthSelect').addEventListener('change', () => {
+  localStorage.setItem('commissionSelectedMonth', $('#commissionMonthSelect').value);
+  loadCommissionDay(); loadCommissionForecast();
+});
+
 async function loadCommissionDay() {
+  renderCommissionMonthSelect();
   if (!$('#cmDay').value) $('#cmDay').value = cmTodayDateStr();
   $('#cmInfo').textContent = 'กำลังโหลด…';
   $('#cmForm').style.display = 'none';
