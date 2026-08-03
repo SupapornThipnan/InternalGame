@@ -58,10 +58,20 @@ function doGet(e) {
 // ---- เขียนข้อมูล: POST { sheet, action: 'add'|'update'|'delete', ... } ----
 // ทั้งเว็บตั้งใจไม่มีปุ่มลบไว้แต่แรก (กันพลาด) มี action 'delete' อันเดียวที่ยกเว้น — ใช้เฉพาะปุ่ม 🗑️ ในตารางสินค้า
 // (พี่แยมขอไว้ตอน 2026-07-17 สำหรับลบแถวซ้ำที่เผลอกดเพิ่มสินค้าใหม่ 2 รอบ) หน้าเว็บมี confirm() popup ถามยืนยันก่อนเสมอ
+// ครอบด้วย try/catch ทั้งก้อน — เดิมถ้ามี exception ระหว่างทาง Apps Script จะส่งหน้า HTML error กลับไป
+// ฝั่งเว็บอ่าน JSON ไม่ได้เลยขึ้นแค่ "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง" ลอยๆ ไม่รู้สาเหตุ ตอนนี้ส่งข้อความจริงกลับไปแทน
 function doPost(e) {
+  try {
+    return doPostInner(e);
+  } catch (err) {
+    return json({ ok: false, error: 'EXCEPTION: ' + (err && err.message ? err.message : String(err)) });
+  }
+}
+
+function doPostInner(e) {
   const p = JSON.parse(e.postData.contents);
   const sheet = SS.getSheetByName(p.sheet);
-  if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
+  if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND: ' + p.sheet });
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
   if (p.action === 'add') {
@@ -133,6 +143,29 @@ function resolveTodolistRow(sheet, p) {
   return findTodolistRow(sheet, itmCode, epNum);
 }
 
+// ---- ข้อความ ROW_NOT_FOUND แบบละเอียด: บอกว่าหาอะไรอยู่ และในชีตมีอะไรบ้างที่ใกล้เคียง ----
+// เดิมส่งกลับแค่คำว่า ROW_NOT_FOUND เฉยๆ เลยไล่หาสาเหตุต่อไม่ได้ว่าเพี้ยนที่รหัส ITM หรือที่เลข EP
+function rowNotFoundDetail(sheet, p) {
+  const itmCode = String(p.itmCode || '').toUpperCase().replace(/\s/g, '_');
+  const epNum = parseFloat(String(p.epText || '').replace(/EP\.?/i, '').trim());
+  const lastRow = sheet.getLastRow();
+  const items = sheet.getRange(1, TODOLIST_ITEM_COL, lastRow, 1).getValues();
+  const eps = sheet.getRange(1, TODOLIST_EP_COL, lastRow, 1).getValues();
+  const digits = itmCode.replace(/\D/g, ''); // ค้นแบบหลวมๆ ด้วยตัวเลขล้วน กันเรื่องขีดล่าง/ช่องว่างเพี้ยน
+  const near = [];
+  for (let r = 0; r < items.length && near.length < 5; r++) {
+    const itemText = String(items[r][0] || '');
+    if (digits && itemText.replace(/\D/g, '').indexOf(digits) === -1) continue;
+    near.push('แถว' + (r + 1) + ' ชื่อ="' + itemText + '" EP="' + String(eps[r][0] || '') + '"');
+  }
+  if (isNaN(epNum)) {
+    return 'แถวนี้ยังไม่มีเลข EP ส่งมาจากหน้าเว็บ — เช็คว่าคอลัมน์ EP ในชีตกรอกไว้แล้วหรือยัง'
+      + ' | ITM="' + itmCode + '" | ที่เจอในชีต: ' + (near.length ? near.join(' ~ ') : '(ไม่เจอเลขนี้เลย)');
+  }
+  return 'ROW_NOT_FOUND | ชีต="' + p.sheet + '" | หา ITM="' + itmCode + '" EP=' + epNum
+    + ' | ที่เจอในชีต: ' + (near.length ? near.join(' ~ ') : '(ไม่เจอเลขนี้เลย)');
+}
+
 // ---- ติ๊ก/เลิกติ๊กช่อง Scripts/Sounds/Footage/Final/UpSpace (จากคิวคลิปในหน้าเว็บ) ----
 // ไม่แตะ ⚡️Progress จากตรงนี้แล้ว — พี่แยมกรอก Scripts/Sounds/Footage/Draft เข้า Progress เองผ่านหน้า
 // ✍️ กรอก Progress โดยเฉพาะ มีแค่ Final ที่ยัง sync อัตโนมัติ (ดู markPosted ด้านล่าง)
@@ -145,7 +178,7 @@ function setStage(sheet, p) {
   const col = TODOLIST_ALL_STAGE_COLS[p.stage];
   if (!col) return json({ ok: false, error: 'UNKNOWN_STAGE' });
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
   sheet.getRange(rowNum, col).setValue(!!p.value);
   return json({ ok: true });
 }
@@ -159,7 +192,7 @@ function markPosted(sheet, p) {
   const platformCol = { tiktok: TODOLIST_TIKTOK_COL, sp: TODOLIST_SP_COL }[p.platform];
   if (!platformCol) return json({ ok: false, error: 'UNKNOWN_PLATFORM' });
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
 
   sheet.getRange(rowNum, platformCol).setValue(true);
 
@@ -176,18 +209,28 @@ function markPosted(sheet, p) {
     const epNum = parseFloat(epText.replace(/EP\.?/i, '').trim());
     if (itmMatch && !isNaN(epNum)) {
       const itmCode = itmMatch[0].toUpperCase().replace(/\s/g, '_');
-      syncEpToListItme(itmCode, epNum);
-      syncProgress(itmCode, 'final', epNum);
+      // ⚠️ 2026-08-02: ครอบ sync ทีละตัวด้วย try/catch — ของสำคัญ (ติ๊ก tiktok + บันทึกลิงก์) เขียนเสร็จไปแล้วข้างบน
+      // ถ้า sync ตัวใดตัวหนึ่งพัง (เช่น เซลล์ปลายทางติด data validation หรือ protected range) จะได้ไม่ล้มทั้งคำสั่ง
+      // จนลิงก์ที่พี่แยมเพิ่งกรอกหายไปด้วย — เก็บชื่อตัวที่พังไว้รายงานกลับหน้าเว็บแทน
+      const failed = [];
+      const trySync = function (label, fn) {
+        try { fn(); } catch (err) { failed.push(label + ' (' + (err && err.message ? err.message : err) + ')'); }
+      };
+      trySync('ListITME EP', function () { syncEpToListItme(itmCode, epNum); });
+      trySync('Progress final', function () { syncProgress(itmCode, 'final', epNum); });
       // ลง TikTok EP.X แปลว่างานสเตจก่อนหน้ามาแล้วอย่างน้อยถึง EP.X — ถ้าสเตจไหนยังตามหลังอยู่ ให้ปรับตามทันที
       // ⚡️Progress ปรับครบ Scripts/Sounds/Footage/Draft (syncProgress เดินหน้าอย่างเดียวอยู่แล้ว)
       // 🗂️ ListITME มีแค่คอลัมน์ Footage/Draft เท่านั้น (ไม่มี Scripts/Sounds ในชีตนี้) จึงปรับแค่ 2 ตัวนี้ (guard เพิ่มไม่ให้ถอยหลัง)
       // ตั้งใจไม่ผูกกับ unmarkPosted — ยกเลิกลงคลิปแล้วไม่ปรับสเตจเหล่านี้ย้อนกลับ
-      syncProgress(itmCode, 'scripts', epNum);
-      syncProgress(itmCode, 'sounds', epNum);
-      syncProgress(itmCode, 'footage', epNum);
-      syncProgress(itmCode, 'draft', epNum);
-      syncListItmeStageIfBehind(itmCode, 'footage', epNum);
-      syncListItmeStageIfBehind(itmCode, 'draft', epNum);
+      trySync('Progress scripts', function () { syncProgress(itmCode, 'scripts', epNum); });
+      trySync('Progress sounds', function () { syncProgress(itmCode, 'sounds', epNum); });
+      trySync('Progress footage', function () { syncProgress(itmCode, 'footage', epNum); });
+      trySync('Progress draft', function () { syncProgress(itmCode, 'draft', epNum); });
+      trySync('ListITME footage', function () { syncListItmeStageIfBehind(itmCode, 'footage', epNum); });
+      trySync('ListITME draft', function () { syncListItmeStageIfBehind(itmCode, 'draft', epNum); });
+      if (failed.length) {
+        return json({ ok: true, warning: 'บันทึกลิงก์แล้ว แต่ sync ไม่ครบ: ' + failed.join(' | ') });
+      }
     }
   } else if (p.platform === 'sp') {
     if (p.link) sheet.getRange(rowNum, TODOLIST_SP_LINK_COL).setValue(p.link);
@@ -202,7 +245,7 @@ function markPosted(sheet, p) {
 const SHOPEE_DRAFT_TEXT = 'ร่าง';
 function toggleShopeeDraft(sheet, p) {
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
   sheet.getRange(rowNum, TODOLIST_SP_LINK_COL).setValue(p.currentlyDraft ? '' : SHOPEE_DRAFT_TEXT);
   return json({ ok: true });
 }
@@ -213,7 +256,7 @@ function toggleShopeeDraft(sheet, p) {
 // กดปุ่มเดิมซ้ำอีกรอบ (ตอนนี้ label จะเปลี่ยนเป็น "ยกเลิกไม่มีลิงก์") จะเรียก restoreShopeeCheckbox ด้านล่างแทน
 function markNoShopeeLink(sheet, p) {
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
   const cell = sheet.getRange(rowNum, TODOLIST_SP_COL);
   cell.setDataValidation(null);
   cell.setValue('');
@@ -225,7 +268,7 @@ function markNoShopeeLink(sheet, p) {
 // คืน checkbox กลับเข้าไปที่ K เหมือนแถวปกติทั่วไป แล้วตั้งเป็นยังไม่ติ๊ก (FALSE) — สลับกับ markNoShopeeLink ด้านบน
 function restoreShopeeCheckbox(sheet, p) {
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
   const cell = sheet.getRange(rowNum, TODOLIST_SP_COL);
   cell.setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
   cell.setValue(false);
@@ -237,7 +280,7 @@ function restoreShopeeCheckbox(sheet, p) {
 function updatePostLink(sheet, p) {
   const linkCol = p.platform === 'tiktok' ? TODOLIST_LINK_COL : TODOLIST_SP_LINK_COL;
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
   sheet.getRange(rowNum, linkCol).setValue(p.link || '');
   return json({ ok: true });
 }
@@ -250,7 +293,7 @@ function unmarkPosted(sheet, p) {
   const platformCol = { tiktok: TODOLIST_TIKTOK_COL, sp: TODOLIST_SP_COL }[p.platform];
   if (!platformCol) return json({ ok: false, error: 'UNKNOWN_PLATFORM' });
   const rowNum = resolveTodolistRow(sheet, p);
-  if (!rowNum) return json({ ok: false, error: 'ROW_NOT_FOUND' });
+  if (!rowNum) return json({ ok: false, error: rowNotFoundDetail(sheet, p) });
 
   sheet.getRange(rowNum, platformCol).setValue(false);
   const linkCol = p.platform === 'tiktok' ? TODOLIST_LINK_COL : TODOLIST_SP_LINK_COL;

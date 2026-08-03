@@ -77,7 +77,7 @@
   .settings label { display: block; font-size: .8rem; color: var(--muted); margin: 14px 0 6px; }
   .settings input, .settings textarea { width: 100%; background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 10px; font-family: inherit; box-sizing: border-box; }
   .settings p { font-size: .85rem; color: var(--muted); margin-top: 10px; line-height: 1.7; }
-  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 12px; font-weight: 600; display: none; z-index: 99; font-size: .85rem; }
+  #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--cyan); color: #000; padding: 10px 20px; border-radius: 12px; font-weight: 600; display: none; z-index: 99; font-size: .85rem; max-width: 92vw; text-align: center; line-height: 1.5; word-break: break-word; user-select: text; }
   .confetti-particle { position: fixed; top: 0; left: 0; font-size: 20px; pointer-events: none; z-index: 999; will-change: transform, opacity; animation: confettiPop .7s ease-out forwards; }
   @keyframes confettiPop { 0% { transform: translate(-50%,-50%) scale(1) rotate(0deg); opacity: 1; } 100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4) rotate(var(--rot)); opacity: 0; } }
   canvas { max-height: 260px; }
@@ -126,7 +126,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.3 · กำลังโหลด…</span>
+  <span id="status">v5.6 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -581,7 +581,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.3';
+const VERSION = 'v5.6';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -720,12 +720,16 @@ async function loadJsonpRaw(name, sheetId = SHEET_ID) {
   return (t.rows || []).map(r => (r.c || []).map(cellStr));
 }
 
-// ชีตดิบ (คำอธิบาย/ลิงก์): JSONP ก่อน (ชัวร์สุด) → Apps Script raw → CSV
+// ชีตดิบ (คำอธิบาย/ลิงก์/คิวคลิป/ListITME ฯลฯ): Apps Script raw ก่อน → JSONP → CSV
+// ⚠️ 2026-08-02: ต้องเอา Apps Script ขึ้นก่อน gviz JSONP เพราะ gviz "เดาชนิดข้อมูลทั้งคอลัมน์" แล้วบังคับให้เหมือนกันหมด
+// คอลัมน์ EP มีทั้ง "EP.2" (ข้อความ = ยืนยันเลข EP แล้ว) ปนกับ 1/2 (ตัวเลขล้วน = ยังไม่ชัวร์เลข) — พอตัวเลขล้วนเยอะพอ
+// gviz จะมองทั้งคอลัมน์เป็นตัวเลข แล้วส่งเซลล์ข้อความ "EP.2" กลับมาเป็น null ทั้งหมด → เว็บส่ง EP ว่างไปหาแถวไม่เจอ (ROW_NOT_FOUND)
+// Apps Script ใช้ getDisplayValues() คืนข้อความตามที่เห็นในชีตเป๊ะๆ ไม่เดาชนิดข้อมูล จึงกันปัญหานี้ได้ทุกชีต ไม่ใช่แค่คิวคลิป
 // sheetId ระบุมาเอง (เช่น ไฟล์ยอดขาย TikTok แยกไฟล์) → ข้าม Apps Script เพราะผูกกับไฟล์หลักเท่านั้น ใช้ได้แค่ JSONP/CSV
 async function loadRaw(name, sheetId) {
   const sid = sheetId || SHEET_ID;
-  try { return await loadJsonpRaw(name, sid); } catch (e) {}
   if (!sheetId && apiUrl()) { try { return await loadApiRaw(name); } catch (e) {} }
+  try { return await loadJsonpRaw(name, sid); } catch (e) {}
   return loadCsvRaw(name, sid);
 }
 
@@ -761,11 +765,17 @@ async function saveToSheet(payload) {
       body: JSON.stringify(payload),
     });
     const j = await res.json();
-    if (!j.ok) { toast(`บันทึกไม่สำเร็จ: ${j.error || 'ไม่ทราบสาเหตุ'} — ลองเช็คว่า Deploy โค้ด Apps Script เวอร์ชันล่าสุดหรือยัง`); return false; }
-    toast('บันทึกแล้ว ✓ กำลังรีเฟรชข้อมูล…');
+    if (!j.ok) { console.error('saveToSheet failed:', j.error, payload); toast(`บันทึกไม่สำเร็จ: ${j.error || 'ไม่ทราบสาเหตุ'}`); return false; }
+    // บันทึกของหลักสำเร็จแล้ว แต่ขั้นตอน sync ต่อเนื่องบางตัวพัง — บอกให้รู้ว่าตัวไหน จะได้ตามแก้ถูกจุด
+    if (j.warning) console.warn('saveToSheet warning:', j.warning, payload);
+    toast(j.warning ? `⚠️ ${j.warning}` : 'บันทึกแล้ว ✓ กำลังรีเฟรชข้อมูล…');
     setTimeout(loadAll, 1500);
     return true;
-  } catch (e) { toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้งครับ'); return false; }
+  } catch (e) {
+    console.error('saveToSheet exception:', e, payload);
+    toast(`บันทึกไม่สำเร็จ (ต่อ Apps Script ไม่ได้): ${e && e.message ? e.message : e}`);
+    return false;
+  }
 }
 
 /* ================== DASHBOARD ================== */
@@ -2555,7 +2565,9 @@ $('#formReminder').addEventListener('submit', async (e) => {
 
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
-  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3000);
+  // ข้อความยาว (พวก error วินิจฉัย) ให้ค้างนานขึ้น จะได้อ่าน/ก๊อปทัน
+  const hold = String(msg).length > 80 ? 20000 : 3000;
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', hold);
 }
 function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBanner(); }
 

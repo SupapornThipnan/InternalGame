@@ -24,7 +24,7 @@
 ├── eco_demo.html               ← [v0.7.3] Prototype ระบบเศรษฐกิจ (ไม่มีแมพ)
 ├── eco_demo_changelog.md
 │
-├── demetria_world.html         ← [v1.8.0] เกมไอโซเมตริกเดินได้จริง
+├── demetria_world.html         ← [v1.12.0] เกมไอโซเมตริกเดินได้จริง
 ├── demetria_world_changelog.md
 │
 └── renovation_mockup.html      ← mockup ภาพนิ่ง ระบบบูรณะด่าน (ไม่ใช่โค้ดเกม ไม่ต้องแก้)
