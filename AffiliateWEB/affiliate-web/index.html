@@ -126,7 +126,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.6 · กำลังโหลด…</span>
+  <span id="status">v5.8 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -497,9 +497,14 @@
     <select name="type" id="reminderType">
       <option value="once">ครั้งเดียว (เลือกวันที่)</option>
       <option value="monthly">ทุกเดือน (เลือกวันในเดือน)</option>
+      <option value="range">ช่วงวันที่ (เลือกวันเริ่ม-สิ้นสุด)</option>
     </select>
     <div id="reminderOnceField"><label>วันที่</label><input type="date" name="onceDate"></div>
     <div id="reminderMonthlyField" style="display:none"><label>วันที่ในเดือน (1-31)</label><input type="number" name="monthlyDay" min="1" max="31"></div>
+    <div id="reminderRangeField" style="display:none">
+      <label>วันเริ่ม</label><input type="date" name="rangeStart">
+      <label>วันสิ้นสุด</label><input type="date" name="rangeEnd">
+    </div>
     <div class="actions">
       <button class="btn ghost" value="cancel" formnovalidate>ยกเลิก</button>
       <button class="btn pink" value="ok">บันทึก</button>
@@ -581,7 +586,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.6';
+const VERSION = 'v5.8';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -2059,28 +2064,32 @@ $('#btnTiktokReload').onclick = async () => {
 // เริ่มต้น: ดึงรายชื่อเดือนที่ cache ไว้ใน IndexedDB มาโชว์ก่อนเลย ไม่ต้องรอ fetch จาก Sheet
 refreshTiktokMonthOptions(localStorage.getItem('tiktokSelectedMonth') || '').catch(() => {});
 
-// เช็คอัตโนมัติว่ามีเดือนใหม่ที่ยังไม่เคยโหลด (ตามรูปแบบชื่อ "ยอดขายเดือน <เดือน>-<ปี>") ตั้งแต่เดือน 1 ถึงเดือนปัจจุบันของปีนี้
-// เดือนที่ cache ไว้แล้วข้ามทันที (เร็ว) ส่วนเดือนที่ยังไม่มีชีตจริง (ยังไม่ถึงเดือนนั้น) จะ error แล้วข้ามไปเงียบๆ ไม่รบกวน
-// ครอบคลุมแค่ปีปัจจุบัน — เดือนเก่าปีก่อนๆ ยังต้องกด "➕ โหลดเดือนใหม่" เองครั้งแรก
+// เช็คอัตโนมัติว่ามีเดือนใหม่ที่ยังไม่เคยโหลด (ตามรูปแบบชื่อ "ยอดขายเดือน <เดือน>-<ปี>")
+// ⚠️ 2026-08-07: เดิมไล่เช็คตั้งแต่เดือน 1 ถึงเดือนปัจจุบัน "ทีละเดือน" (await ต่อกัน) ยิ่งปีผ่านไปนานยิ่งมีเดือนให้เช็คเยอะ
+// พอเดือนไหนยัง ไม่ cache (เครื่อง/เบราว์เซอร์ใหม่ หรือเพิ่งมีชีตเดือนนั้น) ต้องดึงข้อมูลจริง 500+ แถว ทำให้เปิดเว็บช้าลงเรื่อยๆ ตามปฏิทิน
+// แก้โดย: (1) เช็คแค่ 3 เดือนล่าสุด (เดือนนี้ + 2 เดือนก่อน) พอ ไม่ไล่ตั้งแต่มกรา (2) เดือนที่ยังไม่ cache เช็คพร้อมกันหมดทีเดียว ไม่ทีละเดือน
+// เดือนเก่ากว่านั้นยังกด "➕ โหลดเดือนใหม่" เองได้เหมือนเดิม
 async function autoDiscoverTiktokMonths() {
   try {
     const existing = await tiktokDbGetAll();
     const known = new Set(existing.map(m => m.sheetName));
     const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    let lastNew = '';
-    for (let mo = 1; mo <= month; mo++) {
-      const name = `ยอดขายเดือน ${mo}-${year}`;
-      if (known.has(name)) continue;
-      try {
-        const rec = await fetchTiktokMonthSummary(name);
-        await tiktokDbPut(rec);
-        lastNew = name;
-        toast(`พบ "${name}" ใหม่ โหลดให้อัตโนมัติแล้ว ✓`);
-      } catch (e) { /* ยังไม่มีชีตเดือนนี้ ข้ามไปเงียบๆ */ }
+    const candidates = [];
+    for (let back = 0; back < 3; back++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+      const name = `ยอดขายเดือน ${d.getMonth() + 1}-${d.getFullYear()}`;
+      if (!known.has(name)) candidates.push(name);
     }
-    if (lastNew) await refreshTiktokMonthOptions($('#tiktokMonthSelect').value || lastNew);
+    if (!candidates.length) return;
+    const results = await Promise.all(candidates.map(name =>
+      fetchTiktokMonthSummary(name).then(rec => ({ name, rec })).catch(() => null)
+    ));
+    const found = results.filter(Boolean);
+    for (const item of found) {
+      await tiktokDbPut(item.rec);
+      toast(`พบ "${item.name}" ใหม่ โหลดให้อัตโนมัติแล้ว ✓`);
+    }
+    if (found.length) await refreshTiktokMonthOptions($('#tiktokMonthSelect').value || found[found.length - 1].name);
   } catch (e) { /* เช็คไม่สำเร็จ ไม่ต้องรบกวนพี่ */ }
 }
 autoDiscoverTiktokMonths();
@@ -2435,11 +2444,17 @@ function reminderIsActive(r) {
   return v !== false && v !== 'FALSE' && v !== 'false';
 }
 
+// ช่วงวันที่เก็บในคอลัมน์ ค่าวันที่ เดียวกัน รูปแบบ "2026-08-05~2026-08-09" กันไม่ต้องเพิ่มคอลัมน์ใหม่ในชีต
 function reminderIsDueToday(r) {
   if (!reminderIsActive(r)) return false;
-  const d = new Date();
-  if (r['ประเภท'] === 'monthly') return Number(r['ค่าวันที่']) === d.getDate();
-  return r['ค่าวันที่'] === reminderTodayStr();
+  const today = reminderTodayStr();
+  if (r['ประเภท'] === 'monthly') return Number(r['ค่าวันที่']) === new Date().getDate();
+  if (r['ประเภท'] === 'range') {
+    const parts = String(r['ค่าวันที่'] || '').split('~');
+    if (parts.length !== 2) return false;
+    return today >= parts[0] && today <= parts[1]; // รูปแบบ YYYY-MM-DD เทียบด้วยสตริงได้ตรงเป๊ะ
+  }
+  return r['ค่าวันที่'] === today;
 }
 
 async function loadReminders() {
@@ -2469,7 +2484,11 @@ function renderReminderList() {
   $('#reminderListInfo').textContent = reminders.length ? '' : 'ยังไม่มีแจ้งเตือน กด "➕ เพิ่มแจ้งเตือนใหม่" เพื่อเริ่มค่ะ';
   $('#reminderList').innerHTML = reminders.map(r => {
     const isMonthly = r['ประเภท'] === 'monthly';
-    const dateLabel = isMonthly ? `🔁 ทุกวันที่ ${esc(r['ค่าวันที่'])} ของเดือน` : `📅 ${esc(r['ค่าวันที่'])}`;
+    const isRange = r['ประเภท'] === 'range';
+    const rangeParts = isRange ? String(r['ค่าวันที่'] || '').split('~') : [];
+    const dateLabel = isMonthly ? `🔁 ทุกวันที่ ${esc(r['ค่าวันที่'])} ของเดือน`
+      : isRange ? `🗓️ ${esc(rangeParts[0] || '')} ถึง ${esc(rangeParts[1] || '')}`
+      : `📅 ${esc(r['ค่าวันที่'])}`;
     const active = reminderIsActive(r);
     // ถึงกำหนดวันนี้ + เคยกดกากบาทปิดแบนเนอร์ไปแล้ว → โชว์ติ๊กสถานะ + ปุ่มเปิดกลับมาให้เห็นแบนเนอร์อีกครั้ง
     const dismissedToday = reminderIsDueToday(r) && !!localStorage.getItem(reminderDismissKey(r.ID));
@@ -2522,11 +2541,13 @@ $('#reminderList').addEventListener('click', async (e) => {
   }
 });
 
-$('#reminderType').addEventListener('change', () => {
-  const isMonthly = $('#reminderType').value === 'monthly';
-  $('#reminderOnceField').style.display = isMonthly ? 'none' : '';
-  $('#reminderMonthlyField').style.display = isMonthly ? '' : 'none';
-});
+function updateReminderTypeFields() {
+  const type = $('#reminderType').value;
+  $('#reminderOnceField').style.display = type === 'once' ? '' : 'none';
+  $('#reminderMonthlyField').style.display = type === 'monthly' ? '' : 'none';
+  $('#reminderRangeField').style.display = type === 'range' ? '' : 'none';
+}
+$('#reminderType').addEventListener('change', updateReminderTypeFields);
 
 let editingReminderId = null;
 function openReminderModal(id) {
@@ -2538,12 +2559,18 @@ function openReminderModal(id) {
     if (r) {
       f.text.value = r['ข้อความ'];
       f.type.value = r['ประเภท'];
-      if (r['ประเภท'] === 'monthly') f.monthlyDay.value = r['ค่าวันที่']; else f.onceDate.value = r['ค่าวันที่'];
+      if (r['ประเภท'] === 'monthly') {
+        f.monthlyDay.value = r['ค่าวันที่'];
+      } else if (r['ประเภท'] === 'range') {
+        const parts = String(r['ค่าวันที่'] || '').split('~');
+        f.rangeStart.value = parts[0] || '';
+        f.rangeEnd.value = parts[1] || '';
+      } else {
+        f.onceDate.value = r['ค่าวันที่'];
+      }
     }
   }
-  const isMonthly = $('#reminderType').value === 'monthly';
-  $('#reminderOnceField').style.display = isMonthly ? 'none' : '';
-  $('#reminderMonthlyField').style.display = isMonthly ? '' : 'none';
+  updateReminderTypeFields();
   $('#dlgReminder').showModal();
 }
 $('#btnAddReminder').onclick = () => {
@@ -2553,8 +2580,13 @@ $('#btnAddReminder').onclick = () => {
 $('#formReminder').addEventListener('submit', async (e) => {
   if (e.submitter?.value !== 'ok') return;
   const fd = Object.fromEntries(new FormData($('#formReminder')));
-  const isMonthly = fd.type === 'monthly';
-  const value = isMonthly ? fd.monthlyDay : fd.onceDate;
+  let value;
+  if (fd.type === 'monthly') value = fd.monthlyDay;
+  else if (fd.type === 'range') {
+    if (!fd.rangeStart || !fd.rangeEnd) { toast('เลือกวันเริ่มและวันสิ้นสุดก่อนครับ'); return; }
+    if (fd.rangeStart > fd.rangeEnd) { toast('วันเริ่มต้องมาก่อนวันสิ้นสุดครับ'); return; }
+    value = `${fd.rangeStart}~${fd.rangeEnd}`;
+  } else value = fd.onceDate;
   if (!value) { toast('กรอกวันที่ก่อนครับ'); return; }
   const data = { 'ข้อความ': fd.text, 'ประเภท': fd.type, 'ค่าวันที่': value };
   const ok = editingReminderId

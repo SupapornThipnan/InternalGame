@@ -309,15 +309,24 @@ async function fetchApiSheet(sheetName){
   return j.data.map(o=>normalize(o, sheetName)).filter(Boolean);
 }
 
-async function loadData(){
+// ดึงรายชื่อ "หน้า" จาก server — เรียกครั้งเดียวตอนเปิดเว็บ/กด ↻ โหลดใหม่/สร้างหน้าเสร็จเท่านั้น
+// ไม่เรียกซ้ำทุกครั้งที่สลับหน้า/เพิ่ม-แก้รายการ (แต่ก่อนเรียกทุกครั้ง ทำให้ทุกอย่างช้าลง 2 เท่าโดยไม่จำเป็น
+// เพราะ Apps Script แต่ละ request ช้าอยู่แล้ว รายการยิ่งเยอะยิ่งรู้สึกช้าสะสม)
+async function fetchPages(){
+  const pr = await fetch(`${api()}?action=listPages`);
+  const pj = await pr.json();
+  return (pj.ok && Array.isArray(pj.pages)) ? pj.pages : null;
+}
+
+async function loadData(opts){
+  opts = opts || {};
   hush();
-  // 1) มี Apps Script URL → ดึงรายชื่อ "หน้า" ที่มีจริง (พี่แยมสร้าง/ตั้งชื่อเอง ไม่มีสร้างอัตโนมัติตามวันที่)
+  // 1) มี Apps Script URL → ใช้รายชื่อ "หน้า" ที่จำไว้แล้วถ้ามี ไม่งั้นค่อยไปถามใหม่ (เร็วกว่าเดิม)
   if (api()){
     try{
-      const pr = await fetch(`${api()}?action=listPages`);
-      const pj = await pr.json();
-      if (pj.ok && Array.isArray(pj.pages)){
-        PAGES = pj.pages;
+      const pages = (opts.forcePages || !PAGES.length) ? await fetchPages() : PAGES;
+      if (pages){
+        PAGES = pages;
         if (!PAGES.length){
           ROWS = []; SOURCE = 'Apps Script API (ยังไม่มีหน้า)'; CAN_WRITE = false;
           say('ยังไม่มีหน้าเลย — ไปที่ ⚙️ ตั้งค่า สร้างหน้าแรกกันก่อนครับ (หรือรัน <code>setupSheet</code> ใน Apps Script ถ้ายังไม่เคยตั้งค่าตามขั้นที่ 2)','warn');
@@ -651,6 +660,7 @@ async function createPage(){
       return;
     }
     el.value='';
+    PAGES.push({ sheet: j.sheet });   // เพิ่มเข้าลิสต์ที่จำไว้เลย ไม่ต้องขอ listPages ใหม่
     CUR_PAGE = j.sheet;   // สร้างแล้วสลับไปดูหน้าใหม่นี้เลย
     await refresh();
     say(`สร้างหน้า "${esc(j.sheet)}" เรียบร้อยครับ ✅`,'ok');
@@ -661,8 +671,8 @@ async function createPage(){
 }
 
 /* ===================== INIT ===================== */
-async function refresh(){
-  await loadData(); buildFilters(); render(); renderPageChips();
+async function refresh(opts){
+  await loadData(opts); buildFilters(); render(); renderPageChips();
   $('#srcInfo').textContent = SOURCE;
   $('#sheetInfo').textContent = CUR_PAGE
     ? `กำลังดูหน้า: "${CUR_PAGE}"`
@@ -687,15 +697,16 @@ function init(){
   ['#fType','#fCat'].forEach(s=>$(s).onchange=render);
   $('#fPage').onchange = onPageChange;
   $('#fSearch').oninput = render;
-  $('#reload').onclick  = refresh;
+  $('#reload').onclick  = ()=>refresh({forcePages:true});   // ↻ = ตั้งใจโหลดใหม่ทั้งหมด รวมรายชื่อหน้าด้วย
   $('#addBtn').onclick  = ()=>openModal(null);
   $('#fab').onclick     = ()=>openModal(null);
   $('#fabBig').onclick  = ()=>openModal(null, true);
   $('#mCancel').onclick = ()=>$('#modal').classList.remove('on');
   $('#mSave').onclick   = saveEntry;
   $('#modal').onclick   = e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
-  $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); refresh(); };
-  $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=api(); refresh(); };
+  // เปลี่ยนแหล่งเชื่อมต่อ = รายชื่อหน้าเก่าใช้ไม่ได้แล้ว ต้องเคลียร์ + โหลดหน้าใหม่ทั้งหมด
+  $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); PAGES=[]; CUR_PAGE=null; refresh({forcePages:true}); };
+  $('#clearUrl').onclick= ()=>{ localStorage.removeItem('rjApiUrl'); $('#apiUrl').value=api(); PAGES=[]; CUR_PAGE=null; refresh({forcePages:true}); };
   $('#addTypeBtn').onclick = addType;
   $('#addCatBtn').onclick  = addCat;
   $('#newType').onkeydown = e=>{ if(e.key==='Enter') addType(); };

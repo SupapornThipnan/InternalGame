@@ -3902,6 +3902,171 @@
     since rotation validity reads them directly). Both the original and the
     clone survive a full page reload. Zero console/page errors in either
     engine.
+
+  v3.146 (2026-07-19) — Added a multi-slot map save system ("เหมือนระบบเซฟ
+    เกม ที่เซฟได้แยกทีละเซฟ") — a new "💾 เซฟแผนที่ (หลายไฟล์)" section in
+    the "บันทึก" tab, right above the existing single-file Export/Import
+    "🗺️ แผนที่" section (unchanged). Sent an outline first
+    (save_slots_outline.html) with 3 open questions; พี่แยม confirmed all
+    3: (1) a slot holds layout only — terrain/objects/board size/player
+    position, the same scope buildMapData() already had; uploaded images
+    and custom types stay GLOBAL, shared across every slot, matching how
+    Export already behaves today (no change needed there at all); (2) each
+    slot gets its own "⬇️ Export" button; (3) unlimited slots.
+
+    Storage reuses the exact same IndexedDB store images/settings already
+    use — no new database. Added one generic helper,
+    removeSettingFromStorage(name) (sibling of the existing
+    removeImageFromStorage, for the 'setting:'-prefixed key space), needed
+    to delete a slot's stored data when พี่แยม deletes that slot. Two kinds
+    of entries: 'mapSaveSlots' (the index — array of {id, name, savedAt})
+    and one 'mapSave_<id>' per slot (that slot's buildMapData() output,
+    JSON-stringified — same convention persistCustomTypes already uses for
+    storing a structured value as a string under a setting key).
+
+    Refactored the existing "นำเข้าแผนที่" (.json) handler's apply-logic out
+    into a standalone applyMapData(data) function — validates + writes every
+    field (terrain/objects/colors/decals/size/player) and resets transient
+    UI state (pan/drag/hover), returning true/false. The file-import handler
+    now just calls it after its own confirm(); the new "โหลด" slot action
+    calls the exact same function after ITS OWN confirm() — one code path
+    for "replace the current map," not two copies that could drift apart.
+
+    Each slot card shows name + last-saved timestamp + 5 actions: ▶️ โหลด
+    (replace current map, confirm() first — same destructive-action pattern
+    as file import), 💾 บันทึกทับ (overwrite with current state, confirm()
+    first), ✏️ เปลี่ยนชื่อ (prompt, sanitizeLabel()'d — reuses the same
+    sanitizer custom-type names already use), ⬇️ Export (downloads that
+    slot's data as .json, independent of whatever map is currently open —
+    filesystem-unsafe characters in the slot's free-text name are replaced
+    for the downloaded filename only, the display name itself is untouched
+    everywhere else), 🗑️ ลบ (confirm() first). A small in-memory-only
+    `activeMapSaveId` (deliberately NOT persisted — a fresh page load has no
+    slot "active" yet, same as a fresh game session) highlights whichever
+    slot was most recently loaded/created/overwritten, purely a visual aid.
+
+    Verified with Playwright (Chromium + WebKit), 12 assertions each, all
+    passing: empty-state hint shows with 0 slots; creating a slot captures
+    the map at that moment (later edits don't retroactively change it —
+    confirmed by creating slot A, adding another object, creating slot B,
+    then loading A back and confirming the later object is gone); rename/
+    export/delete all work correctly (exported .json contains the right
+    objects); a deleted slot is really gone (1 remains, not the deleted
+    one); the surviving slot persists through a full page reload (name
+    intact) while the active-slot highlight correctly resets (by design,
+    not a bug); overwriting a slot genuinely replaces its stored data
+    (verified by loading it back and seeing the new — empty — state, not
+    the old one). Zero console/page errors in either engine.
+
+  v3.147 (2026-07-19) — Made the page responsive for desktop window resizing
+    (confirmed scope: desktop only, not mobile/touch — Unity handles that
+    separately per this project's own known-limitations list). Sent an
+    outline first; พี่แยม confirmed. Sidebar + game board were a rigid
+    flexbox row with fixed widths (250px panel, 820px canvas) and zero
+    @media queries or viewport meta tag — any window narrower than ~1160px
+    caused horizontal page overflow.
+
+    Added the standard `<meta name="viewport">` tag (a no-op on desktop
+    browsers, correct practice regardless). `.layout` gained flex-wrap, so
+    the sidebar drops to its own row above the canvas once there's no room
+    for both side by side — no fixed breakpoint, adapts continuously as the
+    window is dragged. `.panel` got flex-shrink:0 so it wraps rather than
+    squashing itself unreadably narrow. The wrapper div around the whole
+    page (`.app-shell`, previously unclassed) and `.stage` both needed
+    width:100%/flex:1 auto + min-width:0 to override flexbox's default
+    "never shrink below content size" behavior, or the wrap-based layout
+    would never have a reason to actually reflow.
+
+    The canvas itself needed real thought: it was already prepared for this
+    more than expected — getCanvasPoint() (mouse→world coordinate mapping)
+    already reads canvas.getBoundingClientRect() and rescales by
+    LOGICAL_W/rect.width, and fitCanvasResolution() (built for :fullscreen's
+    stretched canvas) already re-fits the backing-store resolution to
+    whatever CSS size the canvas is actually displayed at — so input and
+    rendering needed ZERO logic changes, both already treat "how many CSS
+    px is this displayed at" as a variable rather than an assumption.
+
+    The sizing mechanism itself needed real iteration, caught only by
+    testing across a resize sequence (not just a single narrow screenshot):
+    a first attempt used pure CSS (max-width:100%; height:auto) on canvas.
+    That broke in two ways once actually tested — (1) shrinking narrow then
+    widening back out left the canvas PERMANENTLY stuck at the shrunk size,
+    because canvas.width/height (the attributes) double as both the backing-
+    store resolution AND, absent a style override, the element's own default
+    CSS box size — fitCanvasResolution() writing a smaller value into
+    canvas.width for sharpness silently became the canvas's new "natural"
+    size, with the original 820 never recorded anywhere to return to; (2)
+    even fixed forward-only, max-width:100% resolves against .stage's
+    CONTENT-box width, 28px narrower than the .clientWidth measurement
+    fitCanvasResolution used (.stage has 14px padding per side), so it
+    re-clamped width tighter than height and distorted the aspect ratio.
+    Fixed by moving sizing fully into fitCanvasResolution(): in non-
+    fullscreen mode it now computes displayW from .stage.clientWidth
+    (capped at LOGICAL_W, never upscaling past native size) and pins
+    canvas.style.width/height explicitly every call — a measurement
+    independent of the canvas's own possibly-already-shrunk attributes,
+    which structurally rules out the feedback loop rather than special-
+    casing around it. In fullscreen mode it clears any inline pin instead,
+    letting the existing (unchanged) .stage:fullscreen canvas CSS rule
+    govern — that rule intentionally renders LARGER than LOGICAL_W, which
+    the capped non-fullscreen formula must never fight.
+
+    Verified with Playwright (Chromium + WebKit), 12 assertions each: wide
+    window (1400px) — unchanged row layout, canvas at full native 820px, no
+    overflow; medium (900px) — sidebar wraps above canvas, no overflow;
+    narrow (600px) — canvas shrinks below 820 preserving the exact 820:620
+    aspect ratio, still no overflow; a drag-drop placed object on the
+    SHRUNK canvas resolves to the correct grid tile (proves the existing
+    coordinate-mapping math holds at any display size, not just 820px);
+    resizing back to wide fully restores the native 820px canvas (the exact
+    regression the first CSS-only attempt introduced). Separately verified
+    fullscreen entry/exit via the Fullscreen API directly: canvas grows past
+    820px on entry (fullscreen CSS rule governing, inline style correctly
+    empty), and returns to exactly 820px on exit. Zero console/page errors
+    in either engine, either test file.
+
+  v3.148 (2026-07-19) — Phase 1 of the UI reorg outline พี่แยม approved
+    earlier (artifact e9100b63-...): "จัดหมวดหมู่ ระบบ และ UI ให้คลีนและใช้
+    งานง่ายขึ้น" → "ต่อไปเราจะจัด UI ให้คลีนยังไงดี" → "โอเคจ้า ทำเลย". Core
+    idea: a type's image upload and its size/offset settings were split
+    across two different tabs ("ใส่รูปเอง" vs "ตั้งค่า") for every type
+    EXCEPT furniture/หญ้าหลากแบบ/custom types, which already had both
+    together in one card — this phase brings everything else in line with
+    that already-proven pattern.
+
+    Removed the "ใส่รูปเอง" tab entirely (button + panel) — 4 tabs → 3.
+    Renamed "ตั้งค่า" to "ชนิด + รูป" to reflect its new, complete scope.
+    Every img-row it held (19 total: สิ่งกีดขวาง ×7, พื้นผิวหลัก ×3,
+    โต้ตอบ/เก็บได้ ×5, ตัวละคร ×4) moved into 4 new accordion sections
+    inside "ชนิด + รูป", positioned next to the settings they're thematically
+    closest to (ตัวละคร sits right under the existing "ขนาด NPC / Player"
+    card; พื้นผิวหลัก sits right above the existing "หญ้าหลากแบบ" accordion
+    it was always conceptually part of). Every existing section (furniture
+    cards, หญ้าหลากแบบ, ขนาดแผนที่, custom types) is completely untouched —
+    same position, same content, same ids.
+
+    This was a pure DOM-position move — every img-row kept its EXACT id/
+    data-kind/data-type unchanged, only which <details> wraps it changed.
+    Confirmed before touching anything that the upload/thumbnail/clear
+    pipeline keys purely off data-kind+data-type (never DOM position or
+    parent structure) and that tab-switching is fully generic (loops
+    .tab-panel matched against data-tab, per the existing v3.66 comment) —
+    so this genuinely needed zero JS changes, exactly as the outline
+    predicted for "ความเสี่ยงต่ำ".
+
+    Verified with Playwright (Chromium + WebKit): exactly 3 tabs remain,
+    #tab-images no longer exists, all 19 moved img-rows are present inside
+    #tab-settings with no duplicates anywhere on the page, every pre-
+    existing section (furniture/grass/map-size) is untouched. Functionally
+    verified the moved wiring still works end-to-end, not just structurally
+    present: uploaded a real image through a MOVED img-row (สิ่งกีดขวาง →
+    box) and confirmed its thumbnail updates; separately uploaded through
+    another moved row (โต้ตอบ → door), reloaded the page, and confirmed the
+    image survived (IndexedDB persistence is keyed the same way, untouched
+    by the move). Also re-ran the full v3.147 responsive suite unchanged —
+    still 12/12 passing, confirming this HTML restructuring didn't disturb
+    the flex-wrap layout or canvas sizing. Zero console/page errors in
+    either engine, across all test files.
 -->
 
 
@@ -3936,6 +4101,11 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<!-- v3.147: standard boilerplate for a responsive page — no-op on desktop
+     browsers (which already use the real window width as viewport), but
+     correct practice regardless of the desktop-only scope confirmed for
+     this change -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Isometric Object Yard</title>
 <style>
   :root{
@@ -3958,6 +4128,19 @@
     gap:24px;
     padding:32px 20px;
   }
+  /* v3.147: body's ONE flex child (the wrapper around header+layout) — by
+     default a flex item shrink-to-fits its content instead of filling the
+     available row, and flex items also default to min-width:auto (never
+     shrinking below their content's natural width) even when they easily
+     could. Both defaults are exactly wrong for a responsive shell: without
+     this, .layout's flex-wrap (below) never has a reason to kick in,
+     because the wrapper itself would rather overflow past the viewport
+     than shrink. width:100% + min-width:0 lets it actually track however
+     much horizontal room body really has. */
+  .app-shell{
+    width:100%;
+    min-width:0;
+  }
   h1{
     font-size:20px;
     margin:0 0 4px;
@@ -3970,6 +4153,12 @@
   }
   .layout{
     display:flex;
+    /* v3.147: was a rigid row (panel + stage always side by side) with no
+       fallback when the window is too narrow to fit both — flex-wrap lets
+       .stage drop to its own row below .panel once there's not enough
+       width, with zero fixed breakpoint (adapts continuously as พี่แยม
+       drags the window edge, same as any other CSS-native reflow) */
+    flex-wrap:wrap;
     gap:20px;
     align-items:flex-start;
   }
@@ -3978,6 +4167,11 @@
     border-radius:14px;
     padding:16px;
     width:250px;
+    /* v3.147: keeps the sidebar at its designed 250px even as a flex item —
+       it should WRAP onto its own row when space is tight, never squash
+       itself narrower than 250px (which would make every label/button
+       inside it wrap awkwardly long before that's actually necessary) */
+    flex-shrink:0;
     /* v3.79: was a hardcoded 660px regardless of the actual browser window
        size, so on a taller screen the panel cut itself off into an internal
        scrollbar well before running out of real vertical space — พี่แยม
@@ -3995,6 +4189,14 @@
     padding:14px;
     box-shadow:0 8px 24px rgba(0,0,0,.35);
     position:relative;
+    /* v3.147: lets the stage (and the canvas inside it, via its own
+       max-width:100% below) actually shrink below its natural ~848px
+       width when the window is narrower than that — flex:1 also lets it
+       grow to fill any leftover width on its own wrapped row. min-width:0
+       overrides the flex-item default (min-width:auto, "never shrink below
+       content size") that would otherwise defeat this entirely. */
+    flex:1 1 auto;
+    min-width:0;
   }
   /* when .stage itself is the fullscreened element, center its contents and
      let it fill the whole screen instead of staying pinned at its normal
@@ -4018,6 +4220,18 @@
     display:block;
     border-radius:10px;
     background:radial-gradient(ellipse at center, #2a3142 0%, #171b24 100%);
+    /* v3.147: sizing in normal (non-fullscreen) mode is now computed and
+       pinned via canvas.style.width/height by fitCanvasResolution() itself
+       (see its comment) — a max-width:100% here was tried first, but it
+       resolves against .stage's CONTENT-box width, 28px narrower than the
+       clientWidth fitCanvasResolution measures (.stage has 14px padding on
+       each side) — so it silently re-clamped the JS-computed width tighter
+       than its matching height, distorting the aspect ratio (caught by
+       testing: width and height stopped shrinking in the same proportion).
+       No sizing rule needed here at all now; fullscreen keeps working via
+       the separate, more specific .stage:fullscreen canvas rule below,
+       since fitCanvasResolution clears any inline width/height while
+       fullscreen so that rule can govern unopposed. */
   }
   .cat{margin-bottom:16px;}
   .section-label{
@@ -4349,6 +4563,32 @@
   details.acc-sub[open] summary::after{transform:rotate(180deg);}
   details.acc-sub summary:hover{background:#242b3c;}
   details.acc-sub .acc-sub-body{padding:2px 10px 10px;}
+  /* map save slots (v3.146) — plain cards, not <details>, since a slot has
+     no nested content to collapse (just a name/timestamp/action row) */
+  .map-save-slot{
+    margin-top:8px;
+    border:1px solid #333c52;
+    border-radius:8px;
+    background:#1e2432;
+    padding:9px 11px;
+  }
+  .map-save-slot.active{border-color:var(--accent);}
+  .map-save-slot-name{font-weight:700; font-size:12.5px; color:var(--text);}
+  .map-save-slot-pin{color:var(--accent); font-size:10.5px; font-weight:700; margin-left:6px;}
+  .map-save-slot-meta{color:var(--muted); font-size:10.5px; margin-top:2px;}
+  .map-save-slot-actions{display:flex; gap:5px; flex-wrap:wrap; margin-top:8px;}
+  .map-save-slot-btn{
+    background:var(--panel);
+    border:1px solid #414a63;
+    border-radius:6px;
+    color:var(--text);
+    padding:4px 9px;
+    font-size:11px;
+    cursor:pointer;
+  }
+  .map-save-slot-btn:hover{background:#2b3244;}
+  .map-save-slot-btn.danger{color:#e28080; border-color:#5a3838;}
+  .map-save-slot-btn.danger:hover{background:#3a2626;}
   /* side-by-side field pairs (v3.67) — กว้าง/สูง on one row instead of
      stacked, so a type's whole group fits in far less vertical space */
   .field-row{display:flex; gap:8px; margin-bottom:8px;}
@@ -4562,10 +4802,10 @@
 </style>
 </head>
 <body>
-<div>
+<div class="app-shell">
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.145: โคลนกล่อง box-maker ผ่านเพิ่มชนิดใหม่จากแม่แบบได้แล้ว (ทรง/ขนาด/snap ตรงต้นฉบับ) — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.145</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.148: จัดระเบียบ UI เฟส 1 — ยุบแท็บ &quot;ใส่รูปเอง&quot; เข้า &quot;ชนิด + รูป&quot; เหลือ 3 แท็บ — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.148</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -4604,8 +4844,14 @@
       <p class="hint submode-hint">อยู่โหมด <b id="submodeHintName">Foundation</b> — แก้ไข/ลบ/ย้ายได้เฉพาะของกลุ่มนี้บนแผนที่ สลับโหมดเพื่อแก้ของอีกกลุ่ม</p>
       <div class="tabs">
         <button class="tab-btn active" data-tab="place">วางวัตถุ</button>
-        <button class="tab-btn" data-tab="images">ใส่รูปเอง</button>
-        <button class="tab-btn" data-tab="settings">ตั้งค่า</button>
+        <!-- v3.148: "ใส่รูปเอง" tab removed — every img-row it held now
+             lives inside "ชนิด + รูป" (formerly "ตั้งค่า"), under its own
+             category accordion, so a type's image + size/offset settings
+             are never split across two different tabs anymore (Phase 1 of
+             the UI reorg outline พี่แยม approved: e9100b63-...). Zero JS
+             changes needed — tab-switching is fully generic, keyed off
+             data-tab (see the "Tab switching" comment further down). -->
+        <button class="tab-btn" data-tab="settings">ชนิด + รูป</button>
         <button class="tab-btn" data-tab="save">บันทึก</button>
       </div>
 
@@ -4726,185 +4972,6 @@
         </div>
       </div>
 
-      <div class="tab-panel" id="tab-images" style="display:none;">
-        <p class="img-tab-hint">อัปโหลดรูปของตัวเองแทนภาพวาดแต่ละชนิด กดค้าง/คลิกขวาที่รูปตัวอย่างเพื่อล้างรูป</p>
-        <p class="img-tab-hint">รูปที่อัปโหลดจำไว้อัตโนมัติในเครื่องนี้อยู่แล้ว (IndexedDB) — ปุ่มสำรอง/ย้ายรูปทั้งชุดย้ายไปอยู่ที่แท็บ "บันทึก" แล้ว (หมวด "🗂️ สำรองรูปที่อัปโหลดไว้")</p>
-        <p class="img-tab-hint">โต๊ะ / โต๊ะเล็ก / แจกัน / กล่องของขวัญ ย้ายไปรวมกับการตั้งค่าขนาด+Offset ที่แท็บ "ตั้งค่า" แล้ว (รูป+ขนาดของแต่ละชิ้นอยู่ในที่เดียวกัน)</p>
-        <div class="divider"></div>
-
-        <div class="cat">
-          <p class="section-label">สิ่งกีดขวาง</p>
-          <div class="img-row" data-kind="object" data-type="box">
-            <div class="img-thumb" id="thumb-object-box"><span class="pal-emoji">📦</span></div>
-            <div class="img-row-label">กล่อง</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="box">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="box">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="wall">
-            <div class="img-thumb" id="thumb-object-wall"><span class="pal-emoji">🧱</span></div>
-            <div class="img-row-label">กำแพง</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="wall">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="wall">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="tree">
-            <div class="img-thumb" id="thumb-object-tree"><span class="pal-emoji">🌳</span></div>
-            <div class="img-row-label">ต้นไม้</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="tree">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="tree">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="rock">
-            <div class="img-thumb" id="thumb-object-rock"><span class="pal-emoji">🪨</span></div>
-            <div class="img-row-label">ก้อนหิน</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="rock">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="rock">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="barrel">
-            <div class="img-thumb" id="thumb-object-barrel"><span class="pal-emoji">🛢️</span></div>
-            <div class="img-row-label">ถัง</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="barrel">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="barrel">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="block">
-            <div class="img-thumb" id="thumb-object-block"><span class="pal-emoji">🧊</span></div>
-            <div class="img-row-label">บล็อก (1x1x1)</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="block">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="block">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="shortFence">
-            <div class="img-thumb" id="thumb-object-shortFence"><span class="pal-emoji">🪵</span></div>
-            <div class="img-row-label">กล่อง (0.25x0.25x0.5)</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="shortFence">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="shortFence">ล้าง</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cat">
-          <p class="section-label">พื้นผิว</p>
-          <div class="img-row" data-kind="terrain" data-type="grass">
-            <div class="img-thumb" id="thumb-terrain-grass" style="background:linear-gradient(160deg,#7fc26a,#4a8a3a);"></div>
-            <div class="img-row-label">หญ้า</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="terrain" data-type="grass">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="terrain" data-type="grass">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="terrain" data-type="sand">
-            <div class="img-thumb" id="thumb-terrain-sand" style="background:linear-gradient(160deg,#eeda9e,#cdb277);"></div>
-            <div class="img-row-label">ทราย</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="terrain" data-type="sand">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="terrain" data-type="sand">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="terrain" data-type="water">
-            <div class="img-thumb" id="thumb-terrain-water" style="background:linear-gradient(160deg,#69aee8,#3373a8);"></div>
-            <div class="img-row-label">น้ำ</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="terrain" data-type="water">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="terrain" data-type="water">ล้าง</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cat">
-          <p class="section-label">โต้ตอบได้</p>
-          <div class="img-row" data-kind="object" data-type="door">
-            <div class="img-thumb" id="thumb-object-door"><span class="pal-emoji">🚪</span></div>
-            <div class="img-row-label">ประตู</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="door">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="door">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="chest">
-            <div class="img-thumb" id="thumb-object-chest"><span class="pal-emoji">🎁</span></div>
-            <div class="img-row-label">หีบสมบัติ</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="chest">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="chest">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="lever">
-            <div class="img-thumb" id="thumb-object-lever"><span class="pal-emoji">🎚️</span></div>
-            <div class="img-row-label">คันโยก</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="lever">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="lever">ล้าง</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cat">
-          <p class="section-label">เก็บได้</p>
-          <div class="img-row" data-kind="object" data-type="coin">
-            <div class="img-thumb" id="thumb-object-coin"><span class="pal-emoji">🪙</span></div>
-            <div class="img-row-label">เหรียญ</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="coin">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="coin">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object" data-type="gem">
-            <div class="img-thumb" id="thumb-object-gem"><span class="pal-emoji">💎</span></div>
-            <div class="img-row-label">พลอย</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="gem">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="gem">ล้าง</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="cat">
-          <p class="section-label">ตัวละคร</p>
-          <div class="img-row" data-kind="object" data-type="npc">
-            <div class="img-thumb" id="thumb-object-npc"><span class="pal-emoji">🧑</span></div>
-            <div class="img-row-label">NPC</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object" data-type="npc">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object" data-type="npc">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="object-back" data-type="npc">
-            <div class="img-thumb" id="thumb-object-back-npc"><span class="pal-emoji">🧑</span></div>
-            <div class="img-row-label">NPC (ด้านหลัง)</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="object-back" data-type="npc">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="object-back" data-type="npc">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="player" data-type="player">
-            <div class="img-thumb" id="thumb-player-player"><span class="pal-emoji">🏃</span></div>
-            <div class="img-row-label">Player (ผู้เล่น)</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="player" data-type="player">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="player" data-type="player">ล้าง</button>
-            </div>
-          </div>
-          <div class="img-row" data-kind="player-back" data-type="player">
-            <div class="img-thumb" id="thumb-player-back-player"><span class="pal-emoji">🏃</span></div>
-            <div class="img-row-label">Player (ด้านหลัง)</div>
-            <div class="img-row-actions">
-              <button class="choose-img-btn" data-kind="player-back" data-type="player">เลือกรูป</button>
-              <button class="clear-img-btn" data-kind="player-back" data-type="player">ล้าง</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="tab-panel" id="tab-settings" style="display:none;">
         <details class="acc">
           <summary>ขนาด NPC / Player</summary>
@@ -4918,6 +4985,185 @@
             </div>
             <button id="applyNpcSizeBtn">ใช้ขนาดนี้</button>
             <button id="exportNpcImageBtn" title="ดาวน์โหลดรูป NPC ปัจจุบัน (พื้นหลังโปร่งใส) เพื่อนำไปแก้แล้ว import กลับ">⬇️ Export รูป NPC</button>
+          </div>
+        </details>
+        <!-- v3.148: Phase 1 of the UI reorg — every img-row below is moved
+             VERBATIM from the old "ใส่รูปเอง" tab (same ids/data-kind/
+             data-type, only the wrapping <details> position changed), so
+             the upload/thumbnail/clear pipeline (which keys off data-kind+
+             data-type, never DOM position) needed zero JS changes. Grouped
+             next to "ขนาด NPC / Player" above since both are character
+             settings, reader-adjacent even though not literally merged. -->
+        <details class="acc">
+          <summary title="ย้ายมาจากแท็บ &quot;ใส่รูปเอง&quot; เดิม">🧑 ตัวละคร (รูป)</summary>
+          <div class="acc-body">
+            <div class="img-row" data-kind="object" data-type="npc">
+              <div class="img-thumb" id="thumb-object-npc"><span class="pal-emoji">🧑</span></div>
+              <div class="img-row-label">NPC</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="npc">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="npc">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object-back" data-type="npc">
+              <div class="img-thumb" id="thumb-object-back-npc"><span class="pal-emoji">🧑</span></div>
+              <div class="img-row-label">NPC (ด้านหลัง)</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object-back" data-type="npc">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object-back" data-type="npc">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="player" data-type="player">
+              <div class="img-thumb" id="thumb-player-player"><span class="pal-emoji">🏃</span></div>
+              <div class="img-row-label">Player (ผู้เล่น)</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="player" data-type="player">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="player" data-type="player">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="player-back" data-type="player">
+              <div class="img-thumb" id="thumb-player-back-player"><span class="pal-emoji">🏃</span></div>
+              <div class="img-row-label">Player (ด้านหลัง)</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="player-back" data-type="player">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="player-back" data-type="player">ล้าง</button>
+              </div>
+            </div>
+          </div>
+        </details>
+        <details class="acc">
+          <summary title="ย้ายมาจากแท็บ &quot;ใส่รูปเอง&quot; เดิม">🏗️ สิ่งกีดขวาง (รูป)</summary>
+          <div class="acc-body">
+            <div class="img-row" data-kind="object" data-type="box">
+              <div class="img-thumb" id="thumb-object-box"><span class="pal-emoji">📦</span></div>
+              <div class="img-row-label">กล่อง</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="box">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="box">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="wall">
+              <div class="img-thumb" id="thumb-object-wall"><span class="pal-emoji">🧱</span></div>
+              <div class="img-row-label">กำแพง</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="wall">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="wall">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="tree">
+              <div class="img-thumb" id="thumb-object-tree"><span class="pal-emoji">🌳</span></div>
+              <div class="img-row-label">ต้นไม้</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="tree">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="tree">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="rock">
+              <div class="img-thumb" id="thumb-object-rock"><span class="pal-emoji">🪨</span></div>
+              <div class="img-row-label">ก้อนหิน</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="rock">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="rock">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="barrel">
+              <div class="img-thumb" id="thumb-object-barrel"><span class="pal-emoji">🛢️</span></div>
+              <div class="img-row-label">ถัง</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="barrel">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="barrel">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="block">
+              <div class="img-thumb" id="thumb-object-block"><span class="pal-emoji">🧊</span></div>
+              <div class="img-row-label">บล็อก (1x1x1)</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="block">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="block">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="shortFence">
+              <div class="img-thumb" id="thumb-object-shortFence"><span class="pal-emoji">🪵</span></div>
+              <div class="img-row-label">กล่อง (0.25x0.25x0.5)</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="shortFence">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="shortFence">ล้าง</button>
+              </div>
+            </div>
+          </div>
+        </details>
+        <details class="acc">
+          <summary title="ย้ายมาจากแท็บ &quot;ใส่รูปเอง&quot; เดิม — หญ้า/ทราย/น้ำหลากแบบ (9 แบบ) อยู่ในหมวด &quot;หญ้าหลากแบบ&quot; ด้านล่างนี้แยกต่างหาก">🟩 พื้นผิว (รูป)</summary>
+          <div class="acc-body">
+            <div class="img-row" data-kind="terrain" data-type="grass">
+              <div class="img-thumb" id="thumb-terrain-grass" style="background:linear-gradient(160deg,#7fc26a,#4a8a3a);"></div>
+              <div class="img-row-label">หญ้า</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="terrain" data-type="grass">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="terrain" data-type="grass">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="terrain" data-type="sand">
+              <div class="img-thumb" id="thumb-terrain-sand" style="background:linear-gradient(160deg,#eeda9e,#cdb277);"></div>
+              <div class="img-row-label">ทราย</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="terrain" data-type="sand">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="terrain" data-type="sand">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="terrain" data-type="water">
+              <div class="img-thumb" id="thumb-terrain-water" style="background:linear-gradient(160deg,#69aee8,#3373a8);"></div>
+              <div class="img-row-label">น้ำ</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="terrain" data-type="water">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="terrain" data-type="water">ล้าง</button>
+              </div>
+            </div>
+          </div>
+        </details>
+        <details class="acc">
+          <summary title="ย้ายมาจากแท็บ &quot;ใส่รูปเอง&quot; เดิม">🎯 โต้ตอบ / เก็บได้ (รูป)</summary>
+          <div class="acc-body">
+            <div class="img-row" data-kind="object" data-type="door">
+              <div class="img-thumb" id="thumb-object-door"><span class="pal-emoji">🚪</span></div>
+              <div class="img-row-label">ประตู</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="door">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="door">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="chest">
+              <div class="img-thumb" id="thumb-object-chest"><span class="pal-emoji">🎁</span></div>
+              <div class="img-row-label">หีบสมบัติ</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="chest">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="chest">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="lever">
+              <div class="img-thumb" id="thumb-object-lever"><span class="pal-emoji">🎚️</span></div>
+              <div class="img-row-label">คันโยก</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="lever">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="lever">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="coin">
+              <div class="img-thumb" id="thumb-object-coin"><span class="pal-emoji">🪙</span></div>
+              <div class="img-row-label">เหรียญ</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="coin">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="coin">ล้าง</button>
+              </div>
+            </div>
+            <div class="img-row" data-kind="object" data-type="gem">
+              <div class="img-thumb" id="thumb-object-gem"><span class="pal-emoji">💎</span></div>
+              <div class="img-row-label">พลอย</div>
+              <div class="img-row-actions">
+                <button class="choose-img-btn" data-kind="object" data-type="gem">เลือกรูป</button>
+                <button class="clear-img-btn" data-kind="object" data-type="gem">ล้าง</button>
+              </div>
+            </div>
           </div>
         </details>
         <details class="acc">
@@ -5247,6 +5493,23 @@
              กันมือลั่น — ปุ่ม/ไอดี/event listener เดิมทุกตัวไม่เปลี่ยนเลย
              แค่ย้ายตำแหน่ง + ห่อด้วย accordion (.acc ที่มีอยู่แล้วทั้งไฟล์)
              เท่านั้น ไม่ต้องเพิ่ม CSS ใหม่ -->
+        <!-- v3.146: multi-slot map saves (เหมือนระบบเซฟเกม) — separate from
+             the single-file Export/Import "🗺️ แผนที่" section right below,
+             which is unchanged and still the way to get a map OUT of this
+             browser (backup/share/move machines). This section is purely an
+             in-browser convenience for switching between several maps on
+             THIS machine without downloading/re-uploading a file each time.
+             Slot list renders dynamically (renderMapSavesList) since the
+             count is unbounded (พี่แยม's "ไม่จำกัด" answer) — no static
+             per-slot HTML like the custom-type cards use. -->
+        <details class="acc" open>
+          <summary title="เก็บแผนที่หลายอันแยกกันในเบราว์เซอร์นี้ — สลับไปมาได้โดยไม่ต้องดาวน์โหลด/อัปโหลดไฟล์ทุกครั้ง">💾 เซฟแผนที่ (หลายไฟล์)</summary>
+          <div class="acc-body">
+            <button id="newMapSaveBtn">💾 บันทึกเป็นเซฟใหม่...</button>
+            <div id="mapSavesList"></div>
+            <p class="field-hint" id="mapSavesEmptyHint">ยังไม่มีเซฟที่บันทึกไว้ — กด "บันทึกเป็นเซฟใหม่" ด้านบนเพื่อเริ่มสร้างเซฟแรก</p>
+          </div>
+        </details>
         <details class="acc" open>
           <summary>🗺️ แผนที่</summary>
           <div class="acc-body">
@@ -5502,7 +5765,43 @@
   // never has to stretch a fixed low-res buffer and blur it, regardless of
   // screen size or zoom level. Called on load, on window resize, and on
   // entering/exiting fullscreen (see their listeners further down).
+  //
+  // v3.147: in NON-fullscreen mode, this function now also explicitly pins
+  // the canvas's CSS display size (canvas.style.width/height) itself,
+  // computed fresh from .stage's own clientWidth every time — needed once
+  // .stage/canvas became allowed to shrink for the responsive layout.
+  // Reasoning: canvas.width/height (the attributes below) double as BOTH
+  // the backing-store resolution AND — whenever no explicit style/max-width
+  // overrides it — the element's own default CSS box size. A pure-CSS
+  // max-width:100% approach (what v3.147 originally shipped with) let a
+  // narrow window shrink the canvas correctly, but the moment this function
+  // then wrote a SMALLER value into canvas.width for backing-store
+  // sharpness, that smaller value became the canvas's new "natural" size —
+  // so widening the window back out never recovered the original 820,
+  // since nothing had ever recorded that 820 as the size to return to
+  // (caught by testing: resized narrow then wide again, canvas stayed
+  // stuck at the narrow width). Explicitly computing displayW/H from
+  // .stage's clientWidth (a measurement independent of the canvas's own,
+  // possibly-already-shrunk attributes) every single call breaks that
+  // feedback loop entirely — capped at LOGICAL_W so normal mode never
+  // renders BIGGER than native, only smaller when space is tight.
   function fitCanvasResolution(){
+    if (!currentFullscreenEl()){
+      const stage = canvas.parentElement;
+      const availableW = stage ? stage.clientWidth : LOGICAL_W;
+      const displayW = Math.min(LOGICAL_W, Math.max(1, availableW));
+      const displayH = displayW * (LOGICAL_H / LOGICAL_W);
+      canvas.style.width = displayW + 'px';
+      canvas.style.height = displayH + 'px';
+    } else {
+      // fullscreen has its own CSS rule (.stage:fullscreen canvas) that can
+      // size the canvas LARGER than LOGICAL_W — clear any inline pin from
+      // non-fullscreen mode so that stylesheet rule governs again instead
+      // of a stale inline style silently overriding it (inline styles always
+      // win over stylesheet rules regardless of selector specificity)
+      canvas.style.width = '';
+      canvas.style.height = '';
+    }
     const rect = canvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return; // not laid out yet (e.g. display:none)
     const dpr = window.devicePixelRatio || 1;
@@ -6752,6 +7051,15 @@
         } catch (err){ resolve(null); }
       });
     });
+  }
+  // v3.146: generic sibling of removeImageFromStorage, for the 'setting:'-
+  // prefixed key space instead — needed by the map save-slot system to
+  // delete a slot's stored map data when พี่แยม deletes that slot.
+  async function removeSettingFromStorage(name){
+    const db = await openImgDb();
+    if (!db) return;
+    try { db.transaction(IMG_DB_STORE, 'readwrite').objectStore(IMG_DB_STORE).delete(settingStorageKey(name)); }
+    catch (err){}
   }
 
   // resolves which uploaded image should actually be drawn/measured for a
@@ -12146,6 +12454,58 @@
     downloadDataUrl(dataUrl, `isometric-map-${todayStamp()}.json`);
   });
 
+  // v3.146: pulled out of the file-import handler below so the new save-
+  // slot system's "โหลด" action can replace the current map the exact same
+  // way an imported .json file does — same validation, same field-by-field
+  // apply, same reset of transient UI state (pan/drag/hover). Caller is
+  // responsible for the destructive-action confirm() — this function itself
+  // just applies data unconditionally once called. Returns true on success,
+  // false (after alerting) if `data` doesn't look like a real map.
+  function applyMapData(data){
+    if (!data || !Array.isArray(data.terrain) || !Array.isArray(data.objects)){
+      alert('ไฟล์แผนที่ไม่ถูกต้อง (ไม่พบข้อมูล terrain/objects ที่คาดไว้)');
+      return false;
+    }
+    // v3.89: restore the saved map's own size — falls back to whatever
+    // COLS/ROWS currently are if the file predates this field (older
+    // exports are always exactly 12×12 anyway, so that fallback is correct)
+    if (typeof data.cols === 'number' && data.cols >= 4 && data.cols <= 40) COLS = Math.round(data.cols);
+    if (typeof data.rows === 'number' && data.rows >= 4 && data.rows <= 40) ROWS = Math.round(data.rows);
+    mapColsInput.value = COLS;
+    mapRowsInput.value = ROWS;
+    objects.clear();
+    terrain.clear();
+    terrainColors.clear();
+    terrainDecal.clear();
+    terrainDecalColors.clear();
+    data.terrain.forEach(([k, v]) => terrain.set(k, v));
+    // v3.91/v3.101: older exports (before these fields existed) simply
+    // have no such array — the Array.isArray guards skip them cleanly,
+    // leaving every cell at its type's own default color with no decals.
+    // v3.103 note: a terrainDecal array from a v3.101/v3.102 export still
+    // imports without error (this loop just copies whatever key/value
+    // pairs it finds) but those old plain "col,row" keys won't match
+    // anything drawTerrainDecal looks up anymore (smallKey "col,row:sub"
+    // only) — same "old format silently stops rendering, no crash"
+    // precedent as v3.100's removal of the terrainSmall system entirely.
+    if (Array.isArray(data.terrainColors)) data.terrainColors.forEach(([k, v]) => terrainColors.set(k, v));
+    if (Array.isArray(data.terrainDecal)) data.terrainDecal.forEach(([k, v]) => terrainDecal.set(k, v));
+    if (Array.isArray(data.terrainDecalColors)) data.terrainDecalColors.forEach(([k, v]) => terrainDecalColors.set(k, v));
+    data.objects.forEach(([k, v]) => objects.set(k, v));
+    if (data.player && typeof data.player.col === 'number' && typeof data.player.row === 'number'){
+      player.col = data.player.col;
+      player.row = data.player.row;
+    }
+    panX = 0;
+    panY = 0;
+    pendingLayer = 0;
+    movingObj = null;
+    dragPreview = null;
+    hoveredObjKey = null;
+    updateStats();
+    return true;
+  }
+
   // clicking the visible "นำเข้าแผนที่" button just opens the real (hidden)
   // file picker — this indirection is the standard way to give a native
   // file input your own button styling instead of the browser's default one
@@ -12174,47 +12534,187 @@
       // importing replaces the entire current map — destructive, so confirm first
       const ok = confirm('นำเข้าแผนที่นี้จะลบแผนที่ปัจจุบันทั้งหมด ต้องการดำเนินการต่อไหม?');
       if (!ok) return;
-
-      // v3.89: restore the saved map's own size — falls back to whatever
-      // COLS/ROWS currently are if the file predates this field (older
-      // exports are always exactly 12×12 anyway, so that fallback is correct)
-      if (typeof data.cols === 'number' && data.cols >= 4 && data.cols <= 40) COLS = Math.round(data.cols);
-      if (typeof data.rows === 'number' && data.rows >= 4 && data.rows <= 40) ROWS = Math.round(data.rows);
-      mapColsInput.value = COLS;
-      mapRowsInput.value = ROWS;
-      objects.clear();
-      terrain.clear();
-      terrainColors.clear();
-      terrainDecal.clear();
-      terrainDecalColors.clear();
-      data.terrain.forEach(([k, v]) => terrain.set(k, v));
-      // v3.91/v3.101: older exports (before these fields existed) simply
-      // have no such array — the Array.isArray guards skip them cleanly,
-      // leaving every cell at its type's own default color with no decals.
-      // v3.103 note: a terrainDecal array from a v3.101/v3.102 export still
-      // imports without error (this loop just copies whatever key/value
-      // pairs it finds) but those old plain "col,row" keys won't match
-      // anything drawTerrainDecal looks up anymore (smallKey "col,row:sub"
-      // only) — same "old format silently stops rendering, no crash"
-      // precedent as v3.100's removal of the terrainSmall system entirely.
-      if (Array.isArray(data.terrainColors)) data.terrainColors.forEach(([k, v]) => terrainColors.set(k, v));
-      if (Array.isArray(data.terrainDecal)) data.terrainDecal.forEach(([k, v]) => terrainDecal.set(k, v));
-      if (Array.isArray(data.terrainDecalColors)) data.terrainDecalColors.forEach(([k, v]) => terrainDecalColors.set(k, v));
-      data.objects.forEach(([k, v]) => objects.set(k, v));
-      if (data.player && typeof data.player.col === 'number' && typeof data.player.row === 'number'){
-        player.col = data.player.col;
-        player.row = data.player.row;
-      }
-      panX = 0;
-      panY = 0;
-      pendingLayer = 0;
-      movingObj = null;
-      dragPreview = null;
-      hoveredObjKey = null;
-      updateStats();
+      applyMapData(data);
     };
     reader.onerror = () => alert('อ่านไฟล์แผนที่ไม่สำเร็จ');
     reader.readAsText(file);
+  });
+
+  // ---- Map save slots (v3.146) — multi-save "เหมือนระบบเซฟเกม" ----
+  // พี่แยม's request: keep several maps saved separately in-browser, switch
+  // between them without the download/re-upload round trip the existing
+  // single-file Export/Import (right above, unchanged) requires. Outline
+  // sent first (save_slots_outline.html) with 3 open questions; พี่แยม
+  // confirmed all 3: (1) a slot holds only layout — terrain/objects/size/
+  // player, same scope buildMapData() already has, NOT images or custom
+  // types (those stay global, shared across every slot, matching how
+  // Export already behaves today); (2) each slot gets its own Export
+  // button; (3) unlimited slots (layout-only data is small, no need to cap).
+  //
+  // Storage: reuses the exact same IndexedDB store as images/settings —
+  // no new database. Two kinds of entries under settingStorageKey's
+  // 'setting:' prefix: 'mapSaveSlots' (the index: array of {id, name,
+  // savedAt}) and one 'mapSave_<id>' per slot (that slot's buildMapData()
+  // output, JSON-stringified — same convention persistCustomTypes already
+  // uses for storing a structured value as a string).
+  function newSaveSlotId(){
+    return 'slot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+  function mapSaveDataKey(id){
+    return 'mapSave_' + id;
+  }
+  async function loadMapSaveSlots(){
+    const raw = await loadSettingFromStorage('mapSaveSlots');
+    if (!raw) return [];
+    try {
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch (err){ return []; }
+  }
+  function persistMapSaveSlots(slots){
+    saveSettingToStorage('mapSaveSlots', JSON.stringify(slots));
+  }
+  async function loadMapSaveData(id){
+    const raw = await loadSettingFromStorage(mapSaveDataKey(id));
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (err){ return null; }
+  }
+  function persistMapSaveData(id, data){
+    saveSettingToStorage(mapSaveDataKey(id), JSON.stringify(data));
+  }
+  function formatSaveTimestamp(ts){
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  // which slot the current in-memory map "is" — purely a UI convenience
+  // (highlights the active card, lets "บันทึกทับ" know its default target
+  // conceptually) — intentionally NOT persisted; a fresh page load has no
+  // slot loaded yet, same as how a fresh game session has no save "active"
+  // until you actually load or create one.
+  let activeMapSaveId = null;
+
+  async function renderMapSavesList(){
+    const slots = await loadMapSaveSlots();
+    const listEl = document.getElementById('mapSavesList');
+    const emptyHint = document.getElementById('mapSavesEmptyHint');
+    listEl.innerHTML = '';
+    if (!slots.length){
+      emptyHint.style.display = '';
+      return;
+    }
+    emptyHint.style.display = 'none';
+    // most-recently-saved first, same "recent saves" convention every game
+    // save-slot UI uses
+    const sorted = [...slots].sort((a, b) => b.savedAt - a.savedAt);
+    sorted.forEach(slot => {
+      const isActive = slot.id === activeMapSaveId;
+      const el = document.createElement('div');
+      el.className = 'map-save-slot' + (isActive ? ' active' : '');
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'map-save-slot-name';
+      nameSpan.textContent = slot.name;
+      if (isActive){
+        const pin = document.createElement('span');
+        pin.className = 'map-save-slot-pin';
+        pin.textContent = '● กำลังใช้งาน';
+        nameSpan.appendChild(pin);
+      }
+      const meta = document.createElement('div');
+      meta.className = 'map-save-slot-meta';
+      meta.textContent = `บันทึกล่าสุด ${formatSaveTimestamp(slot.savedAt)}`;
+      const actions = document.createElement('div');
+      actions.className = 'map-save-slot-actions';
+      const mkBtn = (action, label, danger) => {
+        const b = document.createElement('button');
+        b.className = 'map-save-slot-btn' + (danger ? ' danger' : '');
+        b.dataset.action = action;
+        b.dataset.id = slot.id;
+        b.textContent = label;
+        return b;
+      };
+      actions.appendChild(mkBtn('load', '▶️ โหลด'));
+      actions.appendChild(mkBtn('overwrite', '💾 บันทึกทับ'));
+      actions.appendChild(mkBtn('rename', '✏️ เปลี่ยนชื่อ'));
+      actions.appendChild(mkBtn('export', '⬇️ Export'));
+      actions.appendChild(mkBtn('delete', '🗑️ ลบ', true));
+      el.appendChild(nameSpan);
+      el.appendChild(meta);
+      el.appendChild(actions);
+      listEl.appendChild(el);
+    });
+  }
+  renderMapSavesList();
+
+  document.getElementById('newMapSaveBtn').addEventListener('click', async ()=>{
+    const raw = prompt('ตั้งชื่อเซฟใหม่:', `แผนที่ ${todayStamp()}`);
+    if (raw == null) return; // cancelled
+    const name = sanitizeLabel(raw);
+    if (!name){ alert('กรุณาใส่ชื่อ'); return; }
+    const slots = await loadMapSaveSlots();
+    const id = newSaveSlotId();
+    slots.push({ id, name, savedAt: Date.now() });
+    persistMapSaveSlots(slots);
+    persistMapSaveData(id, buildMapData());
+    activeMapSaveId = id;
+    renderMapSavesList();
+    showToast(`บันทึกเซฟ "${name}" แล้ว`);
+  });
+
+  document.getElementById('mapSavesList').addEventListener('click', async e=>{
+    const btn = e.target.closest('.map-save-slot-btn');
+    if (!btn) return;
+    const { action, id } = btn.dataset;
+    const slots = await loadMapSaveSlots();
+    const slot = slots.find(s => s.id === id);
+    if (!slot) return;
+
+    if (action === 'load'){
+      const ok = confirm(`โหลดเซฟ "${slot.name}" จะแทนที่แผนที่ปัจจุบันทั้งหมด (ส่วนที่ยังไม่ได้บันทึกจะหายไป) ต้องการดำเนินการต่อไหม?`);
+      if (!ok) return;
+      const data = await loadMapSaveData(id);
+      if (!data){ alert('โหลดเซฟนี้ไม่สำเร็จ (ข้อมูลอาจเสียหายหรือหายไป)'); return; }
+      if (applyMapData(data)){
+        activeMapSaveId = id;
+        renderMapSavesList();
+        showToast(`โหลดเซฟ "${slot.name}" แล้ว`);
+      }
+    } else if (action === 'overwrite'){
+      const ok = confirm(`บันทึกทับเซฟ "${slot.name}" ด้วยแผนที่ปัจจุบัน? ข้อมูลเดิมในเซฟนี้จะถูกแทนที่ ย้อนกลับไม่ได้`);
+      if (!ok) return;
+      persistMapSaveData(id, buildMapData());
+      slot.savedAt = Date.now();
+      persistMapSaveSlots(slots);
+      activeMapSaveId = id;
+      renderMapSavesList();
+      showToast(`บันทึกทับเซฟ "${slot.name}" แล้ว`);
+    } else if (action === 'rename'){
+      const raw = prompt('ตั้งชื่อใหม่:', slot.name);
+      if (raw == null) return;
+      const name = sanitizeLabel(raw);
+      if (!name){ alert('กรุณาใส่ชื่อ'); return; }
+      slot.name = name;
+      persistMapSaveSlots(slots);
+      renderMapSavesList();
+    } else if (action === 'export'){
+      const data = await loadMapSaveData(id);
+      if (!data){ alert('Export เซฟนี้ไม่สำเร็จ (ข้อมูลอาจเสียหายหรือหายไป)'); return; }
+      const json = JSON.stringify(data, null, 2);
+      const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+      // slot.name is free-text (Thai/spaces/punctuation all allowed as a
+      // display name) — filesystem-unsafe characters get replaced for the
+      // downloaded filename only; the pretty name itself is untouched
+      // everywhere else (list, toasts, JSON content)
+      const safeName = slot.name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'เซฟ';
+      downloadDataUrl(dataUrl, `isometric-map-${safeName}-${todayStamp()}.json`);
+    } else if (action === 'delete'){
+      const ok = confirm(`ลบเซฟ "${slot.name}" ถาวร? ย้อนกลับไม่ได้`);
+      if (!ok) return;
+      persistMapSaveSlots(slots.filter(s => s.id !== id));
+      removeSettingFromStorage(mapSaveDataKey(id));
+      if (activeMapSaveId === id) activeMapSaveId = null;
+      renderMapSavesList();
+    }
   });
 
   function updateStats(){
