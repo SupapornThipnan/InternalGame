@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GoodByeFat</title>
+<style>
+  :root {
+    --bg:#0b0d10; --card:#161a20; --card2:#1d222a; --text:#e8ecf1; --muted:#8b93a1;
+    --accent:#22c55e; --accent2:#f5a623; --danger:#f87171; --border:#242a33;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; -webkit-tap-highlight-color:transparent; }
+  #app { max-width:480px; margin:0 auto; min-height:100vh; padding-bottom:76px; }
+  header { padding:20px 16px 8px; }
+  header h1 { margin:0; font-size:20px; font-weight:800; }
+  header h1 span { color:var(--accent); }
+  #status { color:var(--muted); font-size:12px; margin-top:4px; }
+  .tab { display:none; padding:12px 16px; }
+  .tab.active { display:block; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:14px; }
+  .card h2 { margin:0 0 10px; font-size:15px; font-weight:700; }
+  .card h2 .num { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--accent); color:#04150a; font-size:12px; margin-right:7px; vertical-align:middle; }
+  .steps { font-size:12.5px; color:var(--muted); line-height:1.75; margin:0 0 12px; padding-left:20px; }
+  .row { display:flex; gap:8px; margin-top:10px; }
+  .btn { flex:1; padding:11px; border-radius:10px; border:none; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-primary { background:var(--accent); color:#04150a; }
+  .btn-secondary { background:var(--card2); color:var(--text); border:1px solid var(--border); }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px; }
+  .field { display:flex; flex-direction:column; gap:5px; }
+  .field.full { grid-column:1 / -1; }
+  .field label { font-size:12px; color:var(--muted); }
+  .field input, .field select, .field textarea { background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:9px; padding:9px 10px; font-size:14px; font-family:inherit; width:100%; }
+  .field textarea { resize:vertical; min-height:44px; }
+  /* ไฮไลต์ช่องที่เพิ่งแกะมาจากคำตอบ เพื่อให้เห็นชัดว่าอันไหนมาจากรูป อันไหนพิมพ์เอง */
+  .field input.autofilled, .field select.autofilled { border-color:var(--accent); box-shadow:0 0 0 2px rgba(34,197,94,.14); }
+  .paste { width:100%; min-height:96px; background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:10px; font-size:13px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; resize:vertical; }
+  nav { position:fixed; left:0; right:0; bottom:0; max-width:480px; margin:0 auto; display:flex; background:var(--card); border-top:1px solid var(--border); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  nav button { flex:1; background:none; border:none; color:var(--muted); font-size:11px; padding:8px 2px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; font-family:inherit; }
+  nav button .ic { font-size:19px; }
+  nav button.active { color:var(--accent); }
+  .subtabs { display:flex; gap:8px; margin-bottom:12px; }
+  .subtabs button { flex:1; padding:9px; border-radius:10px; border:1px solid var(--border); background:var(--card2); color:var(--muted); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .subtabs button.active { background:var(--accent); color:#04150a; border-color:var(--accent); }
+  /* table-layout:fixed ให้ทุกคอลัมน์กว้างตามที่กำหนดเป๊ะๆ ไม่ขยับตามความยาวเนื้อหาของแต่ละแถว
+     (ถ้าไม่ใส่ พอมีแถวที่บางช่องว่าง เช่น "มวลไขมัน" ไม่มีค่า คอลัมน์จะบีบจนแถวดูเบี้ยวไม่ตรงกับหัวตาราง)
+     ความกว้างรวมกันได้ 100% พอดี — ห้ามใส่ min-width ไม่งั้นตารางจะล้นกรอบจนมี scrollbar แนวนอน
+     แล้วคอลัมน์จะเลื่อนไม่ตรงกับหัวตารางอีก (เคยพลาดมาแล้ว) */
+  table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:12.5px; }
+  th, td { text-align:center; padding:8px 3px; border-bottom:1px solid var(--border); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  th:nth-child(1), td:nth-child(1) { width:32%; text-align:left; }   /* วันที่ */
+  th:nth-child(2), td:nth-child(2),
+  th:nth-child(3), td:nth-child(3),
+  th:nth-child(4), td:nth-child(4),
+  th:nth-child(5), td:nth-child(5) { width:15%; }                    /* ค่าตัวเลข 4 คอลัมน์ */
+  th:nth-child(6), td:nth-child(6) { width:8%; }                     /* ปุ่มลบ */
+  /* ตารางออกกำลังกายมีคอลัมน์ "ประเภท" ที่เป็นข้อความ (เช่น "ปั่นจักรยาน") ไม่ใช่ตัวเลขสั้นๆ
+     ต้องกว้างกว่าปกติ ไม่งั้นชื่อกิจกรรมจะโดนตัดท้ายเป็น "..." */
+  table.ex th:nth-child(1), table.ex td:nth-child(1) { width:30%; }
+  table.ex th:nth-child(2), table.ex td:nth-child(2) { width:24%; }
+  table.ex th:nth-child(3), table.ex td:nth-child(3),
+  table.ex th:nth-child(4), table.ex td:nth-child(4),
+  table.ex th:nth-child(5), table.ex td:nth-child(5) { width:13%; }
+  table.ex th:nth-child(6), table.ex td:nth-child(6) { width:7%; }
+  /* หัวตารางยอมให้ตัดขึ้นบรรทัดใหม่ได้ ชื่อยาวๆ อย่าง "กล้ามเนื้อ" จะได้ไม่โดนตัดหาย */
+  th { color:var(--muted); font-weight:600; font-size:11px; white-space:normal; line-height:1.3; vertical-align:bottom; }
+  .tablewrap { overflow-x:auto; }
+  /* จอเล็กมาก (iPhone SE รุ่นเก่า ~320px) ย่อฟอนต์กับระยะขอบลงอีกนิด ไม่งั้นตัวเลขยาวๆ จะโดนตัด */
+  @media (max-width:360px) {
+    table { font-size:11.5px; }
+    th { font-size:10px; }
+    th, td { padding:8px 1px; }
+  }
+  .del { color:var(--danger); cursor:pointer; font-size:14px; }
+  canvas#trend { width:100%; height:140px; display:block; }
+  .empty { color:var(--muted); font-size:13px; text-align:center; padding:20px 0; }
+  .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:var(--card2); border:1px solid var(--border); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; max-width:90%; z-index:50; opacity:0; pointer-events:none; transition:.2s; }
+  .toast.show { opacity:1; }
+  .help { font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .help code { background:var(--card2); padding:1px 5px; border-radius:5px; word-break:break-all; }
+  .help ol { padding-left:18px; }
+  .hint { font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.5; }
+  .warn { font-size:12px; color:var(--accent2); margin-top:8px; line-height:1.5; font-weight:600; }
+  details.ref { margin-top:12px; }
+  details.ref summary { font-size:12.5px; color:var(--muted); cursor:pointer; }
+  details.ref img { max-width:100%; max-height:300px; object-fit:contain; border-radius:10px; margin-top:10px; display:block; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>GoodBye<span>Fat</span></h1>
+    <div id="status">ยินดีต้อนรับ ✨ บันทึกน้ำหนักและการออกกำลังกายของคุณ</div>
+  </header>
+
+  <!-- ===== TAB: WEIGHT ===== -->
+  <div class="tab active" id="tab-weight">
+    <div class="card">
+      <h2><span class="num">1</span>ก็อปคำสั่งไปวางในแอป Claude</h2>
+      <ol class="steps">
+        <li>กดปุ่มข้างล่างเพื่อก็อปคำสั่ง</li>
+        <li>เปิดแอป Claude → วางคำสั่ง + แนบรูปตาชั่ง → ส่ง</li>
+        <li>Claude จะตอบเป็นกล่องโค้ด JSON — กดปุ่มก็อปที่มุมกล่อง</li>
+      </ol>
+      <div class="row"><button class="btn btn-primary" id="wCopyBtn">📋 ก็อปคำสั่งสำหรับรูปตาชั่ง</button></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span>วางคำตอบที่ได้กลับมา</h2>
+      <textarea class="paste" id="wPaste" placeholder='วางคำตอบจาก Claude ตรงนี้ เช่น {"weight_kg": 63.8, "bmi": 25.9, ...}'></textarea>
+      <div class="row">
+        <button class="btn btn-primary" id="wApplyBtn">⬇️ แกะใส่ฟอร์ม</button>
+        <button class="btn btn-secondary" id="wClearPasteBtn">ล้าง</button>
+      </div>
+      <div class="hint" id="wApplyHint"></div>
+    </div>
+
+    <div class="card">
+      <h2>ข้อมูลร่างกาย</h2>
+      <div class="grid" id="wForm"></div>
+      <details class="ref">
+        <summary>📎 แนบรูปไว้ดูเทียบตอนตรวจค่า (ไม่บังคับ)</summary>
+        <input type="file" id="wFile" accept="image/*" style="margin-top:10px; font-size:12px; color:var(--muted)">
+        <img id="wPreview" style="display:none" alt="">
+      </details>
+      <div class="row"><button class="btn btn-primary" id="wSaveBtn">บันทึกลง Sheet</button></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: EXERCISE ===== -->
+  <div class="tab" id="tab-exercise">
+    <div class="card">
+      <h2><span class="num">1</span>ก็อปคำสั่งไปวางในแอป Claude</h2>
+      <ol class="steps">
+        <li>กดปุ่มข้างล่างเพื่อก็อปคำสั่ง</li>
+        <li>เปิดแอป Claude → วางคำสั่ง + แนบรูปหน้าจอนาฬิกา → ส่ง</li>
+        <li>ก็อป JSON ที่ Claude ตอบกลับมา</li>
+      </ol>
+      <div class="row"><button class="btn btn-primary" id="eCopyBtn">📋 ก็อปคำสั่งสำหรับรูปนาฬิกา</button></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span>วางคำตอบที่ได้กลับมา</h2>
+      <textarea class="paste" id="ePaste" placeholder='วางคำตอบจาก Claude ตรงนี้ เช่น {"duration_min": 29.9, "kcal": 222, ...}'></textarea>
+      <div class="row">
+        <button class="btn btn-primary" id="eApplyBtn">⬇️ แกะใส่ฟอร์ม</button>
+        <button class="btn btn-secondary" id="eClearPasteBtn">ล้าง</button>
+      </div>
+      <div class="hint" id="eApplyHint"></div>
+    </div>
+
+    <div class="card">
+      <h2>ข้อมูลการออกกำลังกาย</h2>
+      <div class="grid" id="eForm"></div>
+      <details class="ref">
+        <summary>📎 แนบรูปไว้ดูเทียบตอนตรวจค่า (ไม่บังคับ)</summary>
+        <input type="file" id="eFile" accept="image/*" style="margin-top:10px; font-size:12px; color:var(--muted)">
+        <img id="ePreview" style="display:none" alt="">
+      </details>
+      <div class="row"><button class="btn btn-primary" id="eSaveBtn">บันทึกลง Sheet</button></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: HISTORY ===== -->
+  <div class="tab" id="tab-history">
+    <div class="subtabs">
+      <button id="hSubWeight" class="active">⚖️ น้ำหนัก</button>
+      <button id="hSubExercise">🏃 ออกกำลังกาย</button>
+    </div>
+    <div class="card" id="hChartCard">
+      <h2>แนวโน้มน้ำหนัก (20 ครั้งล่าสุด)</h2>
+      <canvas id="trend"></canvas>
+    </div>
+    <div class="card">
+      <h2 id="hTableTitle">ประวัติล่าสุด</h2>
+      <div class="tablewrap"><table id="hTable"></table></div>
+      <div class="empty" id="hEmpty" style="display:none">ยังไม่มีข้อมูล</div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: SETTINGS ===== -->
+  <div class="tab" id="tab-settings">
+    <div class="card">
+      <h2>เชื่อมต่อ Google Sheet</h2>
+      <div class="field full"><label>Apps Script Web App URL</label><input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/xxxx/exec"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="saveApiBtn">บันทึก</button>
+        <button class="btn btn-secondary" id="testApiBtn">ทดสอบ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>วิธีตั้งค่า Google Sheet ครั้งแรก</h2>
+      <div class="help">
+        <ol>
+          <li>เปิด Google Sheet ที่จะใช้เก็บข้อมูล → เมนู <code>Extensions → Apps Script</code></li>
+          <li>ลบโค้ดเดิมทั้งหมด แล้ววางโค้ดจากไฟล์ <code>apps-script.gs</code></li>
+          <li>เลือกฟังก์ชัน <code>setup</code> ที่แถบด้านบน แล้วกด ▶️ Run ครั้งเดียว</li>
+          <li>กด <code>Deploy → New deployment → Web app</code></li>
+          <li>Execute as: <code>Me</code>, Who has access: <code>Anyone</code> → Deploy</li>
+          <li>ก็อป URL ที่ได้มาวางในช่องด้านบน แล้วกดบันทึก</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>เว็บนี้ทำงานยังไง</h2>
+      <div class="help">
+        ไม่มีการเรียก API ใดๆ และไม่ต้องใช้ API key — เว็บนี้แค่<b>เตรียมคำสั่ง</b>ให้พี่เอาไปวางในแอป Claude
+        ที่พี่ใช้อยู่แล้ว แล้ว<b>แกะคำตอบ</b>ที่ได้กลับมาใส่ฟอร์มให้อัตโนมัติ<br><br>
+        ทั้งหน้าเป็นไฟล์เดียวจบ ไม่โหลดอะไรจากอินเทอร์เน็ต จะเปิดแบบออฟไลน์ก็ได้
+        (ยกเว้นตอนกดบันทึก/ดูประวัติ ที่ต้องต่อ Google Sheet)
+      </div>
+    </div>
+  </div>
+
+  <nav>
+    <button data-tab="weight" class="active"><span class="ic">⚖️</span>ชั่งน้ำหนัก</button>
+    <button data-tab="exercise"><span class="ic">🏃</span>ออกกำลังกาย</button>
+    <button data-tab="history"><span class="ic">📈</span>ประวัติ</button>
+    <button data-tab="settings"><span class="ic">⚙️</span>ตั้งค่า</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const SHEET_WEIGHT = 'น้ำหนัก';
+const SHEET_EXERCISE = 'ออกกำลังกาย';
+
+// ฝัง URL ของ Apps Script ไว้ในโค้ดเลย เปิดเว็บเครื่องใหม่/ล้างแคชก็ใช้ได้ทันทีไม่ต้องตั้งค่าใหม่
+// ถ้าอยากเปลี่ยนไปใช้ Sheet อื่น ยังเข้าแท็บตั้งค่าแล้วกรอก URL ใหม่ทับได้เหมือนเดิม (ค่าที่กรอกเองจะชนะค่านี้เสมอ)
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbzY4K6gFs8Xiqk-zMar93mtqNINtG8dx0GfQqvT45Grn4_l_0lc2U2nktoSg0j4VdOh/exec';
+
+/* ============================================================
+   FIELD DEFINITIONS — แหล่งความจริงเดียวของทั้งไฟล์
+   key = id ของ input ในหน้าเว็บ
+   col = ชื่อหัวคอลัมน์ใน Google Sheet (ต้องตรงกับ HEADERS ใน apps-script.gs เป๊ะๆ)
+   ai  = ชื่อคีย์ใน JSON ที่ Claude ตอบกลับมา
+   ฟอร์ม / คำสั่งที่ก็อป / ตัวแกะคำตอบ / ตัวบันทึกลงชีต สร้างจากตารางนี้ทั้งหมด
+   เพิ่มค่าใหม่ = เพิ่มบรรทัดเดียวตรงนี้ (+ เพิ่มหัวคอลัมน์ใน apps-script.gs ให้ตรง)
+   ============================================================ */
+const WEIGHT_FIELDS = [
+  { key:'wWeight',   col:'น้ำหนัก (กก.)',            ai:'weight_kg',          label:'น้ำหนัก (กก.)',        step:'0.1', desc:'"น้ำหนัก" ตัวเลขใหญ่สุดบนสุด หน่วย กก.' },
+  { key:'wBmi',      col:'BMI',                      ai:'bmi',                label:'BMI',                  step:'0.1', desc:'"BMI"' },
+  { key:'wFat',      col:'เปอร์เซ็นต์ไขมัน (%)',      ai:'body_fat_pct',       label:'ไขมัน (%)',            step:'0.1', desc:'"เปอร์เซ็นต์ไขมันในร่างกาย" หน่วย %' },
+  { key:'wFatMass',  col:'มวลไขมัน (กก.)',           ai:'fat_mass_kg',        label:'มวลไขมัน (กก.)',       step:'0.1', desc:'"มวลไขมัน" หน่วย กก.' },
+  { key:'wMuscle',   col:'มวลกล้ามเนื้อ (กก.)',       ai:'muscle_mass_kg',     label:'มวลกล้ามเนื้อ (กก.)',   step:'0.1', desc:'"มวลกล้ามเนื้อ" หน่วย กก.' },
+  { key:'wSkeletal', col:'มวลกล้ามเนื้อลาย (กก.)',    ai:'skeletal_muscle_kg', label:'กล้ามเนื้อลาย (กก.)',   step:'0.1', desc:'"มวลกล้ามเนื้อลาย" หน่วย กก.' },
+  { key:'wWater',    col:'น้ำในร่างกาย (%)',          ai:'body_water_pct',     label:'น้ำในร่างกาย (%)',      step:'0.1', desc:'"น้ำในร่างกาย" หน่วย % — ระวัง! คนละตัวกับ "มวลน้ำในร่างกาย" ที่หน่วยเป็น กก.' },
+  { key:'wProtein',  col:'เปอร์เซ็นต์โปรตีน (%)',      ai:'protein_pct',        label:'โปรตีน (%)',           step:'0.1', desc:'"เปอร์เซ็นต์โปรตีน" หน่วย % — คนละตัวกับ "มวลโปรตีน" ที่หน่วยเป็น กก.' },
+  { key:'wVisceral', col:'ไขมันในช่องท้อง (ระดับ)',   ai:'visceral_fat_level', label:'ไขมันช่องท้อง (ระดับ)', step:'1',   desc:'"ระดับไขมันในอวัยวะภายใน" เลขจำนวนเต็ม ไม่มีหน่วย' },
+  { key:'wBmr',      col:'BMR (kcal)',               ai:'bmr_kcal',           label:'BMR (kcal)',           step:'1',   desc:'"อัตราการความต้องการเผาผลาญของร่างกายในชีวิตประจำวัน" หน่วย Kcal' },
+  { key:'wBodyAge',  col:'อายุร่างกาย (ปี)',          ai:'body_age_years',     label:'อายุร่างกาย (ปี)',      step:'1',   desc:'"อายุร่างกาย" หน่วย ปี' },
+  { key:'wBone',     col:'มวลกระดูก (กก.)',          ai:'bone_mass_kg',       label:'มวลกระดูก (กก.)',      step:'0.1', desc:'"ปริมาณแร่ธาตุในกระดูก" หน่วย กก. — คนละตัวกับ "เปอร์เซ็นต์แร่ธาตุในกระดูก" ที่หน่วยเป็น %' },
+  { key:'wFatFree',  col:'น้ำหนักไร้ไขมัน (กก.)',     ai:'fat_free_mass_kg',   label:'น้ำหนักไร้ไขมัน (กก.)', step:'0.1', desc:'"น้ำหนักตัวที่ปราศจากไขมัน" หน่วย กก.' },
+  { key:'wScore',    col:'คะแนนร่างกาย',              ai:'body_score',         label:'คะแนนร่างกาย',         step:'1',   desc:'ตัวเลขใหญ่คู่กับคำว่า "คะแนน" ในการ์ด "คะแนนร่างกาย"' },
+];
+
+const EXERCISE_FIELDS = [
+  { key:'eDuration', col:'ระยะเวลา (นาที)',    ai:'duration_min', label:'ระยะเวลา (นาที)',  step:'0.1', desc:'ตัวจับเวลา HH:MM:SS ตัวใหญ่กลางจอ แปลงเป็นจำนวนนาที (เช่น 00:29:55 = 29.9)' },
+  { key:'eKcal',     col:'แคลอรี่ (kcal)',      ai:'kcal',         label:'แคลอรี่ (kcal)',   step:'1',   desc:'ตัวเลขที่มีหน่วย kcal' },
+  { key:'eBpm',      col:'ชีพจรเฉลี่ย (bpm)',   ai:'avg_bpm',      label:'ชีพจรเฉลี่ย (bpm)', step:'1',   desc:'ตัวเลขที่มีหน่วย BPM (มักมีรูปหัวใจอยู่ข้างๆ)' },
+];
+
+const ACTIVITY_TYPES = ['วิ่ง','เดิน','ปั่นจักรยาน','ยกน้ำหนัก','โยคะ','ว่ายน้ำ','คาร์ดิโอ','อื่นๆ'];
+
+/* ============================================================
+   คำสั่งที่ก็อปไปวางในแอป Claude — สร้างจาก FIELD DEFINITIONS ข้างบน
+   สร้างอัตโนมัติเพื่อไม่ให้ชื่อคีย์ในคำสั่ง หลุดไม่ตรงกับที่ตัวแกะคำตอบรอรับอยู่
+   ============================================================ */
+const COMMON_RULES = `กฎเหล็ก:
+- อ่านเฉพาะตัวเลขที่เห็นจริงในรูปเท่านั้น ห้ามเดา ห้ามคำนวณเอง ห้ามเติมค่าที่ดูสมเหตุสมผล
+- ค่าไหนไม่ปรากฏในรูป หรืออ่านไม่ชัด ให้ตอบ null — ตอบ null ดีกว่าเดาผิด
+- ตัวเลขเล็กๆ ที่มีลูกศร ↑ หรือ ↓ นำหน้า (เช่น "↑0.7", "↓0.9") คือส่วนต่างจากการวัดครั้งก่อน
+  ไม่ใช่ค่าที่ต้องการ ห้ามเอามาตอบเด็ดขาด
+- ปีที่เป็น พ.ศ. (มากกว่า 2500) ให้ลบ 543 แปลงเป็น ค.ศ. ก่อนตอบ`;
+
+function jsonTemplate(fields, extraKeys) {
+  const lines = Object.entries(extraKeys).map(([k, v]) => `  "${k}": ${v}`)
+    .concat(fields.map(f => `  "${f.ai}": null`));
+  return '{\n' + lines.join(',\n') + '\n}';
+}
+
+function fieldGuide(fields) {
+  return fields.map(f => `- ${f.desc} → ${f.ai}`).join('\n');
+}
+
+const WEIGHT_PROMPT = `ช่วยอ่านค่าจากสกรีนช็อตแอปตาชั่งวัดองค์ประกอบร่างกาย Xiaomi / Mi Fitness (ภาษาไทย) ที่แนบมาให้หน่อย
+
+${COMMON_RULES}
+
+วิธีอ่านหน้าจอนี้: แต่ละค่าจะแสดงเป็นตัวเลขใหญ่พร้อมหน่วย และมีป้ายชื่อภาษาไทยตัวเล็กอยู่ "ใต้" ตัวเลขนั้น
+ให้จับคู่ค่ากับป้ายชื่อที่อยู่ใต้มันเสมอ อย่าเดาจากตำแหน่งหรือลำดับ
+
+ตารางจับคู่ ป้ายชื่อ → ชื่อคีย์ที่ต้องตอบ:
+${fieldGuide(WEIGHT_FIELDS)}
+- วันที่-เวลาที่ชั่ง อยู่ใต้ชื่อผู้ใช้บนสุดของหน้า (รูปแบบ วว/ดด/ปปปป ชช:นน) → measured_at
+  ตอบเป็นรูปแบบ "YYYY-MM-DD HH:mm" เท่านั้น
+
+ส่วนที่ต้องข้าม ห้ามเอามาตอบเด็ดขาด:
+- การ์ดล่างสุดชื่อ "คำแนะนำเกี่ยวกับน้ำหนัก" ที่มี "น้ำหนักมาตรฐาน", "ควบคุมน้ำหนัก", "ควบคุมไขมัน",
+  "ควบคุมกล้ามเนื้อ" — ค่าพวกนี้คือเป้าหมาย ไม่ใช่ค่าที่วัดได้จริง
+  (เช่น น้ำหนักมาตรฐาน 52.2 กก. ไม่ใช่ weight_kg)
+- ตัวเลขบนแกนของกราฟ "ประเภทร่างกาย" (เช่น 25.0, 18.5, 18%, 28%) เป็นเส้นแบ่งเกณฑ์ ไม่ใช่ค่าที่วัดได้
+- คำบรรยายสถานะใต้ค่า เช่น "มาตรฐาน", "น้ำหนักเกิน", "สูงมาก", "ต่ำกว่า", "มากกว่า"
+
+ตอบกลับเป็นบล็อกโค้ด JSON อย่างเดียว ตามรูปแบบนี้เป๊ะๆ ห้ามเปลี่ยน/เพิ่ม/ลดชื่อคีย์:
+\`\`\`json
+${jsonTemplate(WEIGHT_FIELDS, { measured_at: 'null' })}
+\`\`\``;
+
+const EXERCISE_PROMPT = `ช่วยอ่านค่าจากรูปถ่ายหน้าจอสมาร์ทวอทช์ (Xiaomi Mi Band / สายรัดข้อมือ) ที่กำลังแสดงผลการออกกำลังกาย ที่แนบมาให้หน่อย
+
+${COMMON_RULES}
+
+ตารางจับคู่:
+${fieldGuide(EXERCISE_FIELDS)}
+- ถ้าในรูปบอกชนิดกีฬา (เช่น วิ่ง / เดิน / ปั่นจักรยาน) ให้ใส่ใน activity_type เป็นภาษาไทย ถ้าไม่บอกให้ตอบ null
+- ถ้าอ่านวันที่-เวลาที่ออกกำลังกายได้ ให้ใส่ใน performed_at รูปแบบ "YYYY-MM-DD HH:mm" ถ้าไม่มีให้ตอบ null
+
+⚠️ ระวังที่สุด: นาฬิกามักแสดง "เวลาปัจจุบัน" เป็นตัวเลขเล็กๆ ด้านบนสุดของจอด้วย (เช่น 14:04)
+ตัวนั้นคือเวลานาฬิกา ไม่ใช่ระยะเวลาออกกำลังกาย ห้ามสับสน
+ให้ใช้ตัวจับเวลาที่เป็นตัวใหญ่กลางจอเท่านั้นสำหรับ duration_min
+
+ตอบกลับเป็นบล็อกโค้ด JSON อย่างเดียว ตามรูปแบบนี้เป๊ะๆ ห้ามเปลี่ยน/เพิ่ม/ลดชื่อคีย์:
+\`\`\`json
+${jsonTemplate(EXERCISE_FIELDS, { performed_at: 'null', activity_type: 'null' })}
+\`\`\``;
+
+/* ---- สร้างฟอร์มจาก FIELDS (ไม่ต้องเขียน HTML ซ้ำทีละช่อง) ---- */
+function buildForm(container, fields, opts) {
+  let html = `<div class="field full"><label>วันที่/เวลา</label><input type="datetime-local" id="${opts.dateId}"></div>`;
+  if (opts.activityId) {
+    html += `<div class="field full"><label>ประเภทกิจกรรม</label><select id="${opts.activityId}">`
+      + ACTIVITY_TYPES.map(t => `<option>${t}</option>`).join('') + `</select></div>`;
+  }
+  html += fields.map(f =>
+    `<div class="field"><label>${f.label}</label><input type="number" step="${f.step}" id="${f.key}"></div>`).join('');
+  html += `<div class="field full"><label>หมายเหตุ</label><textarea id="${opts.noteId}"></textarea></div>`;
+  container.innerHTML = html;
+}
+buildForm($('wForm'), WEIGHT_FIELDS, { dateId:'wDate', noteId:'wNote' });
+buildForm($('eForm'), EXERCISE_FIELDS, { dateId:'eDate', noteId:'eNote', activityId:'eType' });
+
+/* ================== NAV / UI ================== */
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  $('tab-' + name).classList.add('active');
+  document.querySelector(`nav button[data-tab="${name}"]`).classList.add('active');
+  if (name === 'history') loadHistory();
+}
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+function nowLocal() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+$('wDate').value = nowLocal();
+$('eDate').value = nowLocal();
+
+/* ================== SETTINGS ================== */
+const apiUrl = () => localStorage.getItem('gbfApiUrl') || DEFAULT_API_URL;
+$('apiUrlInput').value = apiUrl();
+$('saveApiBtn').addEventListener('click', () => {
+  localStorage.setItem('gbfApiUrl', $('apiUrlInput').value.trim());
+  toast('บันทึก URL แล้ว ✓');
+});
+$('testApiBtn').addEventListener('click', async () => {
+  if (!apiUrl()) { toast('กรอก URL ก่อนครับ'); return; }
+  try {
+    const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(SHEET_WEIGHT)}`);
+    const j = await res.json();
+    toast(j.ok ? `เชื่อมต่อสำเร็จ ✓ (มีข้อมูล ${j.data.length} แถว)` : `ผิดพลาด: ${j.error}`);
+  } catch (e) {
+    toast('เชื่อมต่อไม่ได้: ' + (e?.message ?? e));
+  }
+});
+
+/* ================== COPY PROMPT ================== */
+// navigator.clipboard ใช้ได้เฉพาะ secure context (https / localhost) — เปิดไฟล์ตรงๆ แบบ file:// บางเบราว์เซอร์จะไม่ให้ใช้
+// เลยมีทางสำรอง: สร้าง textarea ชั่วคราวแล้ว execCommand('copy') ซึ่งทำงานได้ทุกที่
+async function copyText(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* ตกไปใช้ทางสำรองข้างล่าง */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length); // iOS Safari ต้องระบุช่วงเอง select() อย่างเดียวไม่พอ
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+$('wCopyBtn').addEventListener('click', async () => {
+  toast(await copyText(WEIGHT_PROMPT) ? 'ก็อปคำสั่งแล้ว ✓ เอาไปวางในแอป Claude พร้อมแนบรูปได้เลย' : 'ก็อปไม่สำเร็จ — ลองกดค้างที่ข้อความเพื่อก็อปเองครับ');
+});
+$('eCopyBtn').addEventListener('click', async () => {
+  toast(await copyText(EXERCISE_PROMPT) ? 'ก็อปคำสั่งแล้ว ✓ เอาไปวางในแอป Claude พร้อมแนบรูปได้เลย' : 'ก็อปไม่สำเร็จ — ลองกดค้างที่ข้อความเพื่อก็อปเองครับ');
+});
+
+/* ================== PARSE CLAUDE REPLY ================== */
+/* รับได้ทั้งกรณีพี่ก็อปมาเฉพาะ JSON, ก็อปมาทั้งบล็อกโค้ด ```json ... ```
+   หรือก็อปมาทั้งคำตอบที่มีข้อความอธิบายหุ้มอยู่ */
+function parseReply(raw) {
+  let t = String(raw || '').trim();
+  if (!t) throw new Error('ยังไม่ได้วางคำตอบลงในช่อง');
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) t = fence[1];
+  const s = t.indexOf('{'), e = t.lastIndexOf('}');
+  if (s === -1 || e === -1 || e < s) throw new Error('ไม่พบ JSON ในข้อความที่วาง — ก็อปเฉพาะกล่องโค้ดที่ Claude ตอบมานะครับ');
+  try {
+    return JSON.parse(t.slice(s, e + 1));
+  } catch {
+    throw new Error('รูปแบบ JSON ไม่ถูกต้อง — อาจก็อปมาไม่ครบ ลองก็อปใหม่ทั้งก้อน');
+  }
+}
+
+/* ---- เอาค่าที่แกะได้ใส่ลงฟอร์ม + ไฮไลต์ช่องที่เติมให้ ---- */
+function applyToForm(result, fields, dateId, activityId) {
+  const filled = [], skipped = [];
+  fields.forEach(f => {
+    const el = $(f.key);
+    el.classList.remove('autofilled');
+    const v = result[f.ai];
+    if (v === null || v === undefined || v === '') { skipped.push(f.label); return; }
+    const n = Number(v); // Claude อาจตอบเป็นสตริง "63.8" ได้ แปลงให้เป็นตัวเลขก่อน
+    if (!Number.isFinite(n)) { skipped.push(f.label); return; }
+    el.value = n;
+    el.classList.add('autofilled');
+    filled.push(f.label);
+  });
+
+  const stamp = result.measured_at ?? result.performed_at;
+  if (stamp) {
+    // "YYYY-MM-DD HH:mm" → "YYYY-MM-DDTHH:mm" ให้ input[type=datetime-local] รับได้
+    const iso = String(stamp).trim().replace(' ', 'T').slice(0, 16);
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(iso)) $(dateId).value = iso;
+  }
+  if (activityId) {
+    const sel = $(activityId);
+    sel.classList.remove('autofilled');
+    if (result.activity_type) {
+      const opt = [...sel.options].find(o => o.value === result.activity_type);
+      sel.value = opt ? opt.value : 'อื่นๆ';
+      sel.classList.add('autofilled');
+    }
+  }
+  return { filled, skipped };
+}
+
+function wireApply(prefix, fields, dateId, activityId) {
+  $(prefix + 'ApplyBtn').addEventListener('click', () => {
+    const hint = $(prefix + 'ApplyHint');
+    try {
+      const result = parseReply($(prefix + 'Paste').value);
+      const { filled, skipped } = applyToForm(result, fields, dateId, activityId);
+      if (!filled.length) {
+        hint.className = 'warn';
+        hint.textContent = '⚠️ แกะได้ 0 ค่า — เช็คว่าชื่อคีย์ใน JSON ตรงกับคำสั่งที่ก็อปไปหรือเปล่า';
+        toast('ไม่พบค่าที่ตรงกับฟอร์มเลย');
+        return;
+      }
+      // ไฮไลต์ให้เห็นชัดถ้ามีค่าที่หายไป กันพลาดแบบเผลอบันทึกโดยไม่รู้ตัวว่าช่องไหนว่าง
+      hint.className = skipped.length ? 'warn' : 'hint';
+      hint.textContent = (skipped.length ? '⚠️ ' : '✓ ') + `แกะได้ ${filled.length} ค่า`
+        + (skipped.length ? ` · ไม่พบในรูป ${skipped.length} ค่า: ${skipped.join(', ')} — เช็ครูปแล้วกรอกเองได้` : '')
+        + ' — ช่องขอบเขียวคือค่าที่แกะมา ตรวจสอบก่อนบันทึกนะครับ';
+      toast(`แกะได้ ${filled.length} ค่า ✓`);
+    } catch (err) {
+      hint.className = 'warn';
+      hint.textContent = '⚠️ ' + err.message;
+    }
+  });
+  $(prefix + 'ClearPasteBtn').addEventListener('click', () => {
+    $(prefix + 'Paste').value = '';
+    const h = $(prefix + 'ApplyHint');
+    h.textContent = '';
+    h.className = 'hint';
+  });
+}
+wireApply('w', WEIGHT_FIELDS, 'wDate', null);
+wireApply('e', EXERCISE_FIELDS, 'eDate', 'eType');
+
+/* ================== รูปอ้างอิง (ไม่บังคับ) ================== */
+function wirePreview(prefix) {
+  $(prefix + 'File').addEventListener('change', e => {
+    const file = e.target.files[0];
+    const img = $(prefix + 'Preview');
+    if (!file) { img.style.display = 'none'; return; }
+    if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src); // คืนหน่วยความจำรูปเดิม
+    img.src = URL.createObjectURL(file);
+    img.style.display = 'block';
+  });
+}
+wirePreview('w');
+wirePreview('e');
+
+function clearPreview(prefix) {
+  const img = $(prefix + 'Preview');
+  if (img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+  img.removeAttribute('src');
+  img.style.display = 'none';
+  $(prefix + 'File').value = '';
+}
+
+/* ================== SAVE ================== */
+async function saveToSheet(sheet, data) {
+  if (!apiUrl()) { switchTab('settings'); toast('ต้องเชื่อม Apps Script ก่อนครับ (แท็บตั้งค่า)'); return false; }
+  try {
+    const res = await fetch(apiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ sheet, action: 'add', data }),
+    });
+    const j = await res.json();
+    if (!j.ok) { console.error('saveToSheet failed:', j.error, data); toast('บันทึกไม่สำเร็จ: ' + (j.error || 'ไม่ทราบสาเหตุ')); return false; }
+    toast('บันทึกแล้ว ✓');
+    return true;
+  } catch (e) {
+    console.error('saveToSheet exception:', e);
+    toast('บันทึกไม่สำเร็จ (ต่อ Apps Script ไม่ได้): ' + (e?.message ?? e));
+    return false;
+  }
+}
+
+function fmtDate(val) {
+  const d = new Date(val);
+  if (isNaN(d)) return val;
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function collect(fields, dateId, noteId, extra) {
+  const data = { 'ID': String(Date.now()), 'วันที่': fmtDate($(dateId).value), ...extra };
+  fields.forEach(f => { data[f.col] = $(f.key).value; });
+  data['หมายเหตุ'] = $(noteId).value;
+  return data;
+}
+
+function clearForm(prefix, fields, dateId, noteId) {
+  fields.forEach(f => { $(f.key).value = ''; $(f.key).classList.remove('autofilled'); });
+  $(noteId).value = '';
+  $(dateId).value = nowLocal();
+  $(prefix + 'Paste').value = '';
+  const h = $(prefix + 'ApplyHint');
+  h.textContent = '';
+  h.className = 'hint';
+  clearPreview(prefix);
+}
+
+// ---- เช็คช่องว่างก่อนบันทึก แล้วให้ยืนยันชัดๆ ----
+// ป้องกันกรณีแกะค่าจากรูปได้ไม่ครบ (เช่น Claude อ่านค่านั้นไม่ออกจากรูป) แล้วพี่ไม่ทันสังเกตข้อความเตือนเล็กๆ ใต้ปุ่ม
+// จนกดบันทึกไปทั้งที่บางช่องว่างอยู่ — เกิดปัญหานี้จริงมาแล้วกับ "มวลไขมัน (กก.)" เมื่อ 2026-08-18
+function confirmBlanks(fields) {
+  const blanks = fields.filter(f => !$(f.key).value.trim()).map(f => f.label);
+  if (!blanks.length) return true;
+  return confirm(`ช่องนี้ยังว่างอยู่: ${blanks.join(', ')}\n\nต้องการบันทึกต่อเลยไหม?`);
+}
+
+$('wSaveBtn').addEventListener('click', async () => {
+  const data = collect(WEIGHT_FIELDS, 'wDate', 'wNote', {});
+  if (!data['น้ำหนัก (กก.)']) { toast('กรอกน้ำหนักก่อนครับ'); return; }
+  if (!confirmBlanks(WEIGHT_FIELDS)) return;
+  $('wSaveBtn').disabled = true;
+  const ok = await saveToSheet(SHEET_WEIGHT, data);
+  $('wSaveBtn').disabled = false;
+  if (ok) clearForm('w', WEIGHT_FIELDS, 'wDate', 'wNote');
+});
+
+$('eSaveBtn').addEventListener('click', async () => {
+  const data = collect(EXERCISE_FIELDS, 'eDate', 'eNote', { 'ประเภทกิจกรรม': $('eType').value });
+  if (!data['ระยะเวลา (นาที)'] && !data['แคลอรี่ (kcal)']) { toast('กรอกระยะเวลาหรือแคลอรี่อย่างน้อย 1 อย่าง'); return; }
+  if (!confirmBlanks(EXERCISE_FIELDS)) return;
+  $('eSaveBtn').disabled = true;
+  const ok = await saveToSheet(SHEET_EXERCISE, data);
+  $('eSaveBtn').disabled = false;
+  if (ok) { clearForm('e', EXERCISE_FIELDS, 'eDate', 'eNote'); $('eType').classList.remove('autofilled'); }
+});
+
+/* ================== HISTORY ================== */
+let historySub = 'weight';
+$('hSubWeight').addEventListener('click', () => setHistorySub('weight'));
+$('hSubExercise').addEventListener('click', () => setHistorySub('exercise'));
+function setHistorySub(sub) {
+  historySub = sub;
+  $('hSubWeight').classList.toggle('active', sub === 'weight');
+  $('hSubExercise').classList.toggle('active', sub === 'exercise');
+  $('hChartCard').style.display = sub === 'weight' ? 'block' : 'none';
+  loadHistory();
+}
+
+async function loadHistory() {
+  const table = $('hTable'), empty = $('hEmpty');
+  if (!apiUrl()) {
+    table.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = 'ยังไม่ได้เชื่อม Apps Script — ตั้งค่าในแท็บ ⚙️ ก่อนครับ';
+    return;
+  }
+  const sheet = historySub === 'weight' ? SHEET_WEIGHT : SHEET_EXERCISE;
+  $('hTableTitle').textContent = historySub === 'weight' ? 'ประวัติน้ำหนักล่าสุด' : 'ประวัติออกกำลังกายล่าสุด';
+  try {
+    const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(sheet)}&_=${Date.now()}`, { cache: 'no-store' });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error);
+    empty.style.display = j.data.length ? 'none' : 'block';
+    empty.textContent = 'ยังไม่มีข้อมูล';
+    renderTable(sheet, j.data.slice().reverse());
+    if (historySub === 'weight') drawTrend(j.data);
+  } catch (e) {
+    table.innerHTML = '';
+    empty.style.display = 'block';
+    empty.textContent = 'โหลดข้อมูลไม่ได้: ' + (e?.message ?? e);
+  }
+}
+
+// ย่อวันที่ให้สั้นลงเฉพาะตอนแสดงในตาราง: "2026-08-18 13:27" → "18/08 13:27"
+// ตัดปีออกเพราะคอลัมน์วันที่แคบ ถ้าใส่ปีด้วยจะยาวเกินจนโดนตัดท้ายเป็น "..." บนมือถือจอเล็ก (ทดสอบที่ 360px แล้ว)
+// ปีเต็มยังดูได้จากใน Google Sheet ซึ่งเก็บ "YYYY-MM-DD HH:mm" ไว้ครบเหมือนเดิม
+function shortDate(v) {
+  const m = String(v ?? '').match(/^\d{4}-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? `${m[2]}/${m[1]} ${m[3]}:${m[4]}` : String(v ?? '');
+}
+
+function renderTable(sheet, rows) {
+  const table = $('hTable');
+  table.className = sheet === SHEET_EXERCISE ? 'ex' : ''; // ใช้ความกว้างคอลัมน์คนละชุดกับตารางน้ำหนัก
+  if (!rows.length) { table.innerHTML = ''; return; }
+  // [ชื่อคอลัมน์ในชีต, หัวตารางที่โชว์, ฟังก์ชันแปลงค่าก่อนโชว์ (ไม่ใส่ = โชว์ตรงๆ)]
+  const cols = sheet === SHEET_WEIGHT
+    ? [['วันที่','วันที่',shortDate],['น้ำหนัก (กก.)','น.น.'],['เปอร์เซ็นต์ไขมัน (%)','ไขมัน%'],['มวลไขมัน (กก.)','มวลไขมัน'],['มวลกล้ามเนื้อ (กก.)','กล้ามเนื้อ']]
+    : [['วันที่','วันที่',shortDate],['ประเภทกิจกรรม','ประเภท'],['ระยะเวลา (นาที)','นาที'],['แคลอรี่ (kcal)','kcal'],['ชีพจรเฉลี่ย (bpm)','bpm']];
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+  let html = '<tr>' + cols.map(c => `<th>${esc(c[1])}</th>`).join('') + '<th></th></tr>';
+  rows.forEach(r => {
+    html += '<tr>' + cols.map(c => `<td>${esc(c[2] ? c[2](r[c[0]]) : r[c[0]])}</td>`).join('')
+      + `<td><span class="del" data-id="${esc(r.ID)}" data-sheet="${esc(sheet)}">🗑️</span></td></tr>`;
+  });
+  table.innerHTML = html;
+  table.querySelectorAll('.del').forEach(el => el.addEventListener('click', onDeleteRow));
+}
+
+async function onDeleteRow(e) {
+  const { id, sheet } = e.currentTarget.dataset;
+  if (!confirm('ลบแถวนี้ออกจาก Google Sheet หรือไม่?')) return;
+  try {
+    const res = await fetch(apiUrl(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ sheet, action: 'delete', id }),
+    });
+    const j = await res.json();
+    if (!j.ok) { toast('ลบไม่สำเร็จ: ' + j.error); return; }
+    toast('ลบแล้ว ✓');
+    loadHistory();
+  } catch (err) {
+    toast('ลบไม่สำเร็จ: ' + (err?.message ?? err));
+  }
+}
+
+function drawTrend(rows) {
+  const canvas = $('trend');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth || 300, h = 140;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const pts = rows.slice(-20).map(r => parseFloat(r['น้ำหนัก (กก.)'])).filter(v => !isNaN(v));
+  ctx.font = '11px sans-serif';
+  if (pts.length < 2) {
+    ctx.fillStyle = '#8b93a1';
+    ctx.fillText('บันทึกอย่างน้อย 2 ครั้งเพื่อดูกราฟแนวโน้ม', 12, h / 2);
+    return;
+  }
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const pad = 34, range = (max - min) || 1;
+  const x = i => pad + (i / (pts.length - 1)) * (w - pad - 12);
+  const y = v => h - 22 - ((v - min) / range) * (h - 44);
+  ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2; ctx.beginPath();
+  pts.forEach((v, i) => i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v)));
+  ctx.stroke();
+  ctx.fillStyle = '#22c55e';
+  pts.forEach((v, i) => { ctx.beginPath(); ctx.arc(x(i), y(v), 2.5, 0, Math.PI * 2); ctx.fill(); });
+  ctx.fillStyle = '#8b93a1';
+  ctx.fillText(max.toFixed(1), 4, y(max) + 4);
+  ctx.fillText(min.toFixed(1), 4, y(min) + 4);
+  const diff = pts[pts.length - 1] - pts[0];
+  ctx.fillStyle = diff <= 0 ? '#22c55e' : '#f5a623';
+  ctx.fillText(`${diff <= 0 ? '▼' : '▲'} ${Math.abs(diff).toFixed(1)} กก.`, w - 78, 14);
+}
+
+if (apiUrl()) loadHistory();
+</script>
+</body>
+</html>

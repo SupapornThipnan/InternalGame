@@ -411,7 +411,7 @@ function fillCategories() {
   const descSheet = SS.getSheetByName('📝#คำอธิบาย');
   if (descSheet) descSheet.getDataRange().getValues().forEach(function (r) {
     const m = String(r[0] || '').match(/^(ITM[_\s]?\d+)/i);
-    if (m) descMap[m[1].toUpperCase().replace(/\s/g, '')] = String(r[1] || '');
+    if (m) descMap[m[1].toUpperCase().replace(/\s/g, '')] = String(r[2] || '');
   });
   const values = sheet.getDataRange().getValues();
   const out = values.map(function (r, i) {
@@ -634,8 +634,9 @@ function addNewProductFull(sheet, p) {
   const rule = epDropdownRule();
 
   // 📝#คำอธิบาย — สร้างแถวเสมอ (แม้ยังไม่กรอกคำอธิบาย) พี่แยมทาสีไกด์เองในชีตล่วงหน้าอยู่แล้ว ไม่ต้องยุ่งกับสีจากโค้ดฝั่งนี้
+  // คอลัมน์: A=ITM+ชื่อ, B=Link DOC (พี่แยมเติมเองทีหลัง), C=คำอธิบาย
   const descSheet = SS.getSheetByName('📝#คำอธิบาย');
-  if (descSheet) descSheet.appendRow([itmLabel, p.description || '']);
+  if (descSheet) descSheet.appendRow([itmLabel, '', p.description || '']);
 
   // ⚡️Progress — เริ่มทุกสเตจที่ EP.0 (ไม่เว้นว่าง) พร้อม dropdown เหมือนแถวอื่นๆ ให้กรอกต่อทีหลังผ่านหน้า ✍️ Progress
   const progSheet = SS.getSheetByName(PROGRESS_SHEET);

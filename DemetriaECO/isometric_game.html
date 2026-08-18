@@ -4067,6 +4067,72 @@
     still 12/12 passing, confirming this HTML restructuring didn't disturb
     the flex-wrap layout or canvas sizing. Zero console/page errors in
     either engine, across all test files.
+
+  v3.149 (2026-07-19) — พี่แยม's screenshot on a wide window: the game board
+    sat pinned at its native 820px width inside a much wider .stage box,
+    leaving a big patch of dead space to its right ("แมพทางด้านขวาอยากให้
+    มันใหญ่กว่านี้"). Sent an outline first explaining the cause (v3.147
+    deliberately capped normal-mode canvas width at LOGICAL_W, "never
+    bigger than native") — พี่แยม confirmed wanting uncapped growth
+    ("ขยายได้ไม่จำกัด เต็มพื้นที่ที่มีเป๊ะ").
+
+    The obvious one-line fix (drop the Math.min(LOGICAL_W, ...) cap in
+    fitCanvasResolution) surfaced two more bugs only caught by actually
+    testing the result, not just eyeballing a screenshot: (1) on a wide
+    window's very first paint, .stage's flex-grown width (flex:1 1 auto)
+    wasn't reliably settled at the exact moment fitCanvasResolution's
+    single init-time call ran, so a freshly-loaded wide page could get
+    permanently undersized until the next real resize event corrected it —
+    fixed with a second, requestAnimationFrame-deferred call right after
+    the first, giving that first layout pass one more frame to settle; (2)
+    the canvas was being sized to .stage's clientWidth (content+padding),
+    not its actual content width, so it quietly ate into .stage's own 14px
+    padding on each side instead of respecting it — fixed by subtracting
+    .stage's live computed padding from the measurement.
+
+    A third, more fundamental bug surfaced specifically through the
+    fullscreen round-trip: entering then exiting fullscreen could leave
+    .panel/.stage PERMANENTLY stuck in wrapped (stacked) layout even back
+    at a plenty-wide window, canvas included — a genuine circular
+    dependency between JS and CSS, not a timing issue (confirmed by trying
+    2 and 3 rAF-deferred re-fit passes; none helped, since each
+    re-measurement was internally self-consistent with the wrongly-wrapped
+    state). Root cause: v3.147's flex-wrap line-breaking decision reads
+    .stage's own "hypothetical size," which — with flex-basis:auto — comes
+    from .stage's CONTENT (the canvas); but the canvas's size is ALSO
+    computed by JS FROM .stage's current measured width. Once fullscreen's
+    transient large canvas size caused a wrap, the wrapped .stage
+    immediately became very wide, JS sized the canvas to match, and that
+    now-large canvas re-justified the very wrap that caused it — a stable
+    but wrong equilibrium no amount of re-measuring could escape.
+
+    Fixed structurally rather than patched around: replaced flex-wrap
+    (content-dependent, "adapts continuously, no fixed breakpoint" — v3.147's
+    original framing) with an explicit `@media (max-width: 1160px)` that
+    switches .layout to a column and both children to width:100%, based
+    purely on viewport width — 1160px matches this file's own original
+    pre-responsive note about when horizontal overflow used to start. This
+    has zero dependency on the canvas's live rendered size, ruling the
+    feedback loop out structurally instead of chasing it with more timing
+    fixes. flex-wrap is back to its nowrap default; .stage still uses
+    flex:1 1 auto + min-width:0 for smooth grow/shrink WITHIN row mode
+    (above 1160px), now completely decoupled from the row-vs-column
+    decision itself.
+
+    Verified with Playwright (Chromium + WebKit): ultra-wide (2200px) —
+    canvas now grows well past 820px, fills .stage's actual content width
+    (within 2px, padding correctly excluded), aspect ratio still exactly
+    820:620, drag-drop on the expanded canvas still resolves to the correct
+    tile; narrow (600px) — still shrinks correctly, v3.147 behavior
+    unchanged; re-ran the full v3.147 responsive suite (12/12) and the
+    v3.148 UI-reorg suite (10/10), both still passing. Most importantly,
+    re-tested the exact scenario that exposed the circular-dependency bug:
+    entering and exiting fullscreen once now correctly restores the exact
+    pre-fullscreen canvas width and row layout (previously got stuck
+    wrapped); stress-tested 4 consecutive fullscreen toggles in a row —
+    canvas width stayed pixel-identical across all of them, row layout
+    never broke. Zero console/page errors in either engine, across every
+    test file.
 -->
 
 
@@ -4153,14 +4219,42 @@
   }
   .layout{
     display:flex;
-    /* v3.147: was a rigid row (panel + stage always side by side) with no
-       fallback when the window is too narrow to fit both — flex-wrap lets
-       .stage drop to its own row below .panel once there's not enough
-       width, with zero fixed breakpoint (adapts continuously as พี่แยม
-       drags the window edge, same as any other CSS-native reflow) */
-    flex-wrap:wrap;
+    /* v3.147 originally used flex-wrap here instead of the media query
+       below ("adapts continuously, no fixed breakpoint"). v3.149 replaced
+       it: flex-wrap's line-breaking decision reads each item's own
+       "hypothetical main size" (derived from .stage's content — the canvas
+       — since its flex-basis is auto), but .stage's canvas is ALSO sized
+       by JS (fitCanvasResolution) FROM .stage's current measured width —
+       a live JS↔CSS feedback loop. Caught by testing the fullscreen
+       round-trip specifically: entering fullscreen briefly inflates the
+       canvas; exiting left the wrap decision permanently stuck "wrapped"
+       even back at a plenty-wide 1400px window, because by the time
+       anything re-measured, .stage's own content (the now-large canvas)
+       had already re-justified the wrap that caused it — self-reinforcing,
+       no amount of extra re-measurement passes broke the loop (tried
+       double and triple rAF-deferred re-fits; none of them helped, since
+       the measurement itself was internally consistent every time). The
+       media query below decides row-vs-column purely from viewport width,
+       with zero dependency on the canvas's live rendered size, which
+       structurally rules the whole feedback loop out rather than papering
+       over it. flex-wrap is correspondingly back to its nowrap default. */
     gap:20px;
     align-items:flex-start;
+  }
+  /* v3.149: 1160px matches this file's own original pre-responsive note
+     ("ย่อหน้าต่างแคบกว่า ~1160px จะเกิด scrollbar แนวนอน") — panel(250) +
+     gap(20) + native canvas(820) + stage's own padding(28) + body's own
+     padding(40) = 1158, rounded to 1160. Below it, stack vertically;
+     .panel's fixed 250px width doesn't make sense full-width, so both
+     children get width:100% here (source order after the base .panel/
+     .stage rules above, so this correctly wins the cascade at this width). */
+  @media (max-width: 1160px){
+    .layout{
+      flex-direction:column;
+    }
+    .panel, .stage{
+      width:100%;
+    }
   }
   .panel{
     background:var(--panel);
@@ -4189,12 +4283,16 @@
     padding:14px;
     box-shadow:0 8px 24px rgba(0,0,0,.35);
     position:relative;
-    /* v3.147: lets the stage (and the canvas inside it, via its own
-       max-width:100% below) actually shrink below its natural ~848px
-       width when the window is narrower than that — flex:1 also lets it
-       grow to fill any leftover width on its own wrapped row. min-width:0
-       overrides the flex-item default (min-width:auto, "never shrink below
-       content size") that would otherwise defeat this entirely. */
+    /* v3.147/v3.149: above the 1160px breakpoint (row mode), flex:1 lets
+       .stage grow OR shrink to fill whatever's left next to .panel's fixed
+       250px — min-width:0 overrides the flex-item default (min-width:auto,
+       "never shrink below content size") that would otherwise defeat that
+       near the breakpoint edge. Below 1160px the media query takes over
+       with an explicit width:100% instead; .stage's own canvas is sized in
+       JS by fitCanvasResolution() either way, reading .stage's actual
+       rendered width fresh every time — see v3.149's comment on .layout
+       for why that JS sizing and the ROW-vs-COLUMN decision itself are now
+       fully decoupled (a fixed breakpoint, not each other's live size). */
     flex:1 1 auto;
     min-width:0;
   }
@@ -4805,7 +4903,7 @@
 <div class="app-shell">
   <div class="header-row">
     <h1>🧊 Isometric Object Yard</h1>
-    <a class="changelog-btn" href="changelog.html" title="v3.148: จัดระเบียบ UI เฟส 1 — ยุบแท็บ &quot;ใส่รูปเอง&quot; เข้า &quot;ชนิด + รูป&quot; เหลือ 3 แท็บ — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.148</span></a>
+    <a class="changelog-btn" href="changelog.html" title="v3.149: กระดานเกมขยายเต็มพื้นที่ได้ไม่จำกัดแล้ว + แก้บั๊กจัดวางค้างหลังเข้า-ออกเต็มจอ — ดู Changelog ทั้งหมด">📜 Changelog <span class="ver-chip">v3.149</span></a>
   </div>
   <p class="subtitle">ลากวัตถุมาวางบนแผนที่ · เดินด้วย W A S D</p>
   <div class="layout">
@@ -5783,13 +5881,33 @@
   // stuck at the narrow width). Explicitly computing displayW/H from
   // .stage's clientWidth (a measurement independent of the canvas's own,
   // possibly-already-shrunk attributes) every single call breaks that
-  // feedback loop entirely — capped at LOGICAL_W so normal mode never
-  // renders BIGGER than native, only smaller when space is tight.
+  // feedback loop entirely.
+  //
+  // v3.149: removed the Math.min(LOGICAL_W, ...) cap this originally
+  // shipped with ("never bigger than native, only smaller") — on a wide
+  // window, .stage (flex:1 1 auto, grows to fill its row) ended up much
+  // wider than the 820px-capped canvas sitting inside it, leaving a big
+  // patch of dead space to the canvas's right — exactly what พี่แยม's
+  // screenshot showed ("แมพทางด้านขวาอยากให้มันใหญ่กว่านี้"). Confirmed
+  // wanting uncapped growth ("ขยายได้ไม่จำกัด เต็มพื้นที่ที่มีเป๊ะ") — the
+  // canvas now always fills .stage's actual available width exactly,
+  // shrinking OR growing with it, same as fullscreen already does.
   function fitCanvasResolution(){
     if (!currentFullscreenEl()){
       const stage = canvas.parentElement;
-      const availableW = stage ? stage.clientWidth : LOGICAL_W;
-      const displayW = Math.min(LOGICAL_W, Math.max(1, availableW));
+      // v3.149: stage.clientWidth is content+padding (.stage has 14px
+      // padding each side) — a CHILD filling exactly that width overflows
+      // past the content box into the padding, quietly erasing the
+      // breathing room .stage's own padding is there to provide. Subtract
+      // it (read live via computed style, not hardcoded, so this keeps
+      // working if that padding value ever changes) to get the space
+      // actually available for the canvas to fill.
+      let availableW = LOGICAL_W;
+      if (stage){
+        const cs = getComputedStyle(stage);
+        availableW = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      }
+      const displayW = Math.max(1, availableW);
       const displayH = displayW * (LOGICAL_H / LOGICAL_W);
       canvas.style.width = displayW + 'px';
       canvas.style.height = displayH + 'px';
@@ -9552,7 +9670,22 @@
     // displayed size drastically the instant this event fires, but layout
     // may not be 100% final yet in every browser — one rAF later is enough
     // for getBoundingClientRect() (used by fitCanvasResolution) to reflect it
-    requestAnimationFrame(fitCanvasResolution);
+    //
+    // v3.149: on EXITING fullscreen specifically, one rAF wasn't always
+    // enough for .stage's flex-wrap line-break decision to re-settle (found
+    // by testing: exiting fullscreen sometimes left .panel/.stage wrapped
+    // onto separate rows even though the viewport was wide enough for them
+    // to share one row, because .stage's flex-basis:auto is itself derived
+    // from canvas's CURRENT size, which this same function is in the middle
+    // of changing — same class of "layout not settled after a discrete
+    // transition, not a continuous resize" issue as the page-load case
+    // fitCanvasResolution's own init call has). A second rAF, chained after
+    // the first, gives that re-settled flex layout one more pass to be
+    // measured correctly.
+    requestAnimationFrame(() => {
+      fitCanvasResolution();
+      requestAnimationFrame(fitCanvasResolution);
+    });
   }
   fullscreenBtn.addEventListener('click', ()=>{
     if (currentFullscreenEl()) exitFullscreen();
@@ -9565,6 +9698,17 @@
   // devicePixelRatio (e.g. dragging from a Retina to a non-Retina display)
   window.addEventListener('resize', fitCanvasResolution);
   fitCanvasResolution();
+  // v3.149: a SECOND call, one frame later — on a wide window's very first
+  // paint (page load, before any real resize event ever fires), .stage's
+  // flex-grown width (flex:1 1 auto, needs the whole row's layout resolved
+  // to know how much space it actually gets) isn't reliably settled yet at
+  // the exact moment the synchronous call above runs, so this function can
+  // read a smaller stage.clientWidth than the layout ultimately settles to
+  // — found by testing: a wide window loaded fresh left the canvas
+  // permanently undersized (with a gap of dead space in .stage) until the
+  // NEXT real resize event corrected it. requestAnimationFrame guarantees
+  // this second call runs after that first layout pass is fully done.
+  requestAnimationFrame(fitCanvasResolution);
 
   // ---- Tab switching ----
   // generalized (v3.66) from a hardcoded 2-tab check to looping every

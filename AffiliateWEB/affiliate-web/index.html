@@ -93,6 +93,7 @@
   .linkrow { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: .82rem; flex-wrap: wrap; }
   .linkrow .badge { padding: 2px 10px; border-radius: 10px; font-size: .72rem; font-weight: 700; }
   .badge.tt { background: #123a3a; color: var(--cyan); } .badge.sp { background: #3a2412; color: #ff7a30; }
+  .badge.doc { background: #241a3a; color: #a78bfa; }
   .linkrow a { color: var(--muted); text-decoration: none; word-break: break-all; flex: 1; min-width: 150px; }
   .linkrow a:hover { color: var(--cyan); }
   .nolinks { color: var(--muted); font-size: .8rem; margin-top: 8px; }
@@ -126,7 +127,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.8 · กำลังโหลด…</span>
+  <span id="status">v5.10 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -286,6 +287,15 @@
 
   <!-- ============ LISTITME (โควตาถ่ายคิว B+Bต / C+Cต แบบ real-time) ============ -->
   <section id="tab-listitme" style="display:none">
+    <div class="panel" id="epCheckWrap" style="margin-bottom:14px">
+      <h3 style="margin-bottom:8px">🔍 เช็คสถานะ EP</h3>
+      <div class="toolbar" style="gap:8px">
+        <input type="text" id="epCheckSku" placeholder="SKU เช่น ITM_219" style="max-width:160px">
+        <input type="number" id="epCheckEp" placeholder="EP เช่น 3" style="max-width:100px">
+        <button class="btn" id="epCheckBtn">ตรวจสอบ</button>
+      </div>
+      <div id="epCheckResult" style="margin-top:10px;font-size:.85rem"></div>
+    </div>
     <div id="listitmeInfo" class="empty" style="padding:10px"></div>
     <div class="cards" id="listitmeStats" style="display:none">
       <div class="card"><div class="label">B2(7)+B+Bต — active / โควตา</div><div class="value pink" id="listBCount">–</div></div>
@@ -586,7 +596,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.8';
+const VERSION = 'v5.10';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -871,15 +881,19 @@ function guessCat(text) {
 function buildCatalog(descRows, linkRows) {
   const map = new Map();
   const get = (p) => {
-    if (!map.has(p.id)) map.set(p.id, { id: p.id, name: p.name, descs: [], links: [], cat: '' });
+    if (!map.has(p.id)) map.set(p.id, { id: p.id, name: p.name, descs: [], links: [], cat: '', doc: '' });
     const it = map.get(p.id);
     if (p.name && p.name.length > (it.name || '').length) it.name = p.name;
     return it;
   };
+  // คอลัมน์ชีต 📝#คำอธิบาย (มีแถวหัวแล้ว): A=ITM+ชื่อ, B=Link DOC (สคลิป), C=คำอธิบาย
   descRows.forEach(r => {
     const p = parseItm(r[0]); if (!p) return;
-    const d = String(r[1] || '').trim();
-    if (d) get(p).descs.push(d);
+    const it = get(p);
+    const docUrl = String(r[1] || '').trim();
+    if (docUrl && !it.doc) it.doc = docUrl;
+    const d = String(r[2] || '').trim();
+    if (d) it.descs.push(d);
   });
   // หา index คอลัมน์ "ประเภทสินค้า" จากแถว header ของชีตลิงก์ (แถวที่คอลัมน์แรกไม่ใช่ ITM_XXX)
   let catIdx = -1;
@@ -933,6 +947,7 @@ function catalogCard(it) {
   return `
     <div class="head"><span class="sku">${esc(it.id)}</span><span class="name">${esc(it.name || '')}</span>${it.cat ? `<span class="tag cat">${esc(it.cat)}</span>` : ''}</div>
     ${progressLine(it.id)}
+    ${it.doc ? `<div class="linkrow"><span class="badge doc">📄 สคลิป</span><a href="${esc(it.doc)}" target="_blank" rel="noopener">เปิดหน้าเขียนสคลิป</a><button class="copybtn" data-copy="${esc(it.doc)}">📋</button></div>` : ''}
     ${it.descs.map(d => `
       <div class="desc-row">
         <div class="desc">${esc(d)}</div>
@@ -1818,6 +1833,71 @@ $('#listNewInfo').addEventListener('click', () => {
   $('#listNewBody').style.display = collapsed ? '' : 'none';
   const arrow = $('#listNewInfo .qtoggle'); if (arrow) arrow.textContent = collapsed ? '▼' : '▶';
 });
+
+// เช็คสถานะ EP: กรอก SKU (ITM_xxx) + EP → อ่านตรงจากคอลัมน์สเตจของ TODOLIST (แม่นยำกว่า ⚡️Progress ที่เก็บแค่ EP สูงสุด)
+// เทียบ SKU ด้วยตัวเลขล้วน (ตัด ITM_/ITM ออก) กันปัญหารูปแบบ ITM_219 vs ITM 219 vs ITM219 ไม่ตรงกัน
+async function runEpCheck(scope) {
+  const skuRaw = $('#epCheckSku').value.trim();
+  const epRaw = $('#epCheckEp').value.trim();
+  const skuDigits = (skuRaw.match(/\d+/) || [])[0];
+  if (!skuDigits) { $('#epCheckResult').innerHTML = '⚠️ กรอก SKU ก่อนจ้า เช่น ITM_219'; return; }
+  const epNum = parseFloat(epRaw);
+  if (epRaw === '' || isNaN(epNum)) { $('#epCheckResult').innerHTML = '⚠️ กรอกเลข EP ก่อนจ้า'; return; }
+
+  $('#epCheckResult').textContent = 'กำลังค้นหา…';
+  const map = getTodolistMap();
+  const months = Object.keys(map).sort();
+  const sheetsToSearch = [...new Set((scope === 'all' ? months.map(mo => map[mo]) : [todolistSheet()]).filter(Boolean))];
+
+  let allMatches = [];
+  let itemName = '';
+  for (const sheetName of sheetsToSearch) {
+    try {
+      const rows = await loadRaw(sheetName);
+      const hasHeader = rows.length && rows[0][0] === 'วันที่ลง';
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+      dataRows.forEach(r => {
+        if (!r[2]) return;
+        const p = parseItm(r[2]);
+        if (!p) return;
+        const rowDigits = (p.id.match(/\d+/) || [])[0];
+        if (rowDigits !== skuDigits) return;
+        if (!itemName) itemName = p.name;
+        allMatches.push({
+          ep: r[3],
+          epNum: parseFloat(String(r[3] || '').replace(/EP\.?/i, '').trim()),
+          scripts: r[5] === 'TRUE', sounds: r[6] === 'TRUE', footage: r[7] === 'TRUE', final: r[8] === 'TRUE',
+        });
+      });
+    } catch (e) { /* ข้ามชีตที่โหลดไม่ได้ */ }
+  }
+
+  if (!allMatches.length) {
+    $('#epCheckResult').innerHTML = scope === 'all'
+      ? 'ไม่พบ SKU นี้ในทุกเดือนที่ตั้งค่าไว้เลยครับ'
+      : `ไม่พบ SKU นี้ในเดือนที่เลือกอยู่ (${esc(todolistSheet())}) <button class="btn ghost" id="epCheckAllBtn" style="margin-left:8px">ค้นหาทุกเดือน</button>`;
+    if (scope !== 'all') $('#epCheckAllBtn')?.addEventListener('click', () => runEpCheck('all'));
+    return;
+  }
+
+  const epList = allMatches.map(m => esc(m.ep)).join(', ');
+  const exact = allMatches.find(m => m.epNum === epNum);
+  const stageTag = (label, done) => `<span style="margin-right:14px">${done ? '✅' : '❌'} ${label}</span>`;
+
+  let html = `<div style="margin-bottom:6px"><span class="sku">ITM_${esc(skuDigits)}</span> ${esc(itemName)}</div>`;
+  html += `<div style="color:var(--muted);margin-bottom:10px">EP ที่มีอยู่ตอนนี้: ${epList}</div>`;
+  if (exact) {
+    html += `<div>▶ ${esc(exact.ep)} (ที่ค้นหา)</div>`;
+    html += `<div style="margin-top:4px">${stageTag('เขียนสคลิป', exact.scripts)}${stageTag('พาร์กเสียง', exact.sounds)}${stageTag('ถ่ายฟุต', exact.footage)}${stageTag('Final', exact.final)}</div>`;
+  } else {
+    html += `<div>⚠️ ยังไม่มี EP ${esc(epRaw)}${scope === 'all' ? '' : 'ในเดือนที่เลือกอยู่'} <button class="btn ghost" id="epCheckAllBtn" style="margin-left:8px">ค้นหาทุกเดือน</button></div>`;
+  }
+  $('#epCheckResult').innerHTML = html;
+  if (!exact && scope !== 'all') $('#epCheckAllBtn')?.addEventListener('click', () => runEpCheck('all'));
+}
+$('#epCheckBtn').addEventListener('click', () => runEpCheck('current'));
+$('#epCheckSku').addEventListener('keydown', e => { if (e.key === 'Enter') runEpCheck('current'); });
+$('#epCheckEp').addEventListener('keydown', e => { if (e.key === 'Enter') runEpCheck('current'); });
 
 let listitmeItems = []; // แคชไว้ให้ตัวกรอง Tier ใช้กรอง/เรียงใหม่โดยไม่ต้องโหลดซ้ำ
 
