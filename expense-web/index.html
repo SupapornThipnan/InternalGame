@@ -29,7 +29,7 @@ h1{font-size:20px;margin:0 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
 .card .lb{color:var(--tx2);font-size:12px;margin-bottom:4px}
 .card .vl{font-size:22px;font-weight:700}
-.vl.in{color:var(--green)} .vl.out{color:var(--pink)} .vl.cy{color:var(--cyan)}
+.vl.in{color:var(--green)} .vl.out{color:var(--pink)} .vl.cy{color:var(--cyan)} .vl.loan{color:#b06cff}
 
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 select,input,button.btn{background:var(--card2);color:var(--tx);border:1px solid var(--line);
@@ -38,6 +38,8 @@ input::placeholder{color:#66667a}
 button.btn{cursor:pointer}
 button.primary{background:var(--cyan);color:#08080c;border-color:var(--cyan);font-weight:700}
 button.ghost{background:transparent}
+button.danger{background:transparent;color:var(--pink);border-color:#FE2C5555}
+button.danger:hover{background:#FE2C5518}
 
 .charts{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-bottom:16px}
 @media(max-width:760px){.charts{grid-template-columns:1fr}}
@@ -120,6 +122,7 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
     <div class="cards">
       <div class="card"><div class="lb">รายได้</div><div class="vl in" id="cIn">–</div></div>
       <div class="card"><div class="lb">รายจ่ายรวม</div><div class="vl out" id="cOut">–</div></div>
+      <div class="card"><div class="lb">จ่ายสินเชื่อ</div><div class="vl loan" id="cLoan">–</div></div>
       <div class="card"><div class="lb">คงเหลือ</div><div class="vl cy" id="cNet">–</div></div>
       <div class="card"><div class="lb">จำนวนรายการ</div><div class="vl" id="cCnt">–</div></div>
     </div>
@@ -239,6 +242,7 @@ code{background:#000;padding:2px 5px;border-radius:4px;font-size:12px}
       <button class="btn primary" id="mSave" style="flex:1">บันทึกลง Sheet</button>
       <button class="btn ghost" id="mCancel">ยกเลิก</button>
     </div>
+    <button class="btn danger" id="mDelete" style="width:100%;margin-top:8px;display:none">🗑️ ลบรายการนี้</button>
   </div>
 </div>
 
@@ -248,6 +252,7 @@ const SHEET_ID   = '1ohWLy3jTuc9WRF35UvTiE9o9HXxXkkIsO2JL7pCV7NY';
 const SHEET_NAME = 'รายการ';           // ชีตใหม่ที่ Apps Script สร้างให้
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxhvf2MjgJitPYG0djgeklJ-FQkqN4uLa8dJc2eth--tPej-VlAAUtEVCu1qWEDO9O4kQ/exec';
 const HEAD = { d:'วันที่', a:'จำนวนเงิน', t:'ประเภท', n:'รายละเอียด', c:'หมวดหมู่' };
+const LOAN_TYPE = 'จ่ายสินเชื่อ';   // แยกออกจากรายได้/รายจ่ายรวมบนแดชบอร์ด มีการ์ดของตัวเองต่างหาก
 
 const DEFAULT_TYPES = ['รายได้','รายจ่าย','จ่ายให้อ้วง','จ่ายสินเชื่อ'];
 const DEFAULT_CATS  = ['รายได้','ค่ากิน','ออนไลน์','ช้อปออนไลน์','ของใช้','ของรีวิว',
@@ -458,12 +463,15 @@ function render(){
   const rows = filtered();
 
   const income = rows.filter(r=>r[HEAD.t]==='รายได้').reduce((s,r)=>s+r[HEAD.a],0);
-  const expense= rows.filter(r=>r[HEAD.t]!=='รายได้').reduce((s,r)=>s+r[HEAD.a],0);
-  $('#cIn').textContent  = money(income);
-  $('#cOut').textContent = money(expense);
-  $('#cNet').textContent = money(income-expense);
-  $('#cNet').style.color = (income-expense)>=0 ? 'var(--green)' : 'var(--pink)';
-  $('#cCnt').textContent = rows.length.toLocaleString('th-TH');
+  const loan   = rows.filter(r=>r[HEAD.t]===LOAN_TYPE).reduce((s,r)=>s+r[HEAD.a],0);
+  const expense= rows.filter(r=>r[HEAD.t]!=='รายได้' && r[HEAD.t]!==LOAN_TYPE).reduce((s,r)=>s+r[HEAD.a],0);
+  const net = income - expense - loan;   // คงเหลือจริง หักทั้งรายจ่ายและจ่ายสินเชื่อ (เงินออกจากกระเป๋าจริง)
+  $('#cIn').textContent   = money(income);
+  $('#cOut').textContent  = money(expense);
+  $('#cLoan').textContent = money(loan);
+  $('#cNet').textContent  = money(net);
+  $('#cNet').style.color  = net>=0 ? 'var(--green)' : 'var(--pink)';
+  $('#cCnt').textContent  = rows.length.toLocaleString('th-TH');
 
   // ---- สรุปตามหมวดหมู่ (เฉพาะรายจ่าย) ----
   const byCat = {};
@@ -561,6 +569,7 @@ function openModal(editRef, big){
   $('#mCat').value  = r ? r[HEAD.c] : 'ค่ากิน';
   $('#modal').classList.add('on');
   $('#modal').classList.toggle('big', !!big);
+  $('#mDelete').style.display = editing ? 'block' : 'none';
   if (!CAN_WRITE) showMErr('ยังบันทึกไม่ได้ — ต้องใส่ Apps Script URL ในหน้า ⚙️ ตั้งค่า ก่อนครับ');
 }
 function showMErr(t){ $('#mErr').className='msg err on'; $('#mErr').innerHTML=t; }
@@ -590,6 +599,28 @@ async function saveEntry(){
   }catch(e){
     showMErr('บันทึกไม่สำเร็จ: '+e.message);
   }finally{ btn.disabled=false; btn.textContent='บันทึกลง Sheet'; }
+}
+
+// ลบ = ย้ายแถวไปเก็บไว้ในชีต "ถังขยะ" ก่อน แล้วค่อยลบออกจากหน้าเดิม — ไม่ได้หายไปถาวรทันที
+// (ยังยึดหลัก "เว็บไม่ทำให้ข้อมูลหายถาวรเงียบๆ" เหมือนเดิม แค่ไม่บล็อกการลบทั้งหมดแบบก่อนหน้านี้)
+async function deleteEntry(){
+  if (!editing) return;
+  const label = `${$('#mNote').value.trim() || '(ไม่มีรายละเอียด)'} — ${$('#mAmt').value || 0} บาท`;
+  if (!confirm(`ลบรายการนี้ใช่ไหมครับ?\n\n${label}\n\nรายการจะถูกย้ายไปเก็บไว้ในชีต "🗑 ถังขยะ (ลบแล้ว)" ใน Google Sheet ครับ ไม่ได้หายไปถาวรทันที`)) return;
+
+  const btn=$('#mDelete'); btn.disabled=true; btn.textContent='กำลังลบ…';
+  try{
+    const r = await fetch(api(), { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({ action:'delete', sheet: editing.sheet, row: editing.row }) });
+    const j = await r.json();
+    if (!j.ok){ showMErr('ลบไม่สำเร็จ: '+j.error); return; }
+    $('#modal').classList.remove('on');
+    await refresh();
+    say('ลบรายการแล้วครับ (ย้ายไปเก็บไว้ในชีตถังขยะ)','ok');
+    setTimeout(hush, 3000);
+  }catch(e){
+    showMErr('ลบไม่สำเร็จ: '+e.message);
+  }finally{ btn.disabled=false; btn.textContent='🗑️ ลบรายการนี้'; }
 }
 
 /* ===================== ประเภท / หมวดหมู่ ===================== */
@@ -703,6 +734,7 @@ function init(){
   $('#fabBig').onclick  = ()=>openModal(null, true);
   $('#mCancel').onclick = ()=>$('#modal').classList.remove('on');
   $('#mSave').onclick   = saveEntry;
+  $('#mDelete').onclick = deleteEntry;
   $('#modal').onclick   = e=>{ if(e.target.id==='modal') $('#modal').classList.remove('on'); };
   // เปลี่ยนแหล่งเชื่อมต่อ = รายชื่อหน้าเก่าใช้ไม่ได้แล้ว ต้องเคลียร์ + โหลดหน้าใหม่ทั้งหมด
   $('#saveUrl').onclick = ()=>{ localStorage.setItem('rjApiUrl',$('#apiUrl').value.trim()); PAGES=[]; CUR_PAGE=null; refresh({forcePages:true}); };

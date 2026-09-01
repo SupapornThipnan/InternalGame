@@ -10,6 +10,7 @@
 var SS = SpreadsheetApp.getActiveSpreadsheet();
 var SHEET_NAME = 'รายการ';           // ชื่อชีต default ตอน setupSheet ครั้งแรก
 var HEADERS = ['วันที่', 'จำนวนเงิน', 'ประเภท', 'รายละเอียด', 'หมวดหมู่'];
+var TRASH_SHEET_NAME = '🗑 ถังขยะ (ลบแล้ว)';   // แถวที่ลบจากหน้าไหนก็ตามจะย้ายมารวมกันที่นี่ ไม่ได้หายถาวรทันที
 
 /**
  * จัดฟอร์แมตหัวตาราง/คอลัมน์ให้ชีตใหม่ — ใช้ร่วมกันทั้ง setupSheet และ createPage
@@ -50,6 +51,23 @@ function listPages_() {
     if (headersMatch_(sheets[i])) out.push({ sheet: sheets[i].getName() });
   }
   return out;
+}
+
+/**
+ * หาชีตถังขยะ ถ้ายังไม่มีให้สร้างใหม่ — เก็บทุกแถวที่ถูกลบจากทุกหน้ามารวมกันที่เดียว
+ * หัวตารางไม่ตรงกับ HEADERS ปกติ (มีคอลัมน์ "ลบจากหน้า"/"วันเวลาที่ลบ" เพิ่มด้านหน้า)
+ * headersMatch_() เลยไม่นับชีตนี้เป็น "หน้า" อยู่แล้วโดยธรรมชาติ ไม่ต้องกันเป็นพิเศษ
+ */
+function getTrashSheet_() {
+  var sheet = SS.getSheetByName(TRASH_SHEET_NAME);
+  if (!sheet) {
+    sheet = SS.insertSheet(TRASH_SHEET_NAME);
+    var trashHeaders = ['ลบจากหน้า', 'วันเวลาที่ลบ'].concat(HEADERS);
+    sheet.getRange(1, 1, 1, trashHeaders.length).setValues([trashHeaders])
+      .setFontWeight('bold').setBackground('#3a1520').setFontColor('#ff8ca4');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 /* ============================================================
@@ -186,11 +204,12 @@ function doGet(e) {
 }
 
 /* ============================================================
-   3) เขียนข้อมูล — POST { action:'add'|'update'|'createPage', ... }
+   3) เขียนข้อมูล — POST { action:'add'|'update'|'createPage'|'delete', ... }
    - 'add'/'update' เขียนลง sheet ที่ระบุมาตรงๆ เท่านั้น (หน้าที่พี่แยมเลือกอยู่ตอนนั้น)
      ไม่มีการเดา/สร้างหน้าใหม่อัตโนมัติจากวันที่ — พี่แยมคุมเองทั้งหมดว่าจะเพิ่มเข้าหน้าไหน
    - 'createPage' สร้างหน้าใหม่ชื่อที่ระบุ พร้อมฟอร์แมตหัวตารางให้พร้อมใช้
-   ไม่มี action ลบ โดยตั้งใจ — กันข้อมูลหายถาวร
+   - 'delete' ไม่ได้ลบทิ้งตรงๆ — ย้ายแถวไปเก็บไว้ในชีต TRASH_SHEET_NAME ก่อน แล้วค่อยลบออกจากชีตเดิม
+     (ยังยึดหลักเดิมว่าเว็บไม่ทำให้ข้อมูลหายถาวรแบบเงียบๆ แค่ไม่บล็อกการลบทั้งหมดเหมือนก่อน)
    ============================================================ */
 function doPost(e) {
   try {
@@ -233,6 +252,24 @@ function doPost(e) {
         if (h === 'จำนวนเงิน') v = Number(v) || 0;
         sheet.getRange(rowIdx, i + 1).setValue(v);
       });
+      return json({ ok: true });
+    }
+
+    if (p.action === 'delete') {
+      if (!p.sheet) return json({ ok: false, error: 'MISSING_SHEET' });
+      var sheet = SS.getSheetByName(p.sheet);
+      if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
+      var rowIdx = Number(p.row);
+      if (!rowIdx || rowIdx < 2) return json({ ok: false, error: 'BAD_ROW' });
+      if (rowIdx > sheet.getLastRow()) return json({ ok: false, error: 'BAD_ROW' });
+
+      var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+      var rowValues = sheet.getRange(rowIdx, 1, 1, headers.length).getValues()[0];
+
+      var trash = getTrashSheet_();
+      trash.appendRow([p.sheet, new Date()].concat(rowValues));
+      sheet.deleteRow(rowIdx);
+
       return json({ ok: true });
     }
 

@@ -127,7 +127,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.10 · กำลังโหลด…</span>
+  <span id="status">v5.13 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -596,7 +596,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.10';
+const VERSION = 'v5.13';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -606,12 +606,22 @@ const SHEET_PROGRESS = '⚡️Progress';
 const SHEET_LISTITME = '🗂️ ListITME';
 const SHEET_PROGRESS_DAY = 'Progress-Day '; // มีเว้นวรรคท้ายจริง ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-// ค่าเริ่มต้นที่ฝังไว้ในโค้ด กันต้องกรอกใหม่ทุกครั้งที่รีเฟรช/เปิดเบราว์เซอร์ใหม่ — แก้ในแท็บตั้งค่าเว็บได้ตามปกติ (ค่าที่กรอกเองจะทับค่านี้)
-// ชื่อชีต TODOLIST เปลี่ยนทุกเดือน ต้องมาแก้เลขนี้ในโค้ดเองด้วยตอนขึ้นเดือนใหม่ ถ้าไม่อยากกรอกในหน้าเว็บทุกเครื่อง
+// ค่าเริ่มต้นที่ฝังไว้ในโค้ด กันต้องกรอกใหม่ทุกครั้งที่รีเฟรช/เปิดเบราว์เซอร์ใหม่/เปิดเครื่องใหม่ — แก้ในแท็บตั้งค่าเว็บได้ตามปกติ (ค่าที่กรอกเองจะทับค่านี้)
+// ชื่อชีต TODOLIST เปลี่ยนทุกเดือน — เพิ่มเดือนใหม่ในแมพนี้เลย ไม่ต้องพึ่ง localStorage ของแต่ละเครื่อง
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxssiQazWkQnC20Wtv03ledew7nRrNpaFbxrlQWfKlpBYwP71hsUibfvZxY0UxrXv7X6A/exec';
 const DEFAULT_TODOLIST_SHEET = '7️⃣ 📝 TODOLIST-JULY26';
+const DEFAULT_TODOLIST_MAP = {
+  '2026-07': '7️⃣ 📝 TODOLIST-JULY26',
+  '2026-08': '8️⃣ 📝 TODOLIST-AUG26',
+  '2026-09': '9️⃣ 📝 TODOLIST-SEP26',
+};
 const DEFAULT_TIKTOK_SHEET_ID = '1jyBUyofpn1s0Eesh_w0pHdE7eE7iXuANK7qjtSZ8Ts0'; // ไฟล์ยอดขาย TikTok แยกไฟล์ กันไฟล์หลักหนัก
 const DEFAULT_COMMISSION_SHEET = '7️⃣ 📝  บันทึกค่าคอม-JULY26'; // มีเว้นวรรค 2 ที่ระหว่าง 📝 กับ บันทึก ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
+const DEFAULT_COMMISSION_MAP = {
+  '2026-07': '7️⃣ 📝  บันทึกค่าคอม-JULY26', // มีเว้นวรรค 2 จุดจริง (ตามชื่อชีต) ห้ามลบออก
+  '2026-08': '8️⃣ 📝 บันทึกค่าคอม-AUG26',
+  '2026-09': '9️⃣ 📝 บันทึกค่าคอม-SEP26',
+};
 
 /* ================== STATE ================== */
 let products = [], sales = [], catalog = [], range = 'all';
@@ -631,11 +641,14 @@ function getTodolistMap() {
   try { return JSON.parse(localStorage.getItem('todolistSheetMap') || '{}'); } catch (e) { return {}; }
 }
 function saveTodolistMap(map) { localStorage.setItem('todolistSheetMap', JSON.stringify(map)); }
-// ครั้งแรกที่ยังไม่มี map เลย (ผู้ใช้เก่าที่เคยตั้งชื่อชีตเดี่ยวไว้) → ย้ายค่าเดิมเข้า map ให้เดือนปัจจุบัน กันต้องตั้งใหม่หมด
+// ครั้งแรกที่ยังไม่มี map เลย (เครื่อง/เบราว์เซอร์ใหม่ หรือผู้ใช้เก่าที่เคยตั้งชื่อชีตเดี่ยวไว้) → เริ่มจากแมพที่ฝังไว้ในโค้ด (DEFAULT_TODOLIST_MAP) กันต้องกรอกใหม่ทุกเครื่อง
+// ถ้าเครื่องนี้เคยตั้งชื่อชีตเดือนปัจจุบันไว้เองแบบเก่า (ก่อนมีระบบแมพ) ให้ใช้ค่าที่ตั้งเองทับค่าเริ่มต้นของเดือนนั้น
 (function migrateTodolistSheet() {
   if (Object.keys(getTodolistMap()).length === 0) {
-    const legacy = localStorage.getItem('todolistSheet') || DEFAULT_TODOLIST_SHEET;
-    saveTodolistMap({ [todolistMonthKey()]: legacy });
+    const legacy = localStorage.getItem('todolistSheet');
+    const map = { ...DEFAULT_TODOLIST_MAP };
+    if (legacy) map[todolistMonthKey()] = legacy;
+    saveTodolistMap(map);
   }
 })();
 function selectedTodolistMonth() {
@@ -657,10 +670,13 @@ function getCommissionMap() {
   try { return JSON.parse(localStorage.getItem('commissionSheetMap') || '{}'); } catch (e) { return {}; }
 }
 function saveCommissionMap(map) { localStorage.setItem('commissionSheetMap', JSON.stringify(map)); }
+// เหมือน migrateTodolistSheet ด้านบน — เริ่มจากแมพที่ฝังไว้ในโค้ด (DEFAULT_COMMISSION_MAP) กันต้องกรอกใหม่ทุกเครื่อง
 (function migrateCommissionSheet() {
   if (Object.keys(getCommissionMap()).length === 0) {
-    const legacy = localStorage.getItem('commissionSheet') || DEFAULT_COMMISSION_SHEET;
-    saveCommissionMap({ [commissionMonthKey()]: legacy });
+    const legacy = localStorage.getItem('commissionSheet');
+    const map = { ...DEFAULT_COMMISSION_MAP };
+    if (legacy) map[commissionMonthKey()] = legacy;
+    saveCommissionMap(map);
   }
 })();
 function selectedCommissionMonth() {
@@ -1849,7 +1865,8 @@ async function runEpCheck(scope) {
   const months = Object.keys(map).sort();
   const sheetsToSearch = [...new Set((scope === 'all' ? months.map(mo => map[mo]) : [todolistSheet()]).filter(Boolean))];
 
-  let allMatches = [];
+  // "EP ที่มีอยู่ตอนนี้" มาจาก TODOLIST (แถวที่ถูกวางคิวจริง) — เอาไว้เช็คว่า EP ที่ค้นหามีคิวอยู่จริงไหม
+  let epEntries = [];
   let itemName = '';
   for (const sheetName of sheetsToSearch) {
     try {
@@ -1863,16 +1880,12 @@ async function runEpCheck(scope) {
         const rowDigits = (p.id.match(/\d+/) || [])[0];
         if (rowDigits !== skuDigits) return;
         if (!itemName) itemName = p.name;
-        allMatches.push({
-          ep: r[3],
-          epNum: parseFloat(String(r[3] || '').replace(/EP\.?/i, '').trim()),
-          scripts: r[5] === 'TRUE', sounds: r[6] === 'TRUE', footage: r[7] === 'TRUE', final: r[8] === 'TRUE',
-        });
+        epEntries.push({ ep: r[3], epNum: parseFloat(String(r[3] || '').replace(/EP\.?/i, '').trim()) });
       });
     } catch (e) { /* ข้ามชีตที่โหลดไม่ได้ */ }
   }
 
-  if (!allMatches.length) {
+  if (!epEntries.length) {
     $('#epCheckResult').innerHTML = scope === 'all'
       ? 'ไม่พบ SKU นี้ในทุกเดือนที่ตั้งค่าไว้เลยครับ'
       : `ไม่พบ SKU นี้ในเดือนที่เลือกอยู่ (${esc(todolistSheet())}) <button class="btn ghost" id="epCheckAllBtn" style="margin-left:8px">ค้นหาทุกเดือน</button>`;
@@ -1880,15 +1893,39 @@ async function runEpCheck(scope) {
     return;
   }
 
-  const epList = allMatches.map(m => esc(m.ep)).join(', ');
-  const exact = allMatches.find(m => m.epNum === epNum);
-  const stageTag = (label, done) => `<span style="margin-right:14px">${done ? '✅' : '❌'} ${label}</span>`;
+  // สถานะสเตจอ่านจาก ⚡️Progress แทน checkbox รายแถวใน TODOLIST — Progress เก็บ "EP สูงสุดที่ทำสเตจนั้นแล้ว" แบบ forward-only
+  // และเป็นค่าที่ markPosted() sync ทุกครั้งที่กดโพสต์ ในขณะที่ checkbox ราย EP บน TODOLIST บางทีพี่แยมไม่ได้ติ๊กครบเอง จึงไม่แม่นเท่า
+  let progressStage = null;
+  try {
+    const progRows = await loadRaw(SHEET_PROGRESS);
+    const hasHeader = progRows.length && progRows[0][1] === 'Scripts';
+    const dataRows = hasHeader ? progRows.slice(1) : progRows;
+    const match = dataRows.find(r => {
+      const p = parseItm(r[0]);
+      return p && (p.id.match(/\d+/) || [])[0] === skuDigits;
+    });
+    if (match) {
+      progressStage = {
+        scripts: epNumOf(match[1]), sounds: epNumOf(match[2]), footage: epNumOf(match[3]),
+        draft: epNumOf(match[4]), final: epNumOf(match[5]),
+      };
+    }
+  } catch (e) { /* ข้ามถ้าโหลด Progress ไม่ได้ */ }
+
+  const epList = epEntries.map(m => esc(m.ep)).join(', ');
+  const exact = epEntries.find(m => m.epNum === epNum);
+  const stageDone = (stage) => progressStage && progressStage[stage] !== '' && progressStage[stage] >= epNum;
+  const stageTag = (label, ok) => `<span style="margin-right:14px">${ok ? '✅' : '❌'} ${label}</span>`;
 
   let html = `<div style="margin-bottom:6px"><span class="sku">ITM_${esc(skuDigits)}</span> ${esc(itemName)}</div>`;
   html += `<div style="color:var(--muted);margin-bottom:10px">EP ที่มีอยู่ตอนนี้: ${epList}</div>`;
   if (exact) {
     html += `<div>▶ ${esc(exact.ep)} (ที่ค้นหา)</div>`;
-    html += `<div style="margin-top:4px">${stageTag('เขียนสคลิป', exact.scripts)}${stageTag('พาร์กเสียง', exact.sounds)}${stageTag('ถ่ายฟุต', exact.footage)}${stageTag('Final', exact.final)}</div>`;
+    if (progressStage) {
+      html += `<div style="margin-top:4px">${stageTag('เขียนสคลิป', stageDone('scripts'))}${stageTag('พาร์กเสียง', stageDone('sounds'))}${stageTag('ถ่ายฟุต', stageDone('footage'))}${stageTag('Final', stageDone('final'))}</div>`;
+    } else {
+      html += `<div style="color:var(--muted);margin-top:4px">ยังไม่มีข้อมูลใน ⚡️Progress สำหรับ SKU นี้</div>`;
+    }
   } else {
     html += `<div>⚠️ ยังไม่มี EP ${esc(epRaw)}${scope === 'all' ? '' : 'ในเดือนที่เลือกอยู่'} <button class="btn ghost" id="epCheckAllBtn" style="margin-left:8px">ค้นหาทุกเดือน</button></div>`;
   }

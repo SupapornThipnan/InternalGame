@@ -80,7 +80,17 @@ function addMissingColumns(sheet, want) {
 }
 
 // ---- อ่านข้อมูล: GET ?sheet=น้ำหนัก → { ok, data: [...] } ----
+// ครอบ try/catch เหมือน doPost — ถ้ามี exception กลางทาง Apps Script จะส่ง "หน้า HTML error" กลับไป
+// ฝั่งเว็บ parse JSON ไม่ได้ เลยขึ้นข้อความงงๆ ว่า Unexpected token '<' แทนที่จะบอกสาเหตุจริง
 function doGet(e) {
+  try {
+    return doGetInner(e);
+  } catch (err) {
+    return json({ ok: false, error: 'EXCEPTION: ' + (err && err.message ? err.message : String(err)) });
+  }
+}
+
+function doGetInner(e) {
   const sheet = SS.getSheetByName((e.parameter && e.parameter.sheet) || SHEET_WEIGHT);
   if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
   const rows = sheet.getDataRange().getValues();
