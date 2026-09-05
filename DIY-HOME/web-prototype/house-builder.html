@@ -122,6 +122,12 @@ header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:2
 
 .hint{position:absolute;left:12px;bottom:12px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3);background:color-mix(in srgb,var(--card) 84%,transparent);padding:6px 11px;border-radius:4px;pointer-events:none;max-width:60%;line-height:1.7}
 .stats{position:absolute;right:12px;bottom:12px;font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--ink-3);background:color-mix(in srgb,var(--card) 84%,transparent);padding:5px 10px;border-radius:4px;pointer-events:none}
+.lightpanel{left:14px;top:50%;transform:translateY(-50%);padding:13px 15px;width:172px;display:none}
+.lightpanel.show{display:block}
+.lightpanel .k{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:11px}
+.lightpanel .k:first-child{margin-top:0}
+.lightpanel input[type=range]{width:100%;margin-top:6px;accent-color:var(--indigo)}
+.lightpanel .val{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--bamboo)}
 .fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:32px;color:var(--ink-2)}
 :focus-visible{outline:2px solid var(--indigo-2);outline-offset:2px}
 
@@ -147,7 +153,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     <div class="row">
       <span class="eyebrow">Nyan Kit Workshop · House System</span>
       <span class="eyebrow" style="color:var(--ink-3)">Build Mode + Play Mode</span>
-      <span class="vbadge">v0.12.0</span>
+      <span class="vbadge">v0.15.0</span>
     </div>
     <h1>Nyan Home Builder</h1>
     <p class="note">
@@ -187,6 +193,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       <button class="tbtn" id="btnSnap" aria-pressed="true">🧲 Snap: เปิด</button>
       <button class="tbtn" id="btnFound" aria-pressed="false">ยกใต้ถุน</button>
       <button class="tbtn" id="btnWalls">ผนัง: เต็ม</button>
+      <button class="tbtn" id="btnLight" aria-pressed="false">🔆 แสง</button>
       <button class="tbtn" id="btnUndo">↶ ย้อน</button>
       <button class="tbtn warn" id="btnClear">ล้างทั้งหมด</button>
     </div>
@@ -195,6 +202,15 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       <div class="side" id="side"></div>
       <div class="stage" id="stage">
         <canvas id="cv"></canvas>
+
+        <div class="panel lightpanel" id="lightpanel">
+          <div class="k">ความอบอุ่น <span class="val" id="lwVal">อุ่น</span></div>
+          <input type="range" id="lwSlider" min="-100" max="100" value="65">
+          <div class="k">ความสว่างรวม <span class="val" id="lbVal">100%</span></div>
+          <input type="range" id="lbSlider" min="50" max="150" value="100">
+          <div class="k">ความเข้มเงา <span class="val" id="ssVal">80%</span></div>
+          <input type="range" id="ssSlider" min="0" max="100" value="80">
+        </div>
 
         <div class="panel inspector" id="insp">
           <div class="t" id="ispName">—</div>
@@ -222,10 +238,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
             <input type="range" id="ispArtHeight" min="0.3" max="2.4" step="0.02" value="1.5">
           </div>
           <div id="ispSurfBody" style="display:none">
-            <div class="k">ตำแหน่งซ้าย-ขวา <span class="val" id="ispSurfXVal">กลาง</span></div>
-            <input type="range" id="ispSurfX" min="-0.7" max="0.7" step="0.01" value="0">
-            <div class="k">ตำแหน่งหน้า-หลัง <span class="val" id="ispSurfZVal">กลาง</span></div>
-            <input type="range" id="ispSurfZ" min="-0.4" max="0.4" step="0.01" value="0">
+            <div id="ispSurfPosRows">
+              <div class="k">ตำแหน่งซ้าย-ขวา <span class="val" id="ispSurfXVal">กลาง</span></div>
+              <input type="range" id="ispSurfX" min="-0.7" max="0.7" step="0.01" value="0">
+              <div class="k">ตำแหน่งหน้า-หลัง <span class="val" id="ispSurfZVal">กลาง</span></div>
+              <input type="range" id="ispSurfZ" min="-0.4" max="0.4" step="0.01" value="0">
+            </div>
+            <div class="k">ขนาด <span class="val" id="ispSurfScaleVal">1.00×</span></div>
+            <input type="range" id="ispSurfScale" min="40" max="220" value="100">
           </div>
           <button class="del" id="ispDel">🗑 ลบชิ้นนี้</button>
         </div>
@@ -297,6 +317,26 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     </div>
     <div class="changelog">
       <div class="crow now">
+        <span class="cv">v0.15.0</span>
+        <span class="cd"><b>เฟอร์นิเจอร์ทุกชิ้นวางบนโต๊ะได้แล้ว</b> — ไม่จำกัดแค่ของบนโต๊ะ 4 ชิ้นเดิมอีกต่อไป ทุกอย่างในแคตตาล็อกเฟอร์นิเจอร์ (ต้นไม้ โคมตั้งโต๊ะ เก้าอี้ ฯลฯ) เล็งไปที่หน้าโต๊ะ/เคาน์เตอร์ก็จะเกาะไปวางบนนั้นแทนพื้นได้เลย ใช้เครื่องมือ "เฟอร์นิเจอร์" เดิม ไม่มีเครื่องมือแยก · ระบบตรวจจับหน้าโต๊ะแบบเดียวกับของบนโต๊ะ (v0.12.0) ใช้ scene-graph parent-child เดียวกัน โต๊ะเองก็วางซ้อนบนโต๊ะอีกใบได้ (ลำดับการสร้างตอนโหลดเซฟรองรับการซ้อนกันหลายชั้นแล้ว) · ลากของที่วางแล้วข้ามพื้น↔โต๊ะสลับไปมาได้ตลอด ลบเฟอร์นิเจอร์ที่เป็นโต๊ะจะลบของที่วางอยู่บนมันไปด้วย (cascade delete)</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.14.0</span>
+        <span class="cd"><b>ของบนโต๊ะวางบนพื้นได้ด้วย</b> — เครื่องมือ "ของบนโต๊ะ" (แจกัน/หนังสือ/ชามผลไม้/เทียน) เดิมเดียว ตอนนี้คลิกพื้นก็วางได้ ไม่ต้องมีโต๊ะรองรับอีกต่อไป ระบบเช็คก่อนว่าคลิกโดนหน้าโต๊ะไหม ถ้าไม่โดนก็ตกลงพื้นแทนโดยอัตโนมัติ (สแนปกริดแบบเดียวกับเฟอร์นิเจอร์) · ลากของชิ้นที่วางแล้วข้ามจากพื้นขึ้นโต๊ะ หรือจากโต๊ะลงพื้นได้เลย ระบบจะสลับโหมดพาเรนต์ให้เอง · ของบนพื้นไม่มีปุ่มหมุน (เหมือนของแขวนผนัง) ปรับได้แค่ตำแหน่งวางกับขนาด</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.13.1</span>
+        <span class="cd"><b>ค่าเริ่มต้นอบอุ่นเข้มขึ้น</b> — โทนสีอุ่นเปลี่ยนจากส้มอ่อนเป็นเหลืองอำพันเข้ม ปรับได้แรงขึ้น (สูงสุด 55% ของสี จากเดิม 40%) ความเข้มเงาเริ่มต้น 70%→80% ให้คอนทราสต์ชัดขึ้นแบบร้านกาแฟที่มีมุมมืด-สว่าง · ที่สำคัญที่สุด: ดันความอบอุ่นขึ้นสูง ๆ ตอนนี้จะไป "ปลุก" โคมไฟ/เทียนให้เรืองแสงด้วย แม้เป็นเวลากลางวัน เพราะความคอซี่ในภาพอ้างอิงมาจากไฟในร้านที่ติดอยู่ ไม่ใช่แค่โทนสีอุ่น</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.13.0</span>
+        <span class="cd"><b>ปรับแสงในเกมได้ด้วยสไลเดอร์</b> — ปุ่ม "🔆 แสง" บนแถบเครื่องมือเปิดแผงเลื่อนปรับ <b>ความอบอุ่น</b> (โทนส้ม/ฟ้า), <b>ความสว่างรวม</b>, และ <b>ความเข้มเงา</b> ทำงานซ้อนทับระบบกลางวัน-กลางคืนเดิม ไม่ได้แทนที่ — ปรับได้ทั้งโหมด Build และ Play ความเข้มเงาทำผ่านไฟ ambient เสริมที่ไล่แสงเข้าไปในเงาเมื่อลดความเข้ม ไม่ได้แก้ shadow map โดยตรง (ขอบเงายังนุ่มเท่าเดิม ปรับได้แค่ความมืด-สว่างของเงา) · ค่าที่ปรับไม่ถูกบันทึกลงไฟล์เซฟ เป็นค่ากำหนดการมองชั่วคราวเหมือนเวลาของวัน ไม่ใช่คุณสมบัติของบ้าน</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.12.1</span>
+        <span class="cd"><b>ของบนโต๊ะปรับขนาดได้</b> — สไลเดอร์ขนาด 0.4×-2.2× เหมือนเฟอร์นิเจอร์พื้น เพราะเป็น local scale ของ mesh ที่ฝากไว้กับโต๊ะ ปรับแล้วไม่ต้องรีบิลด์ mesh ใหม่ · ยืนยันแล้วว่าการที่ของบนโต๊ะตามโต๊ะเวลาย้าย/หมุน/ขยาย เป็นผลจากสถาปัตยกรรม parent-child ตั้งแต่ v0.12.0 อยู่แล้ว ไม่ต้องแก้อะไรเพิ่ม</span>
+      </div>
+      <div class="crow">
         <span class="cv">v0.12.0</span>
         <span class="cd"><b>ของวางบนโต๊ะ</b> — เครื่องมือใหม่ "🏺 ของบนโต๊ะ" มีแจกัน กองหนังสือ ชามผลไม้ เทียนหอม วางได้บนโต๊ะกินข้าว โต๊ะทำงาน โต๊ะข้างเตียง และเคาน์เตอร์ ของชิ้นนี้เป็นลูกของ mesh โต๊ะโดยตรง (ไม่ใช่กลุ่มแยกแบบของแขวนผนัง) ย้าย/หมุน/ขยายโต๊ะแล้วของบนโต๊ะตามไปเองอัตโนมัติผ่านระบบ scene graph ของ three.js ไม่ต้องคำนวณพิกัดใหม่เอง · เลือกแล้วลากย้ายบนโต๊ะได้ ลากข้ามไปโต๊ะตัวอื่นก็ได้ · ลบโต๊ะจะพาของบนโต๊ะหายไปด้วย · furniture ที่วางแล้วทุกชิ้นมี id ติดตัวแล้ว (สำหรับให้ของบนโต๊ะอ้างอิงกลับมาหาโต๊ะเจ้าของ)</span>
       </div>
@@ -401,7 +441,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
 </section>
 </main>
 
-<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.12.0</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.15.0</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -861,7 +901,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   // ===================== world state =====================
   var world = { floors: {}, walls: {}, objects: [], openings: [], wallArt: [], surfaceItems: [], foundation: false };
   var undoStack = [];
-  var APP_VERSION = '0.12.0';
+  var APP_VERSION = '0.15.0';
   function plainState() {
     var f = {}, w = {};
     Object.keys(world.floors).forEach(function (k) { f[k] = { mat: world.floors[k].mat }; });
@@ -871,8 +911,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       floors: f, walls: w, foundation: world.foundation,
       openings: world.openings.map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; }),
       wallArt: world.wallArt.map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; }),
-      objects: world.objects.map(function (o) { return { id: o.id, d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift }; }),
-      surfaceItems: world.surfaceItems.map(function (s) { return { def: s.def, hostId: s.hostId, offsetX: s.offsetX, offsetZ: s.offsetZ }; })
+      objects: world.objects.map(function (o) { return { id: o.id, d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift, h: o.hostId || null, ox: o.offsetX, oz: o.offsetZ }; }),
+      surfaceItems: world.surfaceItems.map(function (s) { return { def: s.def, hostId: s.hostId, offsetX: s.offsetX, offsetZ: s.offsetZ, x: s.x, z: s.z, scale: s.scale }; })
     };
   }
   function snap() {
@@ -1254,11 +1294,17 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     if (!def) return;
     var g = def.b();
     g.scale.setScalar(o.scale);
-    g.position.set(o.x, floorY() + o.lift, o.z);
     g.rotation.y = o.rotY;
     g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     g.userData.objRef = o;
-    gObjects.add(g);
+    var host = o.hostId ? findHostById(o.hostId) : null;
+    if (host && host.mesh) {
+      g.position.set(o.offsetX, FURN_BY[host.def].surfaceY + o.lift, o.offsetZ);
+      host.mesh.add(g);          // resting on another piece — same parent-child trick as surface props
+    } else {
+      g.position.set(o.x || 0, floorY() + o.lift, o.z || 0);
+      gObjects.add(g);
+    }
     o.mesh = g;
     if (g.userData.lampAt) {
       var l = new THREE.PointLight(0xFFC178, 0, 6.5);
@@ -1268,10 +1314,29 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       o.light = l;
     }
   }
+  // builds hosts before the pieces resting on them (arbitrary nesting depth) so
+  // addObjectMesh always finds host.mesh already there; anything left over after a
+  // full pass (broken/circular host ref) lands on the floor instead of vanishing
+  function buildObjectsInOrder() {
+    var pending = world.objects.slice(), progressed = true;
+    while (pending.length && progressed) {
+      progressed = false;
+      for (var i = pending.length - 1; i >= 0; i--) {
+        var o = pending[i], host = o.hostId ? findHostById(o.hostId) : null;
+        if (!o.hostId || (host && host.mesh)) {
+          addObjectMesh(o);
+          pending.splice(i, 1);
+          progressed = true;
+        }
+      }
+    }
+    pending.forEach(function (o) { o.hostId = null; addObjectMesh(o); });
+  }
   function removeObject(o) {
     world.surfaceItems.filter(function (s) { return s.hostId === o.id; }).forEach(removeSurfaceItemMesh);
     world.surfaceItems = world.surfaceItems.filter(function (s) { return s.hostId !== o.id; });
-    if (o.mesh) gObjects.remove(o.mesh);
+    world.objects.filter(function (c) { return c.hostId === o.id; }).forEach(removeObject);
+    if (o.mesh && o.mesh.parent) o.mesh.parent.remove(o.mesh);
     var i = world.objects.indexOf(o);
     if (i >= 0) world.objects.splice(i, 1);
   }
@@ -1280,15 +1345,21 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     return null;
   }
   function addSurfaceItemMesh(item) {
-    var host = findHostById(item.hostId);
-    if (!host || !host.mesh) return;
-    var def = FURN_BY[host.def];
     var g = SURFACE_ITEM_BY[item.def].b();
-    g.position.set(item.offsetX, def.surfaceY, item.offsetZ);
+    g.scale.setScalar(item.scale || 1);
     g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
     g.userData.surfaceItemRef = item;
-    host.mesh.add(g);           // parented to the host — moving/rotating/scaling the
-    item.mesh = g;               // table carries the item along for free, no extra math
+    if (item.hostId) {
+      var host = findHostById(item.hostId);
+      if (!host || !host.mesh) return;
+      var def = FURN_BY[host.def];
+      g.position.set(item.offsetX, def.surfaceY, item.offsetZ);
+      host.mesh.add(g);          // parented to the host — moving/rotating/scaling the
+    } else {
+      g.position.set(item.x, floorY(), item.z);
+      gObjects.add(g);           // stands on its own, same group as furniture
+    }
+    item.mesh = g;                // table carries the item along for free, no extra math
   }
   function removeSurfaceItemMesh(item) {
     if (item.mesh && item.mesh.parent) item.mesh.parent.remove(item.mesh);
@@ -1307,11 +1378,11 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     while (o && !o.userData.surfaceItemRef && !o.userData.objRef) o = o.parent;
     return (o && o.userData.surfaceItemRef) ? o.userData.surfaceItemRef : null;
   }
-  // raycast the furniture layer, resolve which host + tabletop point was hit, and turn
-  // that into a clamped (offsetX, offsetZ) pair — snapped to furnGrid when Snap is on,
-  // exactly like the wall-art equivalent. excludeMesh hides the piece being dragged
-  // first, so its own geometry can't block the ray from reaching the tabletop under it.
-  function surfaceItemHitInfo(e, excludeMesh) {
+  // raycasts the furniture layer and, if the point lands on a valid tabletop (within
+  // 8cm of its surfaceY), returns a clamped/snapped local offset on that host. Shared
+  // by props (surfaceItemHitInfo) and now regular furniture (furnHitInfo) — both just
+  // differ in what they do when this comes back null (no tabletop under the cursor).
+  function tableHitInfo(e, excludeMesh) {
     var wasVisible = excludeMesh ? excludeMesh.visible : null;
     if (excludeMesh) excludeMesh.visible = false;
     setNdc(e);
@@ -1336,11 +1407,35 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     }
     return { hostId: host.id, offsetX: offsetX, offsetZ: offsetZ };
   }
+  function surfaceItemHitInfo(e, excludeMesh) {
+    var hit = tableHitInfo(e, excludeMesh);
+    if (hit) return hit;
+    // no valid tabletop under the cursor — these props can stand on the floor too,
+    // snapped the same plain way every non-1m furniture grid setting already uses
+    var gp = groundPoint(e);
+    if (!gp) return null;
+    var fx = snapOn ? Math.round(gp.x / furnGrid) * furnGrid : gp.x;
+    var fz = snapOn ? Math.round(gp.z / furnGrid) * furnGrid : gp.z;
+    return { hostId: null, x: fx, z: fz };
+  }
+  // same idea for regular furniture: try a tabletop first, else fall back to the
+  // ordinary floor grid (snapFurn — footprint/rotation-aware), completely unchanged
+  // from how floor placement always worked
+  function furnHitInfo(e, excludeMesh, def, rot) {
+    var hit = tableHitInfo(e, excludeMesh);
+    if (hit) return hit;
+    var gp = groundPoint(e);
+    if (!gp) return null;
+    var pos = snapOn ? snapFurn(gp.x, gp.z, def, rot) : { x: gp.x, z: gp.z };
+    return { hostId: null, x: pos.x, z: pos.z };
+  }
   function placeSurfaceItemAt(e) {
     var hit = surfaceItemHitInfo(e, null);
     if (!hit) return;
     snap();
-    var item = { def: surfaceKind, hostId: hit.hostId, offsetX: hit.offsetX, offsetZ: hit.offsetZ };
+    var item = hit.hostId
+      ? { def: surfaceKind, hostId: hit.hostId, offsetX: hit.offsetX, offsetZ: hit.offsetZ, scale: 1 }
+      : { def: surfaceKind, hostId: null, x: hit.x, z: hit.z, scale: 1 };
     world.surfaceItems.push(item);
     addSurfaceItemMesh(item);
     updateStats(); save();
@@ -1357,12 +1452,19 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       previewFor = surfaceKind;
     }
     var hit = surfaceItemHitInfo(e, null);
-    var host = hit ? findHostById(hit.hostId) : null;
-    if (!hit || !host || !host.mesh) { previewObj.visible = false; return; }
-    var worldPt = host.mesh.localToWorld(new THREE.Vector3(hit.offsetX, FURN_BY[host.def].surfaceY, hit.offsetZ));
-    previewObj.visible = true;
-    previewObj.position.copy(worldPt);
-    previewObj.rotation.y = host.mesh.rotation.y;
+    if (!hit) { previewObj.visible = false; return; }
+    if (hit.hostId) {
+      var host = findHostById(hit.hostId);
+      if (!host || !host.mesh) { previewObj.visible = false; return; }
+      var worldPt = host.mesh.localToWorld(new THREE.Vector3(hit.offsetX, FURN_BY[host.def].surfaceY, hit.offsetZ));
+      previewObj.visible = true;
+      previewObj.position.copy(worldPt);
+      previewObj.rotation.y = host.mesh.rotation.y;
+    } else {
+      previewObj.visible = true;
+      previewObj.position.set(hit.x, floorY(), hit.z);
+      previewObj.rotation.y = 0;
+    }
   }
 
   function rebuildAll() {
@@ -1376,7 +1478,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     Object.keys(world.walls).forEach(addWallMesh);
     world.openings.forEach(addOpeningMesh);
     world.wallArt.forEach(addWallArtMesh);
-    world.objects.forEach(addObjectMesh);
+    buildObjectsInOrder();
     world.surfaceItems.forEach(addSurfaceItemMesh);   // needs host.mesh, so runs after addObjectMesh
     applyWallView();
     updateStats();
@@ -1501,6 +1603,12 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   scene.add(sun);
   var moon = new THREE.DirectionalLight(0x8FA8D8, 0.0);
   moon.position.set(-10, 14, -8); scene.add(moon);
+  var shadowFill = new THREE.AmbientLight(0xFFFFFF, 0);   // washes out shadow contrast when shadowStrength is low
+  scene.add(shadowFill);
+
+  var lightWarmth = 0.65;    // -1 (cool) .. 1 (warm), user-controlled mood tint
+  var lightBright = 1.0;     // 0.5 .. 1.5, overall brightness multiplier
+  var shadowStrength = 0.8;  // 0 (washed out) .. 1 (full contrast)
 
   // ===================== camera =====================
   var camo = new THREE.OrthographicCamera(-5, 5, 5, -5, -100, 220);
@@ -1532,6 +1640,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   var surfaceKind = 'vase';
   var furnGrid = 0.25;   // metres between snap positions; 1 keeps the Sims edge-aware rule below, default is finer
   var placeRot = 0;
+  var lastFurnHostMesh = null;   // host under the placement ghost right now, if any — lets rotatePlacement compose rotation correctly
   var ROT_STEP_SNAP = Math.PI / 4;    // 45° when Snap is on
   var ROT_STEP_FREE = Math.PI / 24;   // 7.5° when Snap is off
   var selected = null, selectedType = null;
@@ -1561,8 +1670,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     opening: 'คลิกผนังเพื่อเจาะช่องเปิด · เลือกแล้วดูแผงขวาเพื่อเลื่อนตำแหน่ง/ปรับความกว้าง',
     wallart: 'คลิกบนผนังตรงจุดที่จะแขวน · เลือกแล้วปรับตำแหน่ง/ความสูงที่แผงขวา',
     paint: 'คลิกผนังเพื่อทาสี · ลากยาวเพื่อทารวดเดียวหลายช่วง · ปิด "ทาทั้งสองด้าน" เพื่อแยกสีในกับนอก',
-    furn: 'คลิกเพื่อวาง · R หรือคลิกขวาเพื่อหมุนก่อนวาง · ปิด Snap เพื่อวางอิสระ',
-    surface: 'คลิกบนโต๊ะ/เคาน์เตอร์ตรงจุดที่จะวาง · ลากของที่วางแล้วข้ามไปโต๊ะตัวอื่นได้',
+    furn: 'คลิกเพื่อวาง (บนพื้น หรือบนโต๊ะ/เคาน์เตอร์ก็ได้) · R หรือคลิกขวาเพื่อหมุนก่อนวาง · ปิด Snap เพื่อวางอิสระ',
+    surface: 'คลิกบนโต๊ะ/เคาน์เตอร์ หรือวางบนพื้นก็ได้ · ลากของที่วางแล้วข้ามไปที่อื่นได้',
     erase: 'คลิกพื้น ผนัง หรือของ เพื่อลบทีละชิ้น'
   };
   function updateHint() {
@@ -1695,6 +1804,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
         pf.appendChild(b);
       });
       elSide.appendChild(pf);
+      var fnote = document.createElement('div');
+      fnote.style.cssText = 'padding:8px 14px 10px;font-size:.78rem;color:var(--ink-2);line-height:1.6';
+      fnote.textContent = 'วางบนพื้นตามปกติ หรือจะเล็งไปวางบนโต๊ะ/เคาน์เตอร์ก็ได้ — ลากของที่วางแล้วข้ามพื้น↔โต๊ะได้เหมือนกัน';
+      elSide.appendChild(fnote);
     } else if (tool === 'surface') {
       addGroup('ของบนโต๊ะ');
       var nps = document.createElement('div'); nps.className = 'nowplacing';
@@ -1711,7 +1824,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       elSide.appendChild(ps);
       var tips2 = document.createElement('div');
       tips2.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
-      tips2.textContent = 'วางได้เฉพาะบนโต๊ะกินข้าว โต๊ะทำงาน โต๊ะข้างเตียง และเคาน์เตอร์ — เฟอร์นิเจอร์อื่นยังไม่มีพื้นที่วางของ';
+      tips2.textContent = 'วางบนโต๊ะกินข้าว โต๊ะทำงาน โต๊ะข้างเตียง เคาน์เตอร์ หรือวางตรงพื้นก็ได้';
       elSide.appendChild(tips2);
     } else {
       addGroup(tool === 'erase' ? 'เครื่องมือลบ' : 'เลือก / ย้าย');
@@ -1778,6 +1891,31 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   });
   var btnWalls = document.getElementById('btnWalls');
   btnWalls.addEventListener('click', function () { wallView = (wallView + 1) % 3; applyWallView(); syncWallBtn(); });
+  var btnLight = document.getElementById('btnLight');
+  var lightPanelEl = document.getElementById('lightpanel');
+  btnLight.addEventListener('click', function () {
+    var show = !lightPanelEl.classList.contains('show');
+    lightPanelEl.classList.toggle('show', show);
+    btnLight.setAttribute('aria-pressed', String(show));
+  });
+  var lwSlider = document.getElementById('lwSlider');
+  var lbSlider = document.getElementById('lbSlider');
+  var ssSlider = document.getElementById('ssSlider');
+  lwSlider.addEventListener('input', function () {
+    lightWarmth = +lwSlider.value / 100;
+    document.getElementById('lwVal').textContent = lightWarmth > 0.05 ? 'อุ่น' : (lightWarmth < -0.05 ? 'เย็น' : 'กลาง');
+    applySky();
+  });
+  lbSlider.addEventListener('input', function () {
+    lightBright = +lbSlider.value / 100;
+    document.getElementById('lbVal').textContent = Math.round(lightBright * 100) + '%';
+    applySky();
+  });
+  ssSlider.addEventListener('input', function () {
+    shadowStrength = +ssSlider.value / 100;
+    document.getElementById('ssVal').textContent = Math.round(shadowStrength * 100) + '%';
+    applySky();
+  });
   function syncWallBtn() { btnWalls.textContent = 'ผนัง: ' + ['เต็ม', 'ครึ่ง', 'ซ่อน'][wallView]; }
   function applyWallView() {
     gWalls.visible = wallView !== 2;
@@ -1804,8 +1942,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     world.openings = (s.openings || []).map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; });
     world.wallArt = (s.wallArt || []).map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; });
     world.foundation = s.foundation;
-    world.objects = s.objects.map(function (o) { return { id: o.id, def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l }; });
-    world.surfaceItems = (s.surfaceItems || []).map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX, offsetZ: si.offsetZ }; });
+    world.objects = s.objects.map(function (o) { return { id: o.id, def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz }; });
+    world.surfaceItems = (s.surfaceItems || []).map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX, offsetZ: si.offsetZ, x: si.x, z: si.z, scale: si.scale || 1 }; });
     nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id || 0); }, 0);
     btnFound.setAttribute('aria-pressed', String(world.foundation));
     select(null); rebuildAll(); save();
@@ -1824,7 +1962,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     elIspSurf.style.display = selectedType === 'surface' ? '' : 'none';
     if (!o) { updateSelVisual(); return; }   // clears the highlight box/pad too, not just the panel
     if (selectedType === 'furn') {
-      document.getElementById('ispName').textContent = FURN_BY[o.def].th;
+      document.getElementById('ispName').textContent = FURN_BY[o.def].th + (o.hostId ? ' · บนโต๊ะ' : '');
       ispScale.value = String(Math.round(o.scale * 100));
       document.getElementById('ispScaleVal').textContent = o.scale.toFixed(2) + '×';
       ispLift.value = String(Math.round(o.lift * 100));
@@ -1842,23 +1980,36 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       document.getElementById('ispArtHVal').textContent = o.height.toFixed(2);
       document.getElementById('ispDel').textContent = '🗑 ลบของแขวนนี้';
     } else {
-      document.getElementById('ispName').textContent = SURFACE_ITEM_BY[o.def].ic + ' ' + SURFACE_ITEM_BY[o.def].th;
+      document.getElementById('ispName').textContent = SURFACE_ITEM_BY[o.def].ic + ' ' + SURFACE_ITEM_BY[o.def].th + (o.hostId ? '' : ' · บนพื้น');
       syncSurfaceSliders(o);
       document.getElementById('ispDel').textContent = '🗑 ลบของชิ้นนี้';
     }
     updateSelVisual();
   }
   function syncSurfaceSliders(item) {
-    var host = findHostById(item.hostId);
-    var def = host ? FURN_BY[host.def] : null;
-    var hx = def ? def.surfaceHalf[0] : 0.7, hz = def ? def.surfaceHalf[1] : 0.4;
-    ispSurfX.min = String(-hx); ispSurfX.max = String(hx); ispSurfX.value = String(item.offsetX);
-    ispSurfZ.min = String(-hz); ispSurfZ.max = String(hz); ispSurfZ.value = String(item.offsetZ);
-    var step = snapOn ? Math.max(0.05, furnGrid) : 0.01;
-    ispSurfX.step = String(step); ispSurfZ.step = String(step);
-    document.getElementById('ispSurfXVal').textContent = Math.abs(item.offsetX) < 0.005 ? 'กลาง' : item.offsetX.toFixed(2);
-    document.getElementById('ispSurfZVal').textContent = Math.abs(item.offsetZ) < 0.005 ? 'กลาง' : item.offsetZ.toFixed(2);
+    document.getElementById('ispSurfPosRows').style.display = item.hostId ? '' : 'none';
+    if (item.hostId) {
+      var host = findHostById(item.hostId);
+      var def = host ? FURN_BY[host.def] : null;
+      var hx = def ? def.surfaceHalf[0] : 0.7, hz = def ? def.surfaceHalf[1] : 0.4;
+      ispSurfX.min = String(-hx); ispSurfX.max = String(hx); ispSurfX.value = String(item.offsetX);
+      ispSurfZ.min = String(-hz); ispSurfZ.max = String(hz); ispSurfZ.value = String(item.offsetZ);
+      var step = snapOn ? Math.max(0.05, furnGrid) : 0.01;
+      ispSurfX.step = String(step); ispSurfZ.step = String(step);
+      document.getElementById('ispSurfXVal').textContent = Math.abs(item.offsetX) < 0.005 ? 'กลาง' : item.offsetX.toFixed(2);
+      document.getElementById('ispSurfZVal').textContent = Math.abs(item.offsetZ) < 0.005 ? 'กลาง' : item.offsetZ.toFixed(2);
+    }
+    ispSurfScale.value = String(Math.round((item.scale || 1) * 100));
+    document.getElementById('ispSurfScaleVal').textContent = (item.scale || 1).toFixed(2) + '×';
   }
+  var ispSurfScale = document.getElementById('ispSurfScale');
+  ispSurfScale.addEventListener('input', function () {
+    if (!selected || selectedType !== 'surface') return;
+    selected.scale = +ispSurfScale.value / 100;
+    document.getElementById('ispSurfScaleVal').textContent = selected.scale.toFixed(2) + '×';
+    if (selected.mesh) selected.mesh.scale.setScalar(selected.scale);   // no rebuild needed, just resize in place
+    updateSelVisual(); saveSoon();
+  });
   function syncOpeningSliders(o) {
     var maxOff = 0.49 - o.width / 2;
     var step = snapOn ? 0.1 : 0.01;
@@ -1883,7 +2034,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     if (!selected || selectedType !== 'furn') return;
     selected.lift = +ispLift.value / 100;
     document.getElementById('ispLiftVal').textContent = selected.lift.toFixed(2);
-    selected.mesh.position.y = floorY() + selected.lift;
+    var liftHost = selected.hostId ? findHostById(selected.hostId) : null;
+    var baseY = liftHost ? FURN_BY[liftHost.def].surfaceY : floorY();
+    selected.mesh.position.y = baseY + selected.lift;
     updateSelVisual(); saveSoon();
   });
   document.getElementById('ispRotL').addEventListener('click', function () { rotateSel(-1); });
@@ -1893,7 +2046,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   // the next pointermove to catch up
   function rotatePlacement() {
     placeRot += snapOn ? ROT_STEP_SNAP : ROT_STEP_FREE;
-    if (previewObj) previewObj.rotation.y = placeRot;
+    if (previewObj) previewObj.rotation.y = lastFurnHostMesh ? lastFurnHostMesh.rotation.y + placeRot : placeRot;
   }
   // right-click on a piece: pick it up as the selection, then turn it one step
   function rotateUnderPointer(e) {
@@ -2017,13 +2170,29 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     hemi.intensity = 0.8 - night * 0.5;
     hemi.color.set(night > 0.5 ? 0xBACBEC : 0xFFF6E2);
     moon.intensity = night * 0.34;
+
+    // ---- manual mood controls, layered on top of the hour-driven base above ----
+    var tint = lightWarmth >= 0 ? new THREE.Color(0xFF8C42) : new THREE.Color(0x8FB0E8);
+    var tintAmt = Math.min(1, Math.abs(lightWarmth)) * 0.55;
+    sun.color.lerp(tint, tintAmt);
+    hemi.color.lerp(tint, tintAmt * 0.6);
+    sun.intensity *= lightBright;
+    hemi.intensity *= lightBright;
+    moon.intensity *= lightBright;
+    shadowFill.intensity = (1 - shadowStrength) * 0.55;
+
+    // cranking warmth up also wakes the lamps/candles a little, even in daylight — the
+    // reference look a cozy shop goes for is "lights on inside" regardless of the hour
+    var cozyGlow = Math.max(0, lightWarmth) * 0.55;
+    var glowLevel = Math.max(night, cozyGlow);
+
     lawnMat.color.setRGB(1 - night * 0.55, 1 - night * 0.48, 1 - night * 0.35);
     GLOW.forEach(function (m) {
       if (!m.emissive) m.emissive = new THREE.Color();
       var e = new THREE.Color(m.userData.glow);
-      m.emissive.setRGB(e.r * night, e.g * night, e.b * night);
+      m.emissive.setRGB(e.r * glowLevel, e.g * glowLevel, e.b * glowLevel);
     });
-    world.objects.forEach(function (o) { if (o.light) o.light.intensity = night * 1.5; });
+    world.objects.forEach(function (o) { if (o.light) o.light.intensity = glowLevel * 1.5 * lightBright; });
     renderer.setClearColor(rampColor(hour), 1);
   }
 
@@ -2132,7 +2301,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     previewObj.position.set(tr.x, tr.y, tr.z);
     previewObj.rotation.y = tr.rotY;
   }
-  function showFurnPreview(px, pz) {
+  function showFurnPreview(e) {
     var def = FURN_BY[furnId];
     if (previewFor !== furnId || !previewObj) {
       clearPreview();
@@ -2145,9 +2314,23 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       gPreview.add(previewObj);
       previewFor = furnId;
     }
-    var pos = snapOn ? snapFurn(px, pz, def, placeRot) : { x: px, z: pz };
-    previewObj.position.set(pos.x, floorY() + 0.01, pos.z);
-    previewObj.rotation.y = placeRot;
+    var hit = furnHitInfo(e, null, def, placeRot);
+    if (!hit) { previewObj.visible = false; lastFurnHostMesh = null; return; }
+    if (hit.hostId) {
+      var host = findHostById(hit.hostId);
+      if (!host || !host.mesh) { previewObj.visible = false; lastFurnHostMesh = null; return; }
+      var hdef = FURN_BY[host.def];
+      var worldPt = host.mesh.localToWorld(new THREE.Vector3(hit.offsetX, hdef.surfaceY, hit.offsetZ));
+      previewObj.visible = true;
+      previewObj.position.copy(worldPt);
+      previewObj.rotation.y = host.mesh.rotation.y + placeRot;
+      lastFurnHostMesh = host.mesh;
+    } else {
+      previewObj.visible = true;
+      previewObj.position.set(hit.x, floorY() + 0.01, hit.z);
+      previewObj.rotation.y = placeRot;
+      lastFurnHostMesh = null;
+    }
   }
   function showRectPreview(a, b, y) {
     clearPreview();
@@ -2251,7 +2434,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       act = { kind: 'line', a: cornerOf(p) };
       showLinePreview(act.a, act.a);
     } else if (tool === 'furn') {
-      placeFurniture(p);
+      placeFurniture(e);
     } else if (tool === 'opening') {
       snap();
       act = { kind: 'opening', hit: false, lastKey: null };
@@ -2362,11 +2545,23 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       else if (act.kind === 'opening') { placeOpeningAt(e); }
       else if (act.kind === 'move') {
         var def = FURN_BY[act.o.def];
-        var pos = snapOn ? snapFurn(p.x, p.z, def, act.o.rotY) : { x: p.x, z: p.z };
-        act.o.x = pos.x; act.o.z = pos.z;
-        act.o.mesh.position.set(pos.x, floorY() + act.o.lift, pos.z);
-        updateSelVisual();
-        act.moved = true;
+        var hitF = furnHitInfo(e, act.o.mesh, def, act.o.rotY);
+        if (hitF) {
+          if (hitF.hostId) {
+            act.o.hostId = hitF.hostId; act.o.offsetX = hitF.offsetX; act.o.offsetZ = hitF.offsetZ;
+            delete act.o.x; delete act.o.z;
+            var mvHost = findHostById(hitF.hostId), mvHdef = FURN_BY[mvHost.def];
+            if (act.o.mesh.parent !== mvHost.mesh) mvHost.mesh.add(act.o.mesh);
+            act.o.mesh.position.set(hitF.offsetX, mvHdef.surfaceY + act.o.lift, hitF.offsetZ);
+          } else {
+            act.o.hostId = null; act.o.x = hitF.x; act.o.z = hitF.z;
+            delete act.o.offsetX; delete act.o.offsetZ;
+            if (act.o.mesh.parent !== gObjects) gObjects.add(act.o.mesh);
+            act.o.mesh.position.set(hitF.x, floorY() + act.o.lift, hitF.z);
+          }
+          updateSelVisual();
+          act.moved = true;
+        }
       } else if (act.kind === 'moveArt') {
         var hitA = wallArtHitInfo(e);
         if (hitA) {
@@ -2378,14 +2573,21 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       } else if (act.kind === 'moveSurface') {
         var hitS = surfaceItemHitInfo(e, act.o.mesh);
         if (hitS) {
-          act.o.hostId = hitS.hostId; act.o.offsetX = hitS.offsetX; act.o.offsetZ = hitS.offsetZ;
+          act.o.hostId = hitS.hostId;
+          if (hitS.hostId) {
+            act.o.offsetX = hitS.offsetX; act.o.offsetZ = hitS.offsetZ;
+            delete act.o.x; delete act.o.z;
+          } else {
+            act.o.x = hitS.x; act.o.z = hitS.z;
+            delete act.o.offsetX; delete act.o.offsetZ;
+          }
           removeSurfaceItemMesh(act.o); addSurfaceItemMesh(act.o);
           updateSelVisual();
           act.moved = true;
         }
       }
     } else if (mode === 'build' && tool === 'furn') {
-      showFurnPreview(p.x, p.z);
+      showFurnPreview(e);
       clearHover();
     } else if (mode === 'build' && tool === 'paint') {
       var pw2 = pickWall(e);
@@ -2528,11 +2730,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     });
     rebuildWalls(); updateStats(); save();
   }
-  function placeFurniture(p) {
+  function placeFurniture(e) {
     var def = FURN_BY[furnId];
-    var pos = snapOn ? snapFurn(p.x, p.z, def, placeRot) : { x: p.x, z: p.z };
+    var hit = furnHitInfo(e, null, def, placeRot);
+    if (!hit) return;
     snap();
-    var o = { id: nextObjId++, def: furnId, x: pos.x, z: pos.z, rotY: placeRot, scale: 1, lift: 0 };
+    var o = hit.hostId
+      ? { id: nextObjId++, def: furnId, hostId: hit.hostId, offsetX: hit.offsetX, offsetZ: hit.offsetZ, rotY: placeRot, scale: 1, lift: 0 }
+      : { id: nextObjId++, def: furnId, x: hit.x, z: hit.z, rotY: placeRot, scale: 1, lift: 0 };
     world.objects.push(o);
     addObjectMesh(o);
     updateStats(); save();
@@ -2594,10 +2799,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       world.foundation = !!s.foundation;
       var nid = 1;
       world.objects = (s.objects || []).filter(function (o) { return FURN_BY[o.d]; })
-        .map(function (o) { return { id: o.id || nid++, def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0 }; });
+        .map(function (o) { return { id: o.id || nid++, def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz }; });
       nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
-      world.surfaceItems = (s.surfaceItems || []).filter(function (si) { return SURFACE_ITEM_BY[si.def] && findHostById(si.hostId); })
-        .map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX || 0, offsetZ: si.offsetZ || 0 }; });
+      world.surfaceItems = (s.surfaceItems || []).filter(function (si) { return SURFACE_ITEM_BY[si.def] && (si.hostId ? findHostById(si.hostId) : true); })
+        .map(function (si) { return { def: si.def, hostId: si.hostId || null, offsetX: si.offsetX || 0, offsetZ: si.offsetZ || 0, x: si.x || 0, z: si.z || 0, scale: si.scale || 1 }; });
       return true;
     } catch (e) { return false; }
   }
@@ -2629,7 +2834,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       world.objects.push(o);
       if (a[0] === 'table') tableObj = o;
     });
-    if (tableObj) world.surfaceItems.push({ def: 'vase', hostId: tableObj.id, offsetX: 0.4, offsetZ: 0 });
+    if (tableObj) world.surfaceItems.push({ def: 'vase', hostId: tableObj.id, offsetX: 0.4, offsetZ: 0, scale: 1 });
   }
 
   // ===================== boot =====================
