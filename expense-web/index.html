@@ -284,6 +284,10 @@ let editing = null;     // null (เพิ่มใหม่) | {row, sheet} (�
 // "หน้า" = ชีตหนึ่งใน Google Sheet พี่แยมตั้งชื่อ/สร้างเองทั้งหมด ไม่มีการสลับ/สร้างหน้าอัตโนมัติตามวันที่
 let PAGES = [];             // [{sheet:'7️⃣ รจ-กรกฎา 2569'}, …] ตามลำดับแท็บจริงใน Sheet จาก listPages
 let CUR_PAGE = null;        // null = ยังไม่เลือก (ใช้หน้าล่าสุด/ที่จำไว้) · '' = เลือก "ทุกหน้า" ชัดเจน · ชื่อชีต = หน้านั้น
+// true ระหว่างที่กำลังโชว์ข้อมูลจากแคชในเครื่อง (เปิดแอปแล้วเห็นข้อมูลทันทีก่อนไปโหลดจริง)
+// ยังไม่ยืนยันว่าเลขแถวตรงกับ Sheet จริงตอนนี้ 100% เลยกันแก้ไข/ลบไว้ก่อนจนกว่าจะโหลดจริงเสร็จ
+let CACHE_ONLY = false;
+const DATA_CACHE_KEY = 'rjDataCache';
 
 const $ = s => document.querySelector(s);
 const api = () => (localStorage.getItem('rjApiUrl') || DEFAULT_API_URL).trim();
@@ -323,6 +327,22 @@ async function fetchPages(){
   return (pj.ok && Array.isArray(pj.pages)) ? pj.pages : null;
 }
 
+// แคชผลโหลดล่าสุดไว้ในเครื่อง — ใช้แค่ตอน "เปิดแอป" เพื่อให้เห็นข้อมูลทันทีระหว่างรอโหลดจริง
+// ไม่ได้แทนที่การโหลดจริงเลย (refresh() ยังทำงานทุกครั้งเหมือนเดิม แคชแค่ลดความรู้สึก "จอว่างรอ")
+function saveDataCache(){
+  try{
+    localStorage.setItem(DATA_CACHE_KEY, JSON.stringify({
+      apiUrl: api(), pages: PAGES, curPage: CUR_PAGE, rows: ROWS, savedAt: Date.now()
+    }));
+  }catch(e){ /* localStorage เต็ม/ปิดใช้งาน — ข้ามไป ไม่ใช่ฟีเจอร์จำเป็น */ }
+}
+function loadDataCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem(DATA_CACHE_KEY));
+    return (c && c.apiUrl===api() && Array.isArray(c.rows)) ? c : null;
+  }catch(e){ return null; }
+}
+
 async function loadData(opts){
   opts = opts || {};
   hush();
@@ -350,6 +370,7 @@ async function loadData(opts){
           localStorage.setItem('rjCurPage', CUR_PAGE);
         }
         SOURCE = 'Apps Script API (อ่าน + เขียนได้)'; CAN_WRITE = true;
+        saveDataCache();
         return;
       }
     }catch(e){ /* listPages ใช้ไม่ได้ (เดพลอยเวอร์ชันเก่า/เน็ตหลุด) — ลองอ่านชีต default ตรงๆ ต่อ */ }
@@ -361,6 +382,7 @@ async function loadData(opts){
         PAGES = [{sheet: SHEET_NAME}]; CUR_PAGE = SHEET_NAME;
         ROWS = j2.data.map(o=>normalize(o, SHEET_NAME)).filter(Boolean);
         SOURCE = 'Apps Script API (อ่าน + เขียนได้)'; CAN_WRITE = true;
+        saveDataCache();
         return;
       }
       if (j2.error === 'SHEET_NOT_FOUND')
@@ -583,6 +605,8 @@ async function saveEntry(){
   if (!CAN_WRITE) return showMErr('ยังไม่ได้ตั้งค่า Apps Script URL — ไปที่หน้า ⚙️ ตั้งค่า ครับ');
   // เพิ่มรายการใหม่ต้องมีหน้าที่เลือกอยู่ชัดเจน — ไม่มีการเดา/สร้างหน้าอัตโนมัติจากวันที่
   if (!editing && !CUR_PAGE) return showMErr('เลือกหน้าที่จะเพิ่มรายการก่อนครับ (ตอนดู "ทุกหน้า" เพิ่มรายการไม่ได้)');
+  // แก้ไขรายการเดิมต้องรอโหลดข้อมูลจริงเสร็จก่อน — เลขแถวจากแคชอาจไม่ตรงกับ Sheet ปัจจุบันแล้ว
+  if (editing && CACHE_ONLY) return showMErr('กำลังโหลดข้อมูลล่าสุดอยู่ รอสักครู่แล้วลองแก้ไขใหม่นะครับ');
 
   const btn=$('#mSave'); btn.disabled=true; btn.textContent='กำลังบันทึก…';
   // เพิ่มใหม่ → เข้าหน้าที่เลือกอยู่ตอนนั้นเสมอ (CUR_PAGE) ไม่ว่าจะพิมพ์วันที่อะไรก็ตาม
@@ -605,6 +629,8 @@ async function saveEntry(){
 // (ยังยึดหลัก "เว็บไม่ทำให้ข้อมูลหายถาวรเงียบๆ" เหมือนเดิม แค่ไม่บล็อกการลบทั้งหมดแบบก่อนหน้านี้)
 async function deleteEntry(){
   if (!editing) return;
+  // เหตุผลเดียวกับตอนแก้ไข — เลขแถวจากแคชอาจไม่ตรงกับ Sheet ปัจจุบันแล้ว รอโหลดจริงเสร็จก่อน
+  if (CACHE_ONLY) return showMErr('กำลังโหลดข้อมูลล่าสุดอยู่ รอสักครู่แล้วลองลบใหม่นะครับ');
   const label = `${$('#mNote').value.trim() || '(ไม่มีรายละเอียด)'} — ${$('#mAmt').value || 0} บาท`;
   if (!confirm(`ลบรายการนี้ใช่ไหมครับ?\n\n${label}\n\nรายการจะถูกย้ายไปเก็บไว้ในชีต "🗑 ถังขยะ (ลบแล้ว)" ใน Google Sheet ครับ ไม่ได้หายไปถาวรทันที`)) return;
 
@@ -746,7 +772,18 @@ function init(){
   $('#addPageBtn').onclick = createPage;
   $('#newPage').onkeydown = e=>{ if(e.key==='Enter') createPage(); };
 
-  refresh();
+  // เปิดแอปแล้วโชว์ข้อมูลที่จำไว้ล่าสุดทันที ระหว่างรอโหลดจริงจาก Sheet อยู่เบื้องหลัง —
+  // แก้ปัญหา "รู้สึกช้าทุกครั้งที่เปิด" เพราะ Apps Script เองช้าอยู่แล้ว แก้ที่ต้นตอไม่ได้
+  // (กันแก้ไข/ลบรายการไว้ก่อนด้วย CACHE_ONLY จนกว่าจะยืนยันเลขแถวจริงจากการโหลดสดเสร็จ)
+  const cache = loadDataCache();
+  if (cache){
+    PAGES = cache.pages || []; CUR_PAGE = cache.curPage ?? null; ROWS = cache.rows;
+    CAN_WRITE = true; CACHE_ONLY = true;
+    SOURCE = 'ข้อมูลที่จำไว้ล่าสุด (กำลังโหลดของจริง…)';
+    buildFilters(); render(); renderPageChips();
+    $('#srcInfo').textContent = SOURCE;
+  }
+  refresh().finally(()=>{ CACHE_ONLY = false; });
 }
 init();
 </script>

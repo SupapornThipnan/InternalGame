@@ -1,0 +1,2420 @@
+<title>Nyan Home Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F1E8D8; --card:#FBF7EE; --sunk:#E7DCC7;
+  --ink:#1C2233; --ink-2:#565F75; --ink-3:#8B93A6;
+  --line:#D7CAB1; --line-soft:#E3D8C2;
+  --indigo:#2F4373; --indigo-2:#5C7AB8;
+  --kraft:#A0702B; --lantern:#BB4629; --bamboo:#47734D;
+  --on-accent:#FBF7EE; --sel:#0E9E7E; --sel-soft:#D5F0E7;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+    --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+    --line:#2F3547; --line-soft:#262B3A;
+    --indigo:#9BB4EA; --indigo-2:#7189C2;
+    --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+    --on-accent:#141721; --sel:#3FD9B4; --sel-soft:#123A32;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+  --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+  --line:#2F3547; --line-soft:#262B3A;
+  --indigo:#9BB4EA; --indigo-2:#7189C2;
+  --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+  --on-accent:#141721; --sel:#3FD9B4; --sel-soft:#123A32;
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Thai","Helvetica Neue",Arial,sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wide{max-width:1280px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Mitr,"IBM Plex Sans Thai",sans-serif;font-weight:500;margin:0;line-height:1.36;text-wrap:balance}
+p{margin:0}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--kraft)}
+.doclink{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:.88rem;color:var(--indigo);text-decoration:none;border:1px solid var(--line);border-radius:5px;padding:6px 13px;background:var(--paper)}
+.doclink:hover{border-color:var(--indigo-2)}
+.vbadge{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;color:var(--on-accent);background:var(--sel);border-radius:999px;padding:2px 10px;font-weight:500}
+.changelog{display:flex;flex-direction:column;border:1px solid var(--line);background:var(--card)}
+.crow{display:grid;grid-template-columns:74px 1fr;gap:16px;padding:11px 16px;border-bottom:1px solid var(--line-soft);align-items:baseline}
+.crow:last-child{border-bottom:0}
+.crow .cv{font-family:"IBM Plex Mono",monospace;font-size:.76rem;color:var(--ink-3)}
+.crow.now{background:var(--sel-soft)}
+.crow.now .cv{color:var(--sel);font-weight:500}
+.crow .cd{font-size:.9rem;color:var(--ink-2);line-height:1.6}
+.crow .cd b{color:var(--ink);font-weight:500}
+
+header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:24px 0 20px}
+.mast .row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mast h1{font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);font-weight:600}
+.mast .note{color:var(--ink-2);font-size:.92rem;margin-top:6px;max-width:78ch}
+.mast .note b{color:var(--ink);font-weight:500}
+
+/* ---------- app shell ---------- */
+.app{margin-top:18px;border:1px solid var(--line);background:var(--card)}
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--sunk)}
+.seg{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;background:var(--card)}
+.seg button{font-family:inherit;font-size:.84rem;color:var(--ink-2);background:none;border:0;border-right:1px solid var(--line);padding:7px 15px;cursor:pointer;line-height:1.5;white-space:nowrap}
+.seg button:last-child{border-right:0}
+.seg button:hover{color:var(--ink);background:var(--sunk)}
+.seg button[aria-pressed="true"]{background:var(--indigo);color:var(--on-accent)}
+.tb-sp{flex:1}
+.tbtn{font-family:inherit;font-size:.82rem;padding:7px 13px;cursor:pointer;line-height:1.5;border:1px solid var(--line);border-radius:5px;background:var(--card);color:var(--ink);white-space:nowrap}
+.tbtn:hover{border-color:var(--indigo-2)}
+.tbtn[aria-pressed="true"]{background:var(--bamboo);border-color:var(--bamboo);color:var(--on-accent)}
+.tbtn.warn:hover{border-color:var(--lantern);color:var(--lantern)}
+.tlabel{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+
+.work{display:grid;grid-template-columns:212px 1fr;min-height:600px}
+@media (max-width:860px){.work{grid-template-columns:1fr}}
+.side{border-right:1px solid var(--line);overflow-y:auto;max-height:640px;background:var(--card)}
+@media (max-width:860px){.side{border-right:0;border-bottom:1px solid var(--line);max-height:200px}}
+.side.hide{display:none}
+.sgroup{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:12px 14px 5px;background:var(--sunk);border-bottom:1px solid var(--line-soft);position:sticky;top:0}
+.palette{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-soft)}
+.palette button{
+  font-family:inherit;font-size:.76rem;color:var(--ink-2);background:var(--card);
+  border:0;padding:9px 6px;cursor:pointer;line-height:1.35;text-align:center;
+}
+.palette button:hover{background:var(--sunk);color:var(--ink)}
+.palette button{position:relative}
+.palette button[aria-pressed="true"]{background:var(--sel);color:#fff;font-weight:500;box-shadow:inset 0 0 0 2px color-mix(in srgb,#fff 45%,transparent)}
+.palette button[aria-pressed="true"]::after{content:"\2713";position:absolute;top:3px;right:5px;font-size:.72rem;opacity:.95}
+.nowplacing{display:flex;align-items:center;gap:7px;padding:9px 13px;background:var(--sel-soft);border-bottom:1px solid var(--line-soft);font-size:.8rem;color:var(--ink)}
+.nowplacing b{color:var(--sel);font-weight:500}
+.palette button .ic{display:block;font-size:1.12rem;margin-bottom:1px}
+.swatches{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px}
+.swatches button{width:38px;height:38px;border-radius:5px;border:2px solid var(--line);cursor:pointer;padding:0}
+.swatches button{position:relative}
+.swatches button[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 0 3px color-mix(in srgb,var(--sel) 34%,transparent)}
+.swatches button[aria-pressed="true"]::after{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.65)}
+
+.stage{position:relative;background:var(--sunk);min-height:600px;overflow:hidden;user-select:none}
+@media (max-width:860px){.stage{min-height:420px}}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+
+.panel{position:absolute;background:color-mix(in srgb,var(--card) 93%,transparent);border:1px solid var(--line);border-radius:6px}
+.inspector{right:12px;top:12px;width:198px;padding:12px 14px;display:none}
+.inspector.show{display:block}
+.inspector .t{font-family:Mitr,sans-serif;font-size:.98rem;line-height:1.35;color:var(--sel)}
+.inspector .t::before{content:"\25C6 ";font-size:.8rem}
+.inspector .k{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-top:11px}
+.inspector .rowb{display:flex;gap:6px;margin-top:5px}
+.inspector .rowb button{flex:1;font-family:inherit;font-size:.78rem;padding:5px 0;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink)}
+.inspector .rowb button:hover{border-color:var(--indigo-2)}
+.inspector input[type=range]{width:100%;margin-top:6px;accent-color:var(--indigo)}
+.inspector .val{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--bamboo)}
+.inspector .del{width:100%;margin-top:12px;font-family:inherit;font-size:.8rem;padding:6px 0;cursor:pointer;border:1px solid var(--lantern);color:var(--lantern);background:none;border-radius:4px}
+.inspector .del:hover{background:var(--lantern);color:#FBF3E6}
+
+.playbar{left:50%;transform:translateX(-50%);bottom:14px;padding:11px 18px;display:none;align-items:center;gap:14px;min-width:340px}
+.playbar.show{display:flex}
+.playbar .clock{font-family:"IBM Plex Mono",monospace;font-size:.92rem;color:var(--indigo);min-width:52px;text-align:center}
+.playbar input[type=range]{flex:1;accent-color:var(--indigo)}
+.playbar .presets{display:flex;gap:4px}
+.playbar .presets button{font-family:inherit;font-size:.74rem;padding:4px 9px;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:var(--paper);color:var(--ink-2)}
+.playbar .presets button:hover{border-color:var(--indigo-2);color:var(--ink)}
+
+.hint{position:absolute;left:12px;bottom:12px;font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3);background:color-mix(in srgb,var(--card) 84%,transparent);padding:6px 11px;border-radius:4px;pointer-events:none;max-width:60%;line-height:1.7}
+.stats{position:absolute;right:12px;bottom:12px;font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--ink-3);background:color-mix(in srgb,var(--card) 84%,transparent);padding:5px 10px;border-radius:4px;pointer-events:none}
+.fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:32px;color:var(--ink-2)}
+:focus-visible{outline:2px solid var(--indigo-2);outline-offset:2px}
+
+section{padding:42px 0}
+section+section{border-top:1px solid var(--line-soft)}
+.sechead{margin-bottom:18px;max-width:68ch}
+.sechead h2{font-size:1.28rem;margin-top:6px}
+.sechead .sub{color:var(--ink-2);margin-top:6px;font-size:.95rem}
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.keyrow{background:var(--card);padding:11px 15px;display:flex;gap:12px;align-items:baseline;font-size:.88rem}
+.keyrow kbd{font-family:"IBM Plex Mono",monospace;font-size:.72rem;background:var(--sunk);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:2px 7px;color:var(--ink);white-space:nowrap}
+.keyrow span{color:var(--ink-2)}
+ul.plain{margin:0;padding-left:1.15em;color:var(--ink-2);font-size:.94rem;line-height:1.72}
+ul.plain li{margin-bottom:5px}
+ul.plain li::marker{color:var(--kraft)}
+ul.plain b{color:var(--ink);font-weight:500}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;color:var(--kraft)}
+footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);font-size:.8rem;font-family:"IBM Plex Mono",monospace}
+</style>
+
+<header class="mast">
+  <div class="wide">
+    <div class="row">
+      <span class="eyebrow">Nyan Kit Workshop · House System</span>
+      <span class="eyebrow" style="color:var(--ink-3)">Build Mode + Play Mode</span>
+      <span class="vbadge">v0.11.2</span>
+    </div>
+    <h1>Nyan Home Builder</h1>
+    <p class="note">
+      ระบบสร้างบ้านแบบ The Sims 4 — <b>ลากสร้างพื้น ลากสร้างผนัง วางเฟอร์นิเจอร์</b>
+      มี grid snap ที่เปิด-ปิดได้ (ปิดแล้ววางอิสระ หมุนอิสระ) ปรับขนาดโมเดลได้ทีละชิ้น
+      แล้วสลับไป <b>โหมด Play</b> เพื่อดูบ้านตั้งแต่เช้าจรดกลางคืน · งานบันทึกลงเครื่องอัตโนมัติ
+    </p>
+    <a class="doclink" href="https://claude.ai/code/artifact/f792b157-393c-48d0-9e0d-a3cf1e6fd7ed">📐 ดูแผนผังและ flowchart ของระบบ</a>
+  </div>
+</header>
+
+<main>
+<div class="wide">
+  <div class="app">
+
+    <div class="topbar">
+      <div class="seg" id="segMode">
+        <button data-v="build" aria-pressed="true">🔨 สร้าง</button>
+        <button data-v="play" aria-pressed="false">▶ เล่น</button>
+      </div>
+
+      <span class="tlabel" id="lblTool">เครื่องมือ</span>
+      <div class="seg" id="segTool">
+        <button data-v="select" aria-pressed="true">เลือก</button>
+        <button data-v="floor" aria-pressed="false">พื้น</button>
+        <button data-v="wall" aria-pressed="false">ผนัง</button>
+        <button data-v="opening" aria-pressed="false">🚪 ช่องเปิด</button>
+        <button data-v="wallart" aria-pressed="false">🖼 ของแขวนผนัง</button>
+        <button data-v="paint" aria-pressed="false">🎨 ทาสี</button>
+        <button data-v="furn" aria-pressed="false">เฟอร์นิเจอร์</button>
+        <button data-v="erase" aria-pressed="false">ลบ</button>
+      </div>
+
+      <div class="tb-sp"></div>
+
+      <button class="tbtn" id="btnSnap" aria-pressed="true">🧲 Snap: เปิด</button>
+      <button class="tbtn" id="btnFound" aria-pressed="false">ยกใต้ถุน</button>
+      <button class="tbtn" id="btnWalls">ผนัง: เต็ม</button>
+      <button class="tbtn" id="btnUndo">↶ ย้อน</button>
+      <button class="tbtn warn" id="btnClear">ล้างทั้งหมด</button>
+    </div>
+
+    <div class="work">
+      <div class="side" id="side"></div>
+      <div class="stage" id="stage">
+        <canvas id="cv"></canvas>
+
+        <div class="panel inspector" id="insp">
+          <div class="t" id="ispName">—</div>
+          <div id="ispFurnBody">
+            <div class="k">หมุน</div>
+            <div class="rowb">
+              <button id="ispRotL">↺</button>
+              <button id="ispRotR">↻</button>
+            </div>
+            <div class="k">ขนาด <span class="val" id="ispScaleVal">1.00×</span></div>
+            <input type="range" id="ispScale" min="40" max="220" value="100">
+            <div class="k">ความสูง <span class="val" id="ispLiftVal">0.00</span></div>
+            <input type="range" id="ispLift" min="0" max="160" value="0">
+          </div>
+          <div id="ispOpenBody" style="display:none">
+            <div class="k">ตำแหน่งในผนัง <span class="val" id="ispOffVal">กลาง</span></div>
+            <input type="range" id="ispOffset" min="-0.49" max="0.49" step="0.01" value="0">
+            <div class="k">ความกว้าง <span class="val" id="ispWidthVal">0.90</span></div>
+            <input type="range" id="ispWidth" min="0.4" max="0.98" step="0.01" value="0.9">
+          </div>
+          <div id="ispWallArtBody" style="display:none">
+            <div class="k">ตำแหน่งแนวนอน <span class="val" id="ispArtOffVal">กลาง</span></div>
+            <input type="range" id="ispArtOffset" min="-0.45" max="0.45" step="0.01" value="0">
+            <div class="k">ความสูงจากพื้น <span class="val" id="ispArtHVal">1.50</span></div>
+            <input type="range" id="ispArtHeight" min="0.3" max="2.4" step="0.02" value="1.5">
+          </div>
+          <button class="del" id="ispDel">🗑 ลบชิ้นนี้</button>
+        </div>
+
+        <div class="panel playbar" id="playbar">
+          <span class="clock" id="clock">14:00</span>
+          <input type="range" id="timeSlider" min="0" max="1440" value="840">
+          <div class="presets">
+            <button data-h="7">เช้า</button>
+            <button data-h="13">กลางวัน</button>
+            <button data-h="18.5">เย็น</button>
+            <button data-h="22">กลางคืน</button>
+          </div>
+        </div>
+
+        <div class="hint" id="hint"></div>
+        <div class="stats" id="stats">—</div>
+        <div class="fallback" id="fallback">เบราว์เซอร์นี้เปิด WebGL ไม่ได้ครับ ลองใช้ Chrome หรือ Safari รุ่นใหม่</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">ปุ่มลัด</span>
+      <h2>คุมกล้องแบบเดียวกับ Sims</h2>
+      <p class="sub">คลิกซ้ายสงวนไว้ให้เครื่องมือเสมอ กล้องอยู่บนปุ่มขวากับปุ่มกลาง จะได้ไม่ตีกันตอนลากสร้าง</p>
+    </div>
+    <div class="keys">
+      <div class="keyrow"><kbd>ซ้ายลาก</kbd><span>ใช้เครื่องมือที่เลือกอยู่</span></div>
+      <div class="keyrow"><kbd>ขวาลาก</kbd><span>หมุนกล้องรอบบ้าน</span></div>
+      <div class="keyrow"><kbd>ขวาคลิก</kbd><span>หมุนเฟอร์นิเจอร์ที่ชี้อยู่ (เครื่องมือเลือก) หรือหมุนเงาก่อนวาง (เครื่องมือเฟอร์นิเจอร์)</span></div>
+      <div class="keyrow"><kbd>กลางลาก</kbd> <kbd>Space+ซ้าย</kbd><span>เลื่อนกล้อง</span></div>
+      <div class="keyrow"><kbd>ล้อเมาส์</kbd><span>ซูมเข้า-ออก</span></div>
+      <div class="keyrow"><kbd>R</kbd><span>หมุนของที่เลือก / ของที่กำลังจะวาง</span></div>
+      <div class="keyrow"><kbd>G</kbd><span>สลับ Snap เปิด-ปิด</span></div>
+      <div class="keyrow"><kbd>Delete</kbd><span>ลบของที่เลือก</span></div>
+      <div class="keyrow"><kbd>Ctrl</kbd> + <kbd>Z</kbd><span>ย้อนกลับ</span></div>
+      <div class="keyrow"><kbd>สองนิ้ว</kbd><span>เลื่อนกล้อง + หนีบซูม (จอสัมผัส)</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">หมายเหตุทางเทคนิค</span>
+      <h2>สิ่งที่ระบบนี้ทำจริงและยังไม่ทำ</h2>
+    </div>
+    <ul class="plain">
+      <li><b>Snap สองระดับ</b> — เปิดอยู่: พื้น/ผนังล็อกกับเส้นกริดเสมอ เฟอร์นิเจอร์ล็อกกลางช่อง (ของกว้างเลขคู่ล็อกที่เส้น ของเลขคี่ล็อกที่กลางช่อง แบบเดียวกับ Sims) และหมุนทีละ 45° · ปิดอยู่: วางอิสระทุกจุด หมุนทีละ 7.5° และปรับละเอียดต่อได้ในแผงขวา</li>
+      <li><b>ผนังวาดเป็นเส้น</b> — กดค้างที่มุมกริดแล้วลากไปอีกมุม ระบบจะบังคับให้เป็นแนวตรงและวางทีละช่วงตลอดเส้น เหมือนเครื่องมือผนังของ Sims ไม่ใช่การคลิกทีละก้อน</li>
+      <li><b>ประตูกับหน้าต่างเป็นชนิดของผนัง</b> — เลือกชนิดจากแผงซ้ายแล้ววาดทับผนังเดิมได้เลย ระบบจะสลับช่วงนั้นให้</li>
+      <li><b>ผนังพับได้ 3 ระดับ</b> (เต็ม / ครึ่ง / ซ่อน) — แก้ปัญหาผนังบังของข้างในตอนจัดห้อง เป็นฟีเจอร์ที่ Sims ขาดไม่ได้</li>
+      <li><b>บันทึกอัตโนมัติ</b> ลง localStorage ของเครื่องที่เปิด — ปิดแท็บแล้วกลับมาบ้านยังอยู่ (เฉพาะเครื่อง+เบราว์เซอร์เดิม ยังไม่ใช่เซฟบนคลาวด์)</li>
+      <li><b>ยังไม่ทำ</b> — บ้านหลายชั้น หลังคา บันได ผนังโค้ง สระว่ายน้ำ และระบบ pathfinding ของตัวละคร ทั้งหมดนี้เป็นงานคนละก้อนที่ต้องคุยสโคปกันก่อน</li>
+    </ul>
+  </div>
+</section>
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">ประวัติเวอร์ชัน</span>
+      <h2>แก้อะไรไปแล้วบ้าง</h2>
+      <p class="sub">ลิงก์ artifact เป็นตัวเดิมตลอด เลขเวอร์ชันนี้ไว้เช็คว่าหน้าที่เปิดอยู่เป็นรอบล่าสุดหรือยัง (กด refresh ถ้าเลขไม่ตรง)</p>
+    </div>
+    <div class="changelog">
+      <div class="crow now">
+        <span class="cv">v0.11.2</span>
+        <span class="cd"><b>ความละเอียดกริดเริ่มต้นเป็น 0.25 ม.</b> — เดิมเปิดเกมมาเป็น 1 ม. (กฎ Sims) ตอนนี้เริ่มที่ 0.25 ม. ทันที มีผลกับทั้งเฟอร์นิเจอร์พื้นและของแขวนผนัง เปลี่ยนกลับเป็น 1 หรือ 0.5 ได้ที่แผงเครื่องมือเฟอร์นิเจอร์เหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.11.1</span>
+        <span class="cd"><b>คลิกขวาหมุนเงาตอนวางเฟอร์นิเจอร์</b> — ก่อนหน้านี้คลิกขวาหมุนได้แค่ของที่วางไปแล้ว (เครื่องมือเลือก) ตอนนี้ในเครื่องมือเฟอร์นิเจอร์ คลิกขวาที่เงาก่อนวางก็หมุนได้เลย สเต็ปเดียวกับปุ่ม R เป๊ะ</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.11.0</span>
+        <span class="cd"><b>ของแขวนผนังเหมือนเฟอร์นิเจอร์เต็มตัว</b> — เลือกแล้วลากย้ายตำแหน่งบนผนังได้โดยตรง (ไม่ต้องพึ่งสไลเดอร์ในแผงขวาอย่างเดียว) ลากข้ามไปคนละผนังได้ด้วย ระบบ Snap และความละเอียดกริด (1/0.5/0.25 ม.) เดียวกับเฟอร์นิเจอร์พื้นใช้ร่วมกันเป๊ะ ทั้งตำแหน่งแนวนอนและความสูง · เคอร์เซอร์เป็นมือกำตอนลากเหมือนของพื้นทุกอย่าง</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.10.1</span>
+        <span class="cd"><b>ของแขวนผนังมีเงา Outline ตอนวาง</b> — เดิมชี้ผนังแค่เรืองเป็นแผ่นสีเขียวเฉย ๆ ตอนนี้เป็นเงาโปร่งของชิ้นจริง (กรอบรูป/กระจก/นาฬิกา) ลอยอยู่ตรงตำแหน่งและมุมที่จะแขวนพอดี ใช้เอนจิ้นเงาตัวเดียวกับตอนวางเฟอร์นิเจอร์พื้น</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.10.0</span>
+        <span class="cd"><b>เฟอร์นิเจอร์แขวนผนัง</b> — เครื่องมือใหม่ "🖼 ของแขวนผนัง" มีกรอบรูป 2 แบบ กระจกเงา นาฬิกา คลิกบนผนังตรงจุดที่จะแขวน (ความสูงเอาตามจุดคลิกเลย) เลือกแล้วปรับตำแหน่งแนวนอน/ความสูงต่อได้ที่แผงขวา ระบบตำแหน่งแยกจากเฟอร์นิเจอร์พื้นโดยสิ้นเชิง อ้างอิงกับผนังที่แขวนอยู่ + ด้านที่คลิก (หน้าไหนมองเห็นก็แขวนหน้านั้น เหมือนหลักการเดียวกับทาสีแยกด้าน) ลบผนังที่มีของแขวนอยู่จะพาของแขวนหายไปด้วย</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.9.4</span>
+        <span class="cd"><b>แยกน้ำหนักเส้นกริด 0.5 กับ 0.25</b> — เส้น 0.5 ม. ตอนนี้เป็นเส้นทึบ opacity 0.45 (เข้มกว่า) ส่วนเส้น 0.25 ม. ยังเป็นเส้นปะ opacity 0.28 (จางกว่า) อ่านเป็นลำดับชั้นกริดหลัก/กริดย่อยชัดขึ้น</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.9.3</span>
+        <span class="cd"><b>เส้นกริดย่อยเข้มขึ้นกลับที่เดิม</b> — 0.2 จางเกินจนแทบมองไม่เห็น (เพราะเป็นเส้นประด้วยแล้วความหนาแน่นลดไปครึ่งหนึ่งอยู่แล้วจากช่องว่างระหว่างขีด) ปรับ opacity กลับเป็น 0.35 ความเป็นเส้นปะยังอยู่เหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.9.2</span>
+        <span class="cd"><b>เส้นกริดละเอียดจางลงและเป็นเส้นปะ</b> — ลดความเข้มลง (opacity 0.35 → 0.2) และเปลี่ยนจากเส้นทึบเป็นเส้นประ ต้องปั้นเรขาคณิตเองแทนใช้ GridHelper ตรง ๆ เพราะฟังก์ชันคำนวณเส้นปะมาตรฐานของ three.js ออกแบบมาสำหรับเส้นต่อเนื่องเส้นเดียว ถ้าใช้กับกริดที่แต่ละเส้นเป็นคนละท่อนจะทำให้จังหวะเส้นประของแต่ละเส้นเหลื่อมกันไม่ตรงกัน</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.9.1</span>
+        <span class="cd"><b>เห็นเส้นกริดละเอียดด้วย</b> — เลือกความละเอียด 0.5 หรือ 0.25 ม. แล้วมีเส้นกริดสีเขียวจาง ๆ ทับพื้นให้เห็นจุดล็อกจริง โผล่เฉพาะตอนกำลังวาง/ลากย้ายเฟอร์นิเจอร์ ไม่รบกวนตอนทำอย่างอื่น · เลือก 1 ม. เส้นพิเศษจะหายไป เหลือกริดโครงสร้างเส้นเดียวเหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.9.0</span>
+        <span class="cd"><b>กริดวางเฟอร์นิเจอร์ละเอียดขึ้น</b> — เพิ่มตัวเลือก 1 / 0.5 / 0.25 เมตรในเครื่องมือเฟอร์นิเจอร์ (ค่าเริ่มต้น 1 ม. ยังใช้กฎ Sims เดิมที่ขอบของชิ้นตกบนเส้นกริดเสมอ ส่วน 0.5/0.25 ล็อกตรง ๆ ตามระยะไม่สนใจขนาดของ) มีผลทั้งตอนวางใหม่และตอนลากย้ายของเดิม · ไม่กระทบกริดพื้น/ผนังซึ่งยังคงที่ 1 ม. ตามโครงสร้างเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.8.2</span>
+        <span class="cd"><b>คลิกที่ว่างแล้วยกเลิกการเลือกจริง ๆ</b> — เดิม <code>select(null)</code> ออกจากฟังก์ชันก่อนถึงบรรทัดที่ซ่อนกรอบไฮไลต์เขียว ทำให้แผงขวาปิดไปแต่กรอบ/แสงเรืองรอบของที่เลือกไว้ยังค้างอยู่ในฉาก 3D ตอนนี้คลิกพื้นว่างแล้วไฮไลต์หายไปด้วย — แก้จุดเดียวเพราะทุกทางที่ยกเลิกเลือก (คลิกที่ว่าง สลับเครื่องมือ กด Delete) เรียกฟังก์ชันเดียวกันหมด</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.8.1</span>
+        <span class="cd"><b>ซอยสเต็ปการหมุนลงครึ่งหนึ่ง</b> — เปิด Snap หมุนทีละ 45° (เดิม 90°) ปิด Snap หมุนทีละ 7.5° (เดิม 15°) มีผลกับทุกทางที่หมุนได้ ทั้งคลิกขวา ปุ่ม R และปุ่มในแผงขวา รวมถึงของที่กำลังจะวาง</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.8.0</span>
+        <span class="cd"><b>คลิกขวาหมุนเฟอร์นิเจอร์</b> — ในเครื่องมือ "เลือก" คลิกขวาที่ของแล้วปล่อยเลย = หมุนหนึ่งสเต็ป (90° เมื่อเปิด Snap / 15° เมื่อปิด) ถ้าลากต่อยังเป็นการหมุนกล้องเหมือนเดิม แยกกันด้วยระยะที่เมาส์ขยับ · การหมุนทุกทาง (คลิกขวา · ปุ่ม R · ปุ่มในแผงขวา) ย้อนกลับด้วย Ctrl+Z ได้แล้ว</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.7.2</span>
+        <span class="cd"><b>เคอร์เซอร์บอกว่าคลิกได้</b> — เครื่องมือ "เลือก" เปลี่ยนเป็นนิ้วชี้เมื่อชี้โดนเฟอร์นิเจอร์หรือประตู/หน้าต่างที่เลือกได้ นอกนั้นเป็นลูกศรปกติ · ตอนลากย้ายของเป็นมือกำ · เครื่องมือวาดอื่น ๆ ยังเป็นกากบาทเหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.7.1</span>
+        <span class="cd"><b>มุมผนังเนียนแล้ว</b> — เดิมผนังสองแผ่นชนกันแบบต่อก้น เหลือรอยบาก 8 ซม. ตรงมุมนอกที่โชว์สีหน้าตัด ตอนนี้แผ่นที่จบตรงมุมจะอ้อมมุมไปเอง (หยุดก่อนถึงผิวผนังอีกด้าน 2 มม. เพื่อไม่ให้ z-fight) ลายอิฐจึงต่อรอบมุมได้ · บัวล่างกับบัวบนอ้อมมุมด้วย</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.7.0</span>
+        <span class="cd"><b>ทาสีผนังแยกสองด้านได้</b> — ผนังเก็บ <code>paintOut</code>/<code>paintIn</code> แยกกันแล้ว สลับสวิตช์ "ทาทั้งสองด้าน" ในเครื่องมือทาสีเพื่อทาเฉพาะหน้าที่คลิกอยู่ (หน้าไหนที่มองเห็นก็คือหน้าที่กำลังจะโดนทา ไม่ต้องเดา) ไฟล์เซฟเก่าทุกรุ่นแปลงข้อมูลอัตโนมัติ — สีเดิมยังอยู่ทั้งสองด้านเหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.6.1</span>
+        <span class="cd"><b>อุดช่องว่างรอบประตู/หน้าต่าง</b> — วงกบย้ายกลับเข้ามาในช่องเปิด (v0.6.0 วางไว้นอกช่อง เลยเหลือรูข้างละ 6 ซม.) ตอนนี้วงกบ+บาน+คิ้วหัวบานคำนวณจากขนาดช่องจริง ต่อกันสนิททุกความกว้าง · เก็บร่องบน-ล่างของหน้าต่างที่มีมาตั้งแต่ก่อนหน้านี้ด้วย</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.6.0</span>
+        <span class="cd"><b>ประตู/หน้าต่างแยกจากผนัง</b> — เก็บเป็น <code>world.openings</code> เอง เลื่อนตำแหน่งและปรับความกว้างได้ที่แผงขวา ลบช่องเปิดแล้วผนังเหลือทึบ (ไม่ต้องลบทั้งช่วง) บัวล่างต่อเนื่องรอบช่องเปิดแล้ว · เครื่องมือ "ผนัง" ก่อทึบอย่างเดียว ใช้เครื่องมือ "🚪 ช่องเปิด" แยกเจาะทีหลัง · ไฟล์เซฟเก่าแปลงข้อมูลอัตโนมัติตอนโหลด</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.5.1</span>
+        <span class="cd"><b>ผูกกับหน้าเอกสาร</b> — เพิ่มลิงก์ไปหน้าแผนผังและ flowchart ของระบบ</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.5.0</span>
+        <span class="cd"><b>แสดงเลขเวอร์ชัน</b> — ใส่ป้ายเวอร์ชันบนหัวเรื่องกับท้ายหน้า และเก็บเลขเวอร์ชันลงไฟล์เซฟด้วย</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.4.0</span>
+        <span class="cd"><b>แก้ขอบผนังซ้อนกัน</b> — เลิกให้บัวฝังในตัวผนัง (z-fighting), แยก material รายหน้าให้ลายอยู่แค่หน้ากว้าง, หน้าตัดเป็นสีเรียบ และปรับสเกลลายตามขนาดแผงจริง</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.3.0</span>
+        <span class="cd"><b>ทาสีผนัง</b> — เครื่องมือทาสี 11 แบบ (สีทึบ 7 + วอลเปเปอร์ 4) ลากทารวดเดียวหลายช่วงได้ · เก็บบั๊ก Undo ที่เผลอ serialize mesh ลง snapshot</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.2.0</span>
+        <span class="cd"><b>สี selection ชัดขึ้น</b> — แผ่นเรืองใต้ของที่เลือก + กรอบล้อม, hover บอกล่วงหน้าว่าจะโดนอะไร (แดง = กำลังจะลบ), ปุ่มในแผงมีติ๊กถูก</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.1.0</span>
+        <span class="cd"><b>ตัวระบบแรก</b> — โหมด Build (เลือก/พื้น/ผนัง/เฟอร์นิเจอร์/ลบ), grid snap เปิดปิดได้, ปรับขนาดโมเดล, ใต้ถุน, Undo, บันทึกอัตโนมัติ และโหมด Play ที่มีสไลเดอร์เวลา 24 ชม.</span>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.11.2</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('cv');
+  var stageEl = document.getElementById('stage');
+  var renderer;
+  if (typeof THREE === 'undefined') { fail(); return; }
+  try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); } catch (e) { fail(); return; }
+  function fail() {
+    document.getElementById('fallback').style.display = 'grid';
+    document.querySelectorAll('.panel,.hint,.stats').forEach(function (n) { n.style.display = 'none'; });
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var N = 22;                  // grid is N x N cells
+  var HALF = N / 2;
+  var WALL_H = 2.7;
+  var FOUND_H = 0.45;
+  var ISO_ELEV = Math.atan(1 / Math.SQRT2);
+
+  // ===================== palette =====================
+  var P = {
+    wood: 0xB07A45, woodDk: 0x8A5E33, woodLt: 0xD6A96E,
+    plaster: 0xF0E7D6, plasterDk: 0xDCCFB6,
+    fabricA: 0x7B8FA8, fabricB: 0xC98A6B, fabricC: 0x8AA378, fabricD: 0xB2708B,
+    white: 0xF7F3EA, cream: 0xEFE3C8,
+    metal: 0xBCC2C8, metalDk: 0x8D949B, brass: 0xC9A24A,
+    black: 0x3A3A42, dark: 0x4A4550,
+    leaf: 0x5FA046, leafLt: 0x8AC45E, terra: 0xC1704A,
+    glass: 0x9FC6DE, tile: 0xD8D2C6, stone: 0xAFA9A1,
+    warm: 0xFFD9A0
+  };
+  var MC = {};
+  function M(hex) { if (!MC[hex]) MC[hex] = new THREE.MeshLambertMaterial({ color: hex }); return MC[hex]; }
+  var GLOW = [];
+  function glowM(hex, e) { var m = new THREE.MeshLambertMaterial({ color: hex }); m.userData.glow = e; GLOW.push(m); return m; }
+  function bx(w, h, d, c) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); }
+  function cyl(rt, rb, h, s, c) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s || 12), M(c)); }
+  function sph(r, c, w, h) { return new THREE.Mesh(new THREE.SphereGeometry(r, w || 12, h || 9), M(c)); }
+  function G() { return new THREE.Group(); }
+  function put(o, x, y, z) { o.position.set(x || 0, y || 0, z || 0); return o; }
+
+  // ===================== procedural floor textures =====================
+  function tex(draw, rep) {
+    var c = document.createElement('canvas'); c.width = c.height = 128;
+    draw(c.getContext('2d'));
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rep || 1, rep || 1);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  var FLOORS = [
+    { id: 'oak', th: 'ไม้โอ๊ก', css: '#C08B52', tex: tex(function (g) {
+        g.fillStyle = '#C08B52'; g.fillRect(0, 0, 128, 128);
+        for (var y = 0; y < 128; y += 21) {
+          g.fillStyle = y % 42 ? '#B77F46' : '#C9945B'; g.fillRect(0, y, 128, 20);
+          g.strokeStyle = '#96682F'; g.lineWidth = 1;
+          g.beginPath(); g.moveTo(0, y + .5); g.lineTo(128, y + .5); g.stroke();
+          var off = (y / 21 % 2) ? 40 : 90;
+          g.beginPath(); g.moveTo(off + .5, y); g.lineTo(off + .5, y + 20); g.stroke();
+        }
+      }) },
+    { id: 'walnut', th: 'ไม้วอลนัท', css: '#7C5334', tex: tex(function (g) {
+        g.fillStyle = '#7C5334'; g.fillRect(0, 0, 128, 128);
+        for (var y = 0; y < 128; y += 16) {
+          g.fillStyle = y % 32 ? '#744C2E' : '#875C3B'; g.fillRect(0, y, 128, 15);
+          g.strokeStyle = '#5B3A22'; g.lineWidth = 1;
+          g.beginPath(); g.moveTo(0, y + .5); g.lineTo(128, y + .5); g.stroke();
+        }
+      }) },
+    { id: 'tile', th: 'กระเบื้อง', css: '#DDD8CC', tex: tex(function (g) {
+        g.fillStyle = '#C9C2B2'; g.fillRect(0, 0, 128, 128);
+        for (var y = 0; y < 128; y += 32) for (var x = 0; x < 128; x += 32) {
+          g.fillStyle = ((x + y) / 32) % 2 ? '#E6E1D5' : '#D6D0C1';
+          g.fillRect(x + 2, y + 2, 28, 28);
+        }
+      }) },
+    { id: 'checker', th: 'ลายหมากรุก', css: '#3F4A5C', tex: tex(function (g) {
+        for (var y = 0; y < 128; y += 32) for (var x = 0; x < 128; x += 32) {
+          g.fillStyle = ((x + y) / 32) % 2 ? '#F0EADC' : '#3F4A5C';
+          g.fillRect(x, y, 32, 32);
+        }
+      }) },
+    { id: 'carpet', th: 'พรมเขียว', css: '#6E8F63', tex: tex(function (g) {
+        g.fillStyle = '#6E8F63'; g.fillRect(0, 0, 128, 128);
+        for (var i = 0; i < 2600; i++) {
+          g.fillStyle = Math.random() > .5 ? '#79996D' : '#628357';
+          g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+        }
+      }) },
+    { id: 'stone', th: 'หินกรวด', css: '#A9A398', tex: tex(function (g) {
+        g.fillStyle = '#8E887C'; g.fillRect(0, 0, 128, 128);
+        for (var i = 0; i < 26; i++) {
+          g.fillStyle = ['#B4AEA2', '#A29B8F', '#C0BAAE'][i % 3];
+          var x = Math.random() * 128, y = Math.random() * 128, r = 9 + Math.random() * 12;
+          g.beginPath(); g.ellipse(x, y, r, r * .78, Math.random() * 3, 0, 6.3); g.fill();
+        }
+      }) }
+  ];
+  var floorMats = {};
+  FLOORS.forEach(function (f) { floorMats[f.id] = new THREE.MeshLambertMaterial({ map: f.tex }); });
+
+  // ===================== furniture builders =====================
+  function sofa() {
+    var g = G();
+    g.add(put(bx(1.9, 0.28, 0.85, P.fabricA), 0, 0.36));
+    g.add(put(bx(1.9, 0.6, 0.22, P.fabricA), 0, 0.62, -0.32));
+    [-1, 1].forEach(function (s) { g.add(put(bx(0.18, 0.42, 0.85, P.fabricA), s * 0.86, 0.5)); });
+    [-1, 1].forEach(function (s) {
+      var cu = bx(0.78, 0.14, 0.7, 0x8FA0B6); g.add(put(cu, s * 0.44, 0.55, 0.04));
+    });
+    [[-0.8, 0.34], [0.8, 0.34], [-0.8, -0.28], [0.8, -0.28]].forEach(function (p) {
+      g.add(put(cyl(0.05, 0.05, 0.22, 6, P.woodDk), p[0], 0.11, p[1]));
+    });
+    return g;
+  }
+  function armchair() {
+    var g = G();
+    g.add(put(bx(0.82, 0.26, 0.8, P.fabricB), 0, 0.35));
+    g.add(put(bx(0.82, 0.55, 0.2, P.fabricB), 0, 0.6, -0.3));
+    [-1, 1].forEach(function (s) { g.add(put(bx(0.16, 0.38, 0.8, P.fabricB), s * 0.33, 0.48)); });
+    g.add(put(bx(0.62, 0.12, 0.62, 0xD79B7C), 0, 0.54, 0.02));
+    [[-0.3, 0.3], [0.3, 0.3], [-0.3, -0.28], [0.3, -0.28]].forEach(function (p) {
+      g.add(put(cyl(0.045, 0.045, 0.22, 6, P.woodDk), p[0], 0.11, p[1]));
+    });
+    return g;
+  }
+  function bed() {
+    var g = G();
+    g.add(put(bx(1.5, 0.24, 2.0, P.woodDk), 0, 0.3));
+    g.add(put(bx(1.44, 0.2, 1.94, P.white), 0, 0.52));
+    g.add(put(bx(1.44, 0.1, 1.15, P.fabricC), 0, 0.64, 0.4));
+    [-1, 1].forEach(function (s) {
+      var pl = bx(0.6, 0.14, 0.38, P.cream); g.add(put(pl, s * 0.35, 0.68, -0.72));
+    });
+    g.add(put(bx(1.56, 0.85, 0.12, P.wood), 0, 0.62, -1.02));
+    [[-0.7, 0.95], [0.7, 0.95], [-0.7, -0.95], [0.7, -0.95]].forEach(function (p) {
+      g.add(put(bx(0.1, 0.2, 0.1, P.woodDk), p[0], 0.1, p[1]));
+    });
+    return g;
+  }
+  function table() {
+    var g = G();
+    g.add(put(bx(1.7, 0.09, 0.92, P.woodLt), 0, 0.74));
+    g.add(put(bx(1.5, 0.1, 0.16, P.wood), 0, 0.64));
+    [[-0.72, 0.36], [0.72, 0.36], [-0.72, -0.36], [0.72, -0.36]].forEach(function (p) {
+      g.add(put(bx(0.09, 0.7, 0.09, P.woodDk), p[0], 0.35, p[1]));
+    });
+    return g;
+  }
+  function chair() {
+    var g = G();
+    g.add(put(bx(0.46, 0.07, 0.46, P.woodLt), 0, 0.46));
+    g.add(put(bx(0.46, 0.5, 0.07, P.wood), 0, 0.72, -0.2));
+    for (var i = 0; i < 3; i++) g.add(put(bx(0.05, 0.42, 0.05, P.woodLt), -0.14 + i * 0.14, 0.7, -0.19));
+    [[-0.19, 0.19], [0.19, 0.19], [-0.19, -0.19], [0.19, -0.19]].forEach(function (p) {
+      g.add(put(bx(0.06, 0.44, 0.06, P.woodDk), p[0], 0.22, p[1]));
+    });
+    return g;
+  }
+  function bookshelf() {
+    var g = G();
+    g.add(put(bx(0.94, 1.9, 0.32, P.woodDk), 0, 0.95));
+    for (var s = 0; s < 4; s++) {
+      g.add(put(bx(0.86, 0.05, 0.3, P.woodLt), 0, 0.36 + s * 0.44, 0.01));
+      for (var b = 0; b < 7; b++) {
+        var bk = bx(0.07 + (b % 3) * 0.02, 0.22 + (b % 4) * 0.05, 0.2,
+          [P.fabricB, P.fabricA, P.fabricC, P.fabricD, P.terra][b % 5]);
+        g.add(put(bk, -0.36 + b * 0.12, 0.5 + s * 0.44 + (b % 4) * 0.02, 0.03));
+      }
+    }
+    return g;
+  }
+  function fridge() {
+    var g = G();
+    g.add(put(bx(0.78, 1.8, 0.72, P.metal), 0, 0.9));
+    g.add(put(bx(0.02, 0.04, 0.72, P.metalDk), 0, 1.18, 0.01));
+    [-1, 1].forEach(function (s) { g.add(put(bx(0.05, s > 0 ? 0.9 : 0.5, 0.05, P.metalDk), 0.24, s > 0 ? 0.68 : 1.44, 0.38)); });
+    return g;
+  }
+  function counter() {
+    var g = G();
+    g.add(put(bx(0.98, 0.86, 0.66, P.cream), 0, 0.43));
+    g.add(put(bx(1.02, 0.07, 0.7, P.stone), 0, 0.89));
+    g.add(put(bx(0.86, 0.02, 0.02, P.metalDk), 0, 0.6, 0.34));
+    g.add(put(bx(0.86, 0.02, 0.02, P.metalDk), 0, 0.24, 0.34));
+    return g;
+  }
+  function stove() {
+    var g = G();
+    g.add(put(bx(0.94, 0.86, 0.66, P.metal), 0, 0.43));
+    g.add(put(bx(0.98, 0.06, 0.7, P.black), 0, 0.89));
+    [[-0.22, -0.15], [0.22, -0.15], [-0.22, 0.17], [0.22, 0.17]].forEach(function (p) {
+      g.add(put(cyl(0.12, 0.12, 0.02, 12, P.dark), p[0], 0.93, p[1]));
+    });
+    g.add(put(bx(0.9, 0.5, 0.04, 0x6E7784), 0, 0.5, 0.34));
+    g.add(put(bx(0.8, 0.05, 0.06, P.metalDk), 0, 0.72, 0.37));
+    return g;
+  }
+  function sink() {
+    var g = G();
+    g.add(put(bx(0.98, 0.86, 0.66, P.cream), 0, 0.43));
+    g.add(put(bx(1.02, 0.07, 0.7, P.stone), 0, 0.89));
+    g.add(put(bx(0.6, 0.1, 0.44, 0xC5CBD1), 0, 0.9, 0));
+    g.add(put(cyl(0.03, 0.03, 0.3, 8, P.metalDk), 0, 1.05, -0.2));
+    g.add(put(bx(0.04, 0.04, 0.2, P.metalDk), 0, 1.19, -0.11));
+    return g;
+  }
+  function tvStand() {
+    var g = G();
+    g.add(put(bx(1.3, 0.46, 0.4, P.woodDk), 0, 0.23));
+    g.add(put(bx(1.2, 0.02, 0.36, P.woodLt), 0, 0.47));
+    g.add(put(bx(1.1, 0.64, 0.05, P.black), 0, 0.84));
+    var scr = new THREE.Mesh(new THREE.PlaneGeometry(1.02, 0.56), glowM(0x2A3440, 0x2A4A66));
+    g.add(put(scr, 0, 0.84, 0.028));
+    g.add(put(bx(0.24, 0.06, 0.14, P.black), 0, 0.52));
+    return g;
+  }
+  function floorLamp() {
+    var g = G();
+    g.add(put(cyl(0.2, 0.24, 0.04, 14, P.metalDk), 0, 0.02));
+    g.add(put(cyl(0.03, 0.03, 1.4, 8, P.metalDk), 0, 0.72));
+    var sh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.3, 0.34, 14, 1, true), glowM(P.cream, 0x8A6A28));
+    sh.material.side = THREE.DoubleSide;
+    g.add(put(sh, 0, 1.56));
+    var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), glowM(P.warm, 0xB08A30));
+    g.add(put(bulb, 0, 1.5));
+    g.userData.lampAt = [0, 1.5, 0];
+    return g;
+  }
+  function tableLamp() {
+    var g = G();
+    g.add(put(cyl(0.12, 0.14, 0.03, 12, P.brass), 0, 0.015));
+    g.add(put(cyl(0.025, 0.025, 0.26, 8, P.brass), 0, 0.15));
+    var sh = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.2, 12, 1, true), glowM(P.cream, 0x8A6A28));
+    sh.material.side = THREE.DoubleSide;
+    g.add(put(sh, 0, 0.38));
+    var b = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 6), glowM(P.warm, 0xB08A30));
+    g.add(put(b, 0, 0.35));
+    g.userData.lampAt = [0, 0.35, 0];
+    return g;
+  }
+  function nightstand() {
+    var g = G();
+    g.add(put(bx(0.5, 0.52, 0.42, P.wood), 0, 0.29));
+    g.add(put(bx(0.44, 0.18, 0.03, P.woodLt), 0, 0.4, 0.21));
+    g.add(put(bx(0.44, 0.18, 0.03, P.woodLt), 0, 0.18, 0.21));
+    [0.4, 0.18].forEach(function (y) { g.add(put(sph(0.03, P.brass, 8, 6), 0, y, 0.24)); });
+    [[-0.19, 0.16], [0.19, 0.16], [-0.19, -0.16], [0.19, -0.16]].forEach(function (p) {
+      g.add(put(bx(0.05, 0.06, 0.05, P.woodDk), p[0], 0.03, p[1]));
+    });
+    return g;
+  }
+  function rug() {
+    var g = G();
+    g.add(put(bx(2.3, 0.03, 1.6, P.fabricD), 0, 0.015));
+    g.add(put(bx(1.95, 0.035, 1.3, 0xC58FA6), 0, 0.02));
+    g.add(put(bx(1.5, 0.04, 0.92, P.fabricD), 0, 0.023));
+    return g;
+  }
+  function plant() {
+    var g = G();
+    g.add(put(cyl(0.24, 0.19, 0.34, 12, P.terra), 0, 0.17));
+    g.add(put(cyl(0.27, 0.25, 0.06, 12, 0xA85E3E), 0, 0.35));
+    g.add(put(cyl(0.04, 0.05, 0.4, 6, P.woodDk), 0, 0.55));
+    [[0, 1.02, 0, 0.3], [-0.22, 0.86, 0.1, 0.22], [0.2, 0.9, -0.1, 0.24]].forEach(function (p) {
+      g.add(put(sph(p[3], p[3] > 0.25 ? P.leaf : P.leafLt, 12, 8), p[0], p[1], p[2]));
+    });
+    return g;
+  }
+  function wardrobe() {
+    var g = G();
+    g.add(put(bx(1.1, 2.05, 0.6, P.wood), 0, 1.02));
+    g.add(put(bx(0.02, 1.9, 0.6, P.woodDk), 0, 1.02, 0.01));
+    [-1, 1].forEach(function (s) { g.add(put(sph(0.035, P.brass, 8, 6), s * 0.08, 1.0, 0.31)); });
+    g.add(put(bx(1.16, 0.08, 0.66, P.woodDk), 0, 2.08));
+    return g;
+  }
+  function desk() {
+    var g = G();
+    g.add(put(bx(1.5, 0.07, 0.72, P.woodLt), 0, 0.75));
+    g.add(put(bx(0.5, 0.6, 0.66, P.wood), 0.46, 0.45));
+    [0.62, 0.4, 0.2].forEach(function (y) { g.add(put(bx(0.42, 0.03, 0.03, P.brass), 0.46, y, 0.34)); });
+    [[-0.7, 0.3], [-0.7, -0.3]].forEach(function (p) { g.add(put(bx(0.07, 0.72, 0.07, P.woodDk), p[0], 0.36, p[1])); });
+    g.add(put(bx(0.5, 0.34, 0.04, P.dark), -0.2, 0.96, -0.2));
+    g.add(put(bx(0.16, 0.06, 0.1, P.metalDk), -0.2, 0.8, -0.18));
+    return g;
+  }
+  function toilet() {
+    var g = G();
+    g.add(put(bx(0.4, 0.72, 0.22, P.white), 0, 0.36, -0.28));
+    g.add(put(bx(0.44, 0.06, 0.26, P.white), 0, 0.72, -0.28));
+    g.add(put(cyl(0.21, 0.16, 0.34, 14, P.white), 0, 0.24, 0.06));
+    var seat = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.045, 8, 16), M(P.cream));
+    seat.rotation.x = Math.PI / 2; g.add(put(seat, 0, 0.43, 0.06));
+    return g;
+  }
+  function bathtub() {
+    var g = G();
+    g.add(put(bx(1.7, 0.58, 0.82, P.white), 0, 0.29));
+    g.add(put(bx(1.52, 0.1, 0.64, 0xBFDCE8), 0, 0.55));
+    g.add(put(cyl(0.028, 0.028, 0.24, 8, P.metal), -0.76, 0.68, 0));
+    g.add(put(bx(0.03, 0.03, 0.16, P.metal), -0.72, 0.79, 0));
+    return g;
+  }
+  function diningRugSmall() { return rug(); }
+
+  // ===================== furniture catalog =====================
+  function artTexture() {
+    var c = document.createElement('canvas'); c.width = c.height = 128;
+    var g = c.getContext('2d');
+    var grd = g.createLinearGradient(0, 0, 0, 128);
+    grd.addColorStop(0, '#BFD9E8'); grd.addColorStop(1, '#EEE3C8');
+    g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+    g.fillStyle = '#E3B354'; g.beginPath(); g.arc(96, 30, 14, 0, 6.283); g.fill();
+    g.fillStyle = '#7FA35C';
+    g.beginPath(); g.moveTo(0, 128); g.quadraticCurveTo(40, 68, 70, 98);
+    g.quadraticCurveTo(102, 60, 128, 88); g.lineTo(128, 128); g.closePath(); g.fill();
+    var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  var _artTex = artTexture();
+
+  // every wall-art piece is authored flat against local z=0, facing local +Z —
+  // wallArtTransform() places and, on the far face, spins it to face outward instead
+  function frameArt(w, h, rim) {
+    var g = G();
+    g.add(bx(w, h, 0.03, rim));
+    var pic = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.06, h - 0.06),
+      new THREE.MeshLambertMaterial({ map: _artTex }));
+    pic.position.z = 0.017;
+    g.add(pic);
+    return g;
+  }
+  function mirrorArt() {
+    var g = G();
+    g.add(bx(0.46, 0.7, 0.03, P.brass));
+    var glass = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.62),
+      new THREE.MeshLambertMaterial({ color: 0xCBD9E0 }));
+    glass.position.z = 0.017;
+    g.add(glass);
+    return g;
+  }
+  function clockArt() {
+    var g = G();
+    var rim = cyl(0.2, 0.2, 0.04, 24, P.woodDk); rim.rotation.x = Math.PI / 2; g.add(rim);
+    var face = new THREE.Mesh(new THREE.CircleGeometry(0.17, 24), M(P.cream));
+    face.position.z = 0.021; g.add(face);
+    g.add(put(bx(0.016, 0.09, 0.01, P.black), 0, 0.045, 0.024));
+    var minH = bx(0.013, 0.13, 0.01, P.black);
+    minH.position.set(0.02, 0.06, 0.025); minH.rotation.z = -0.5; g.add(minH);
+    return g;
+  }
+
+  var WALLART = [
+    { id: 'frameSq', th: 'กรอบรูปสี่เหลี่ยม', ic: '🖼', b: function () { return frameArt(0.5, 0.5, M(P.brass)); } },
+    { id: 'framePort', th: 'กรอบรูปแนวตั้ง', ic: '🖼', b: function () { return frameArt(0.4, 0.6, M(P.woodDk)); } },
+    { id: 'mirror', th: 'กระจกเงา', ic: '🪞', b: mirrorArt },
+    { id: 'clock', th: 'นาฬิกาแขวน', ic: '🕐', b: clockArt }
+  ];
+  var WALLART_BY = {}; WALLART.forEach(function (w) { WALLART_BY[w.id] = w; });
+
+  var FURN = [
+    { id: 'sofa', th: 'โซฟา', ic: '🛋', fp: [2, 1], b: sofa },
+    { id: 'armchair', th: 'เก้าอี้นวม', ic: '💺', fp: [1, 1], b: armchair },
+    { id: 'bed', th: 'เตียง', ic: '🛏', fp: [2, 2], b: bed },
+    { id: 'nightstand', th: 'โต๊ะข้างเตียง', ic: '🗄', fp: [1, 1], b: nightstand },
+    { id: 'wardrobe', th: 'ตู้เสื้อผ้า', ic: '🚪', fp: [1, 1], b: wardrobe },
+    { id: 'table', th: 'โต๊ะกินข้าว', ic: '🍽', fp: [2, 1], b: table },
+    { id: 'chair', th: 'เก้าอี้', ic: '🪑', fp: [1, 1], b: chair },
+    { id: 'desk', th: 'โต๊ะทำงาน', ic: '🖥', fp: [2, 1], b: desk },
+    { id: 'bookshelf', th: 'ตู้หนังสือ', ic: '📚', fp: [1, 1], b: bookshelf },
+    { id: 'tv', th: 'ทีวี + ตู้', ic: '📺', fp: [1, 1], b: tvStand },
+    { id: 'counter', th: 'เคาน์เตอร์', ic: '🧱', fp: [1, 1], b: counter },
+    { id: 'stove', th: 'เตา', ic: '🔥', fp: [1, 1], b: stove },
+    { id: 'sink', th: 'อ่างล้างจาน', ic: '🚰', fp: [1, 1], b: sink },
+    { id: 'fridge', th: 'ตู้เย็น', ic: '🧊', fp: [1, 1], b: fridge },
+    { id: 'toilet', th: 'สุขภัณฑ์', ic: '🚽', fp: [1, 1], b: toilet },
+    { id: 'bathtub', th: 'อ่างอาบน้ำ', ic: '🛁', fp: [2, 1], b: bathtub },
+    { id: 'lamp', th: 'โคมตั้งพื้น', ic: '💡', fp: [1, 1], b: floorLamp },
+    { id: 'tlamp', th: 'โคมตั้งโต๊ะ', ic: '🕯', fp: [1, 1], b: tableLamp },
+    { id: 'plant', th: 'ต้นไม้', ic: '🪴', fp: [1, 1], b: plant },
+    { id: 'rug', th: 'พรม', ic: '🟪', fp: [2, 2], b: rug }
+  ];
+  var FURN_BY = {}; FURN.forEach(function (f) { FURN_BY[f.id] = f; });
+
+  var OPENING_KINDS = [
+    { id: 'door', th: 'ประตู', ic: '🚪', width: 0.9 },
+    { id: 'window', th: 'หน้าต่าง', ic: '🪟', width: 0.8 }
+  ];
+  var OPENING_KIND_BY = {}; OPENING_KINDS.forEach(function (k) { OPENING_KIND_BY[k.id] = k; });
+
+  // ===================== world state =====================
+  var world = { floors: {}, walls: {}, objects: [], openings: [], wallArt: [], foundation: false };
+  var undoStack = [];
+  var APP_VERSION = '0.11.2';
+  function plainState() {
+    var f = {}, w = {};
+    Object.keys(world.floors).forEach(function (k) { f[k] = { mat: world.floors[k].mat }; });
+    Object.keys(world.walls).forEach(function (k) { w[k] = { paintOut: world.walls[k].paintOut, paintIn: world.walls[k].paintIn }; });
+    return {
+      v: APP_VERSION,
+      floors: f, walls: w, foundation: world.foundation,
+      openings: world.openings.map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; }),
+      wallArt: world.wallArt.map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; }),
+      objects: world.objects.map(function (o) { return { d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift }; })
+    };
+  }
+  function snap() {
+    undoStack.push(JSON.stringify(plainState()));
+    if (undoStack.length > 30) undoStack.shift();
+  }
+  function floorY() { return world.foundation ? FOUND_H : 0; }
+
+  // ===================== scene groups =====================
+  var gFloors = new THREE.Group(); scene.add(gFloors);
+  var gWalls = new THREE.Group(); scene.add(gWalls);
+  var gOpenings = new THREE.Group(); scene.add(gOpenings);
+  var gObjects = new THREE.Group(); scene.add(gObjects);
+  var gWallArt = new THREE.Group(); scene.add(gWallArt);
+  var gPreview = new THREE.Group(); scene.add(gPreview);
+
+  var floorGeo = new THREE.BoxGeometry(1, 0.12, 1);
+  var skirtGeo = new THREE.BoxGeometry(1, FOUND_H, 1);
+  var skirtMat = new THREE.MeshLambertMaterial({ color: 0xB09A7C });
+
+  function addFloorMesh(key) {
+    var f = world.floors[key];
+    var p = key.split(',');
+    var x = +p[0] + 0.5, z = +p[1] + 0.5;
+    var m = new THREE.Mesh(floorGeo, floorMats[f.mat] || floorMats.oak);
+    m.position.set(x, floorY() - 0.06, z);
+    m.receiveShadow = true;
+    m.userData.floorKey = key;
+    gFloors.add(m);
+    f.mesh = m;
+    if (world.foundation) {
+      var s = new THREE.Mesh(skirtGeo, skirtMat);
+      s.position.set(x, FOUND_H / 2 - 0.12, z);
+      s.receiveShadow = true; s.castShadow = true;
+      gFloors.add(s);
+      f.skirt = s;
+    }
+  }
+  function removeFloorMesh(key) {
+    var f = world.floors[key];
+    if (!f) return;
+    if (f.mesh) gFloors.remove(f.mesh);
+    if (f.skirt) gFloors.remove(f.skirt);
+  }
+
+  function wtex(draw, rx, ry) {
+    var c = document.createElement('canvas'); c.width = c.height = 128;
+    draw(c.getContext('2d'));
+    return { canvas: c, url: c.toDataURL(), rx: rx, ry: ry };
+  }
+  var _stripe = wtex(function (g) {
+    g.fillStyle = '#F2EAD8'; g.fillRect(0, 0, 128, 128);
+    for (var i = 0; i < 128; i += 32) { g.fillStyle = '#C9D6DE'; g.fillRect(i, 0, 16, 128); }
+    g.fillStyle = 'rgba(160,140,110,.18)';
+    for (var j = 0; j < 128; j += 32) g.fillRect(j + 20, 0, 3, 128);
+  }, 1, 1);
+  var _floral = wtex(function (g) {
+    g.fillStyle = '#F4EADA'; g.fillRect(0, 0, 128, 128);
+    for (var y = 0; y < 128; y += 32) for (var x = 0; x < 128; x += 32) {
+      var ox = x + ((y / 32) % 2 ? 16 : 0), oy = y + 16;
+      g.fillStyle = '#D4A0A8';
+      for (var k = 0; k < 5; k++) {
+        var a = k / 5 * 6.283;
+        g.beginPath(); g.arc(ox + Math.cos(a) * 4.5, oy + Math.sin(a) * 4.5, 3.1, 0, 6.283); g.fill();
+      }
+      g.fillStyle = '#E8C87A';
+      g.beginPath(); g.arc(ox, oy, 2.4, 0, 6.283); g.fill();
+      g.strokeStyle = '#A9BE93'; g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(ox, oy + 7); g.lineTo(ox, oy + 14); g.stroke();
+    }
+  }, 2, 5);
+  var _brickW = wtex(function (g) {
+    g.fillStyle = '#8C6A58'; g.fillRect(0, 0, 128, 128);
+    var bw = 42, bh = 20, gap = 4;
+    for (var row = 0, y = 0; y < 128; row++, y += bh + gap) {
+      var off = (row % 2) ? (bw + gap) / 2 : 0;
+      for (var x = -bw; x < 128; x += bw + gap) {
+        var v = 10 - Math.floor(Math.random() * 20);
+        g.fillStyle = 'rgb(' + (183 + v) + ',' + (112 + v) + ',' + (92 + v) + ')';
+        g.fillRect(x + off, y, bw, bh);
+      }
+    }
+  }, 1, 2.5);
+  var _plank = wtex(function (g) {
+    g.fillStyle = '#C9A273'; g.fillRect(0, 0, 128, 128);
+    for (var x = 0; x < 128; x += 26) {
+      g.fillStyle = (x / 26) % 2 ? '#C09769' : '#D0AB7E'; g.fillRect(x, 0, 25, 128);
+      g.strokeStyle = '#9C7549'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, 128); g.stroke();
+    }
+  }, 1, 1);
+
+  var PAINTS = [
+    { id: 'plaster', th: 'ปูนขาว', sw: '#F0E7D6', col: 0xF0E7D6, edge: 0xDCD2BE, trim: 0xDCCFB6 },
+    { id: 'cream', th: 'ครีมอุ่น', sw: '#EBD9B4', col: 0xEBD9B4, edge: 0xD6C4A0, trim: 0xF7F3EA },
+    { id: 'sage', th: 'เขียวเสจ', sw: '#A8BC9C', col: 0xA8BC9C, edge: 0x93A788, trim: 0xF2EFE6 },
+    { id: 'blue', th: 'ฟ้าหม่น', sw: '#9FB4C7', col: 0x9FB4C7, edge: 0x8B9FB1, trim: 0xF2EFE6 },
+    { id: 'blush', th: 'ชมพูอิฐ', sw: '#D9A894', col: 0xD9A894, edge: 0xC29480, trim: 0xF7F3EA },
+    { id: 'mustard', th: 'เหลืองมัสตาร์ด', sw: '#D3A552', col: 0xD3A552, edge: 0xBB9145, trim: 0xF7F3EA },
+    { id: 'charcoal', th: 'เทาถ่าน', sw: '#4E525C', col: 0x4E525C, edge: 0x3E424B, trim: 0x9AA0AC },
+    { id: 'stripe', th: 'ลายทาง', t: _stripe, edge: 0xE8DFCB, trim: 0xF7F3EA },
+    { id: 'floral', th: 'ลายดอกไม้', t: _floral, edge: 0xE8DFCB, trim: 0xF7F3EA },
+    { id: 'brick', th: 'อิฐเปลือย', t: _brickW, edge: 0xD8CDBB, trim: 0x8A6A58 },
+    { id: 'plank', th: 'ไม้ระแนง', t: _plank, edge: 0xC0A883, trim: 0x9C7549 }
+  ];
+  var PAINT_BY = {}, paintMats = {}, paintTrims = {}, paintEdges = {};
+  PAINTS.forEach(function (pt) {
+    PAINT_BY[pt.id] = pt;
+    if (pt.t) pt.sw = 'url(' + pt.t.url + ')';
+    else paintMats[pt.id] = new THREE.MeshLambertMaterial({ color: pt.col });
+    paintTrims[pt.id] = new THREE.MeshLambertMaterial({ color: pt.trim });
+    paintEdges[pt.id] = new THREE.MeshLambertMaterial({ color: pt.edge });
+  });
+  function trimOf(id) { return paintTrims[id] || paintTrims.plaster; }
+  function edgeOf(id) { return paintEdges[id] || paintEdges.plaster; }
+
+  // a wallpaper panel keeps its pattern at real-world scale whatever the panel size,
+  // so a door pillar and a full wall show bricks of the same size
+  var faceCache = {};
+  function faceMat(id, w, h) {
+    var pt = PAINT_BY[id] || PAINT_BY.plaster;
+    if (!pt.t) return paintMats[pt.id];
+    var k = pt.id + '|' + w.toFixed(3) + '|' + h.toFixed(3);
+    if (!faceCache[k]) {
+      var t = new THREE.CanvasTexture(pt.t.canvas);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(pt.t.rx * w, pt.t.ry * (h / WALL_H));
+      t.encoding = THREE.sRGBEncoding;
+      faceCache[k] = new THREE.MeshLambertMaterial({ map: t });
+    }
+    return faceCache[k];
+  }
+
+  // BoxGeometry material order is [+X, -X, +Y, -Y, +Z, -Z]:
+  // wallpaper only on the two broad faces, flat cut-colour on the four thin ones
+  function wallBox(w, h, d, paintOut, paintIn) {
+    // BoxGeometry material order is [+X,-X,+Y,-Y,+Z,-Z]: the two broad faces (+Z front,
+    // -Z back) can carry different paint; the four thin edge faces stay a single flat
+    // colour taken from the outer paint, since they're the same physical stud either way.
+    var e = edgeOf(paintOut), fOut = faceMat(paintOut, w, h), fIn = faceMat(paintIn, w, h);
+    return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [e, e, e, e, fOut, fIn]);
+  }
+  var BASE_H = 0.14, CROWN_H = 0.07, TRIM_MARGIN = 0.0025, TRIM_D = 0.19;
+  var DOOR_TOP = 2.05, WIN_SILL = 0.95, WIN_H = 1.1;
+
+  // At an outside corner two segments used to butt end-to-end, leaving an 8cm notch
+  // that showed the flat end-cap colour. Instead the run that stops at a corner now
+  // reaches around it, stopping 2mm short of the crossing wall's outer face so the cap
+  // is buried instead of landing on the same plane (which would z-fight).
+  var WALL_HALF = 0.08, TRIM_HALF = TRIM_D / 2, CORNER_CLEAR = 0.002;
+  var CORNER_EXT = WALL_HALF - CORNER_CLEAR;        // 0.078
+  var CORNER_EXT_TRIM = TRIM_HALF - CORNER_CLEAR;   // 0.093
+
+  function wallExists(k) { return !!world.walls[k]; }
+
+  // the grid corner each end of a segment lands on ('minus' = local -X end)
+  function endCorners(key) {
+    var p = key.split(','), dir = p[0], x = +p[1], z = +p[2];
+    return dir === 'h'
+      ? { minus: [x, z], plus: [x + 1, z] }
+      : { minus: [x, z + 1], plus: [x, z] };   // v-walls: local +X maps to world -Z
+  }
+
+  // reach around only when this run stops here AND something perpendicular carries on;
+  // extending into a collinear neighbour would overlap it and z-fight
+  function cornerNeedsExt(dir, cx, cz) {
+    if (dir === 'h') {
+      var runsThrough = wallExists('h,' + (cx - 1) + ',' + cz) && wallExists('h,' + cx + ',' + cz);
+      var perp = wallExists('v,' + cx + ',' + cz) || wallExists('v,' + cx + ',' + (cz - 1));
+      return !runsThrough && perp;
+    }
+    var runsThroughV = wallExists('v,' + cx + ',' + cz) && wallExists('v,' + cx + ',' + (cz - 1));
+    var perpH = wallExists('h,' + cx + ',' + cz) || wallExists('h,' + (cx - 1) + ',' + cz);
+    return !runsThroughV && perpH;
+  }
+
+  function wallExts(key) {
+    var c = endCorners(key), dir = key.split(',')[0];
+    return {
+      minus: cornerNeedsExt(dir, c.minus[0], c.minus[1]),
+      plus: cornerNeedsExt(dir, c.plus[0], c.plus[1])
+    };
+  }
+
+  function openingOf(key) {
+    for (var i = 0; i < world.openings.length; i++) if (world.openings[i].wall === key) return world.openings[i];
+    return null;
+  }
+
+  // solid panels only (paint + trim) — the "งานปูน" half. Carves a gap for whatever
+  // opening lives on this wall key, but never draws door/window hardware itself.
+  function buildWallPanels(key, paintOut, paintIn) {
+    var g = G();
+    var wallTrim = trimOf(paintOut);
+    var ex = wallExts(key);
+    // body span and trim span, each reaching around a corner where one is needed
+    var bL = ex.minus ? -0.5 - CORNER_EXT : -0.5;
+    var bR = ex.plus ? 0.5 + CORNER_EXT : 0.5;
+    var L = ex.minus ? -0.5 - CORNER_EXT_TRIM : -0.5 + TRIM_MARGIN;
+    var R = ex.plus ? 0.5 + CORNER_EXT_TRIM : 0.5 - TRIM_MARGIN;
+
+    function slab(x0, x1, y0, y1) {
+      var w = x1 - x0, h = y1 - y0;
+      if (w <= 0.001 || h <= 0.001) return;
+      var m = wallBox(w, h, 0.16, paintOut, paintIn);
+      m.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0);
+      g.add(m);
+    }
+    function trimRun(x0, x1, y, h) {
+      var w = x1 - x0;
+      if (w <= 0.001) return;
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, TRIM_D), wallTrim);
+      m.position.set((x0 + x1) / 2, y, 0);
+      g.add(m);
+    }
+
+    var op = openingOf(key);
+    if (!op) {
+      slab(bL, bR, BASE_H, WALL_H - CROWN_H);
+      trimRun(L, R, BASE_H / 2, BASE_H);
+      trimRun(L, R, WALL_H - CROWN_H / 2, CROWN_H);
+    } else {
+      var gapL = op.offset - op.width / 2, gapR = op.offset + op.width / 2;
+      trimRun(L, R, WALL_H - CROWN_H / 2, CROWN_H); // crown always runs the full segment
+      if (op.kind === 'door') {
+        slab(bL, gapL, BASE_H, DOOR_TOP);
+        slab(gapR, bR, BASE_H, DOOR_TOP);
+        slab(bL, bR, DOOR_TOP, WALL_H - CROWN_H);         // lintel, full width
+        trimRun(L, gapL, BASE_H / 2, BASE_H);              // baseboard skips the doorway
+        trimRun(gapR, R, BASE_H / 2, BASE_H);
+      } else {
+        var winTop = WIN_SILL + WIN_H;
+        slab(bL, bR, BASE_H, WIN_SILL);                    // sill wall, full width
+        slab(bL, bR, winTop, WALL_H - CROWN_H);             // header, full width
+        slab(bL, gapL, WIN_SILL, winTop);                   // jambs beside the glass
+        slab(gapR, bR, WIN_SILL, winTop);
+        trimRun(L, R, BASE_H / 2, BASE_H);                  // baseboard never breaks — the gap doesn't reach the floor
+      }
+    }
+    g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  }
+
+  // door/window hardware only — the "งานไม้" half, positioned in the same local
+  // frame as its host wall segment so it lines up once transformed into world space.
+  var LIN_T = 0.04;   // lining thickness
+  var LIN_D = 0.18;   // a touch proud of the 0.16 wall so the frame reads from the front
+
+  function buildOpeningDecor(op) {
+    var g = G();
+    var hw = op.width / 2, gapL = op.offset - hw, gapR = op.offset + hw;
+    var t = LIN_T;
+
+    // every piece is placed by its span, and the spans tile the hole exactly:
+    // t + (width - 2t) + t === width, so no sliver of daylight can survive a resize
+    function lining(x0, x1, y0, y1, col) {
+      var w = x1 - x0, h = y1 - y0;
+      if (w <= 0.001 || h <= 0.001) return;
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, LIN_D), M(col));
+      m.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0);
+      g.add(m);
+    }
+
+    if (op.kind === 'door') {
+      var headY = DOOR_TOP - t;
+      lining(gapL, gapL + t, 0, headY, P.woodDk);      // jambs stop under the head so
+      lining(gapR - t, gapR, 0, headY, P.woodDk);      // nothing shares a plane
+      lining(gapL, gapR, headY, DOOR_TOP, P.woodDk);
+      var leafW = Math.max(0.12, op.width - 2 * t);
+      var leaf = new THREE.Mesh(new THREE.BoxGeometry(leafW, headY, 0.06), M(P.wood));
+      leaf.position.set(op.offset, headY / 2, 0.04); g.add(leaf);
+      g.add(put(sph(0.045, P.brass, 8, 6), op.offset + leafW / 2 - 0.09, 1.02, 0.09));
+    } else {
+      var winTop = WIN_SILL + WIN_H;
+      lining(gapL, gapL + t, WIN_SILL + t, winTop - t, P.white);
+      lining(gapR - t, gapR, WIN_SILL + t, winTop - t, P.white);
+      lining(gapL, gapR, WIN_SILL, WIN_SILL + t, P.white);
+      lining(gapL, gapR, winTop - t, winTop, P.white);
+      var glassW = Math.max(0.12, op.width - 2 * t), glassH = WIN_H - 2 * t;
+      var gl = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.04),
+        new THREE.MeshLambertMaterial({ color: P.glass, transparent: true, opacity: 0.55 }));
+      gl.position.set(op.offset, WIN_SILL + WIN_H / 2, 0); g.add(gl);
+      g.add(put(bx(0.05, glassH, 0.06, P.white), op.offset, WIN_SILL + WIN_H / 2, 0.02));
+      g.add(put(bx(glassW, 0.05, 0.06, P.white), op.offset, WIN_SILL + WIN_H / 2, 0.02));
+    }
+    g.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    return g;
+  }
+
+  function wallTransform(key) {
+    var p = key.split(','), dir = p[0], x = +p[1], z = +p[2];
+    return dir === 'h'
+      ? { x: x + 0.5, z: z, rotY: 0 }
+      : { x: x, z: z + 0.5, rotY: Math.PI / 2 };
+  }
+  function openingTransform(key, offset) {
+    var t = wallTransform(key);
+    return t.rotY === 0
+      ? { x: t.x + offset, z: t.z, rotY: 0 }
+      : { x: t.x, z: t.z - offset, rotY: t.rotY };
+  }
+  // inverse of the rotation used above: a world-space (dx,dz) offset from a wall's
+  // centre, resolved back into that wall's local (along-the-wall, out-from-the-wall) axes
+  function worldToLocalOffset(rotY, dx, dz) {
+    return rotY === 0 ? { lx: dx, lz: dz } : { lx: -dz, lz: dx };
+  }
+  var WALLART_DEPTH = 0.1;
+  function wallArtTransform(key, offset, height, side) {
+    var t = wallTransform(key);
+    var lx = offset, lz = side * WALLART_DEPTH;
+    var d = t.rotY === 0 ? { dx: lx, dz: lz } : { dx: lz, dz: -lx };
+    return {
+      x: t.x + d.dx, y: floorY() + height, z: t.z + d.dz,
+      rotY: t.rotY + (side < 0 ? Math.PI : 0)
+    };
+  }
+  function addWallMesh(key) {
+    var w = world.walls[key];
+    var t = wallTransform(key);
+    var g = buildWallPanels(key, w.paintOut, w.paintIn);
+    g.position.set(t.x, floorY(), t.z);
+    g.rotation.y = t.rotY;
+    g.userData.wallKey = key;
+    gWalls.add(g);
+    w.mesh = g;
+  }
+  function removeWallMesh(key) {
+    var w = world.walls[key];
+    if (w && w.mesh) gWalls.remove(w.mesh);
+  }
+  function addOpeningMesh(op) {
+    var t = openingTransform(op.wall, op.offset);
+    var g = buildOpeningDecor(op);
+    g.position.set(t.x, floorY(), t.z);
+    g.rotation.y = t.rotY;
+    g.userData.openingRef = op;
+    gOpenings.add(g);
+    op.mesh = g;
+  }
+  function removeOpeningMesh(op) {
+    if (op.mesh) gOpenings.remove(op.mesh);
+  }
+  function addWallArtMesh(art) {
+    var def = WALLART_BY[art.def];
+    var g = def.b();
+    var t = wallArtTransform(art.wall, art.offset, art.height, art.side);
+    g.position.set(t.x, t.y, t.z);
+    g.rotation.y = t.rotY;
+    g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.userData.wallArtRef = art;
+    gWallArt.add(g);
+    art.mesh = g;
+  }
+  function removeWallArtMesh(art) {
+    if (art.mesh) gWallArt.remove(art.mesh);
+  }
+  function removeWallArt(art) {
+    removeWallArtMesh(art);
+    var i = world.wallArt.indexOf(art);
+    if (i >= 0) world.wallArt.splice(i, 1);
+  }
+  // adding or removing a segment changes whether its neighbours reach around a corner,
+  // so any topology edit rebuilds the whole wall layer (cheap: a house is tens of segments)
+  function rebuildWalls() {
+    while (gWalls.children.length) gWalls.remove(gWalls.children[0]);
+    Object.keys(world.walls).forEach(addWallMesh);
+    applyWallView();
+  }
+  function refreshWall(key) {
+    removeWallMesh(key);
+    addWallMesh(key);
+    var op = openingOf(key);
+    if (op) { removeOpeningMesh(op); addOpeningMesh(op); }
+    applyWallView();
+  }
+
+  function addObjectMesh(o) {
+    var def = FURN_BY[o.def];
+    if (!def) return;
+    var g = def.b();
+    g.scale.setScalar(o.scale);
+    g.position.set(o.x, floorY() + o.lift, o.z);
+    g.rotation.y = o.rotY;
+    g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.userData.objRef = o;
+    gObjects.add(g);
+    o.mesh = g;
+    if (g.userData.lampAt) {
+      var l = new THREE.PointLight(0xFFC178, 0, 6.5);
+      var la = g.userData.lampAt;
+      l.position.set(la[0], la[1] * o.scale, la[2]);
+      g.add(l);
+      o.light = l;
+    }
+  }
+  function removeObject(o) {
+    if (o.mesh) gObjects.remove(o.mesh);
+    var i = world.objects.indexOf(o);
+    if (i >= 0) world.objects.splice(i, 1);
+  }
+
+  function rebuildAll() {
+    while (gFloors.children.length) gFloors.remove(gFloors.children[0]);
+    while (gWalls.children.length) gWalls.remove(gWalls.children[0]);
+    while (gOpenings.children.length) gOpenings.remove(gOpenings.children[0]);
+    while (gWallArt.children.length) gWallArt.remove(gWallArt.children[0]);
+    while (gObjects.children.length) gObjects.remove(gObjects.children[0]);
+    selPad.visible = selBox.visible = false; clearHover();
+    Object.keys(world.floors).forEach(addFloorMesh);
+    Object.keys(world.walls).forEach(addWallMesh);
+    world.openings.forEach(addOpeningMesh);
+    world.wallArt.forEach(addWallArtMesh);
+    world.objects.forEach(addObjectMesh);
+    applyWallView();
+    updateStats();
+  }
+
+  // ===================== grid + ground =====================
+  var grid = new THREE.GridHelper(N, N, 0x9AA6B8, 0xC3BCA9);
+  grid.position.set(0, 0.004, 0);
+  grid.material.opacity = 0.62; grid.material.transparent = true;
+  scene.add(grid);
+
+  // finer lines that only appear while placing/dragging furniture on a sub-1m grid —
+  // the 1m structural grid above already covers the default resolution
+  // dashed = true for the finer 0.25m grid; the 0.5m grid stays solid and reads as
+  // the "major" subdivision, so it needs to be the stronger of the two
+  function makeSubGrid(step, dashed, opacity) {
+    var half = N / 2, pos = [], dist = [];
+    for (var k = -half; k <= half + 1e-6; k += step) {
+      pos.push(-half, 0, k, half, 0, k); dist.push(0, N);   // one line along X
+      pos.push(k, 0, -half, k, 0, half); dist.push(0, N);   // one line along Z
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    var mat;
+    if (dashed) {
+      geo.setAttribute('lineDistance', new THREE.Float32BufferAttribute(dist, 1));
+      mat = new THREE.LineDashedMaterial({
+        color: 0x4E9A78, dashSize: 0.12, gapSize: 0.1,
+        transparent: true, opacity: opacity
+      });
+    } else {
+      mat = new THREE.LineBasicMaterial({ color: 0x4E9A78, transparent: true, opacity: opacity });
+    }
+    var g = new THREE.LineSegments(geo, mat);
+    g.position.set(0, 0.006, 0);
+    g.visible = false;
+    scene.add(g);
+    return g;
+  }
+  var subGrid05 = makeSubGrid(0.5, false, 0.45);   // solid, more intense
+  var subGrid025 = makeSubGrid(0.25, true, 0.28);  // dashed, fainter
+  function updateSubGrid() {
+    var active = mode === 'build' && furnGrid !== 1 &&
+      (tool === 'furn' || (tool === 'select' && act && act.kind === 'move'));
+    subGrid05.visible = active && furnGrid === 0.5;
+    subGrid025.visible = active && furnGrid === 0.25;
+  }
+
+  var lawnMat = new THREE.MeshLambertMaterial({ color: 0x8FAE63 });
+  var lawn = new THREE.Mesh(new THREE.PlaneGeometry(N + 14, N + 14), lawnMat);
+  lawn.rotation.x = -Math.PI / 2; lawn.position.y = -0.02; lawn.receiveShadow = true;
+  scene.add(lawn);
+
+  var pickPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+  var hoverMat = new THREE.MeshBasicMaterial({ color: 0x5C7AB8, transparent: true, opacity: 0.34, depthWrite: false });
+  var hoverGeo = new THREE.PlaneGeometry(1, 1);
+
+  var SEL_COLOR = 0x18C79E, ERASE_COLOR = 0xE0503A;
+  // filled footprint under the selected piece — the loudest signal at iso angles
+  var selPad = new THREE.Mesh(hoverGeo, new THREE.MeshBasicMaterial({ color: SEL_COLOR, transparent: true, opacity: 0.42, depthWrite: false }));
+  selPad.rotation.x = -Math.PI / 2; selPad.visible = false; scene.add(selPad);
+  var selBox = new THREE.BoxHelper(new THREE.Object3D(), SEL_COLOR);
+  selBox.material.transparent = true; selBox.visible = false; scene.add(selBox);
+  // fainter pad that follows the cursor so you know what a click will hit
+  var hovPad = new THREE.Mesh(hoverGeo, new THREE.MeshBasicMaterial({ color: SEL_COLOR, transparent: true, opacity: 0.22, depthWrite: false }));
+  hovPad.rotation.x = -Math.PI / 2; hovPad.visible = false; scene.add(hovPad);
+  var hovWall = new THREE.Mesh(new THREE.BoxGeometry(1, WALL_H, 0.24), new THREE.MeshBasicMaterial({ color: SEL_COLOR, transparent: true, opacity: 0.3, depthWrite: false }));
+  hovWall.visible = false; scene.add(hovWall);
+
+  var _b3 = new THREE.Box3(), _sz = new THREE.Vector3(), _ct = new THREE.Vector3();
+  function padTo(pad, mesh, margin) {
+    _b3.setFromObject(mesh); _b3.getSize(_sz); _b3.getCenter(_ct);
+    pad.scale.set(_sz.x + margin, _sz.z + margin, 1);
+    pad.position.set(_ct.x, floorY() + 0.035, _ct.z);
+  }
+  function updateSelVisual() {
+    if (!selected || !selected.mesh || mode !== 'build') { selPad.visible = selBox.visible = false; return; }
+    padTo(selPad, selected.mesh, 0.22);
+    selBox.setFromObject(selected.mesh);
+    selPad.visible = selBox.visible = true;
+  }
+  var hoverPick = false;   // select tool is over something clickable
+  function updateCursor() {
+    var c;
+    if (camDrag) c = 'grabbing';
+    else if (act && (act.kind === 'move' || act.kind === 'moveArt')) c = 'grabbing';
+    else if (mode === 'play') c = 'grab';
+    else if (tool === 'select') c = hoverPick ? 'pointer' : 'default';
+    else c = 'crosshair';
+    canvas.style.cursor = c;
+  }
+  function setHoverPick(v) {
+    if (hoverPick === v) return;   // only touch the style when it actually changes
+    hoverPick = v;
+    updateCursor();
+  }
+  function clearHover() { hovPad.visible = false; hovWall.visible = false; }
+  function hoverObject(o, color) {
+    padTo(hovPad, o.mesh, 0.16);
+    hovPad.material.color.setHex(color); hovPad.visible = true; hovWall.visible = false;
+  }
+  function hoverCell(cx, cz, color) {
+    hovPad.scale.set(1, 1, 1);
+    hovPad.position.set(cx + 0.5, floorY() + 0.035, cz + 0.5);
+    hovPad.material.color.setHex(color); hovPad.visible = true; hovWall.visible = false;
+  }
+  function hoverWallKey(key, color) {
+    var p = key.split(',');
+    if (p[0] === 'h') { hovWall.position.set(+p[1] + 0.5, floorY() + WALL_H / 2, +p[2]); hovWall.rotation.y = 0; }
+    else { hovWall.position.set(+p[1], floorY() + WALL_H / 2, +p[2] + 0.5); hovWall.rotation.y = Math.PI / 2; }
+    hovWall.material.color.setHex(color); hovWall.visible = true; hovPad.visible = false;
+  }
+
+  // ===================== lights =====================
+  var hemi = new THREE.HemisphereLight(0xFFF6E2, 0x6E6450, 0.8); scene.add(hemi);
+  var sun = new THREE.DirectionalLight(0xFFEFD0, 0.9);
+  sun.castShadow = true;
+  sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048;
+  var ssc = sun.shadow.camera;
+  ssc.left = -18; ssc.right = 18; ssc.top = 18; ssc.bottom = -18; ssc.near = 1; ssc.far = 70;
+  scene.add(sun);
+  var moon = new THREE.DirectionalLight(0x8FA8D8, 0.0);
+  moon.position.set(-10, 14, -8); scene.add(moon);
+
+  // ===================== camera =====================
+  var camo = new THREE.OrthographicCamera(-5, 5, 5, -5, -100, 220);
+  var cam = { azim: -Math.PI / 4, elev: ISO_ELEV, dist: 30, tx: 0, ty: 1.2, tz: 0 };
+  function applyCamera() {
+    var w = stageEl.clientWidth || 1, h = stageEl.clientHeight || 1;
+    var aspect = w / h;
+    var fh = cam.dist * (aspect < 1 ? 0.30 : 0.215);
+    var fw = fh * aspect;
+    camo.left = -fw; camo.right = fw; camo.top = fh; camo.bottom = -fh;
+    camo.updateProjectionMatrix();
+    var r = Math.cos(cam.elev) * cam.dist;
+    camo.position.set(cam.tx + r * Math.sin(cam.azim), cam.ty + Math.sin(cam.elev) * cam.dist, cam.tz + r * Math.cos(cam.azim));
+    camo.lookAt(cam.tx, cam.ty, cam.tz);
+  }
+
+  // ===================== UI state =====================
+  var mode = 'build';
+  var tool = 'select';
+  var snapOn = true;
+  var wallView = 0;           // 0 full, 1 half, 2 hidden
+  var floorMatId = 'oak';
+  var paintId = 'plaster';
+  var paintBothSides = true;
+  var openingKind = 'door';
+  var wallArtKind = 'frameSq';
+  var furnId = 'sofa';
+  var furnGrid = 0.25;   // metres between snap positions; 1 keeps the Sims edge-aware rule below, default is finer
+  var placeRot = 0;
+  var ROT_STEP_SNAP = Math.PI / 4;    // 45° when Snap is on
+  var ROT_STEP_FREE = Math.PI / 24;   // 7.5° when Snap is off
+  var selected = null, selectedType = null;
+  var hour = 14;
+
+  var elSide = document.getElementById('side');
+  var elHint = document.getElementById('hint');
+  var elStats = document.getElementById('stats');
+  var elInsp = document.getElementById('insp');
+  var elPlaybar = document.getElementById('playbar');
+  var elIspFurn = document.getElementById('ispFurnBody');
+  var elIspOpen = document.getElementById('ispOpenBody');
+  var elIspWallArt = document.getElementById('ispWallArtBody');
+
+  function updateStats() {
+    elStats.textContent =
+      'พื้น ' + Object.keys(world.floors).length +
+      ' · ผนัง ' + Object.keys(world.walls).length +
+      ' · ช่องเปิด ' + world.openings.length +
+      ' · ของ ' + world.objects.length;
+  }
+  var HINTS = {
+    select: 'คลิกของเพื่อเลือก · ลากเพื่อย้าย · คลิกขวาที่ของเพื่อหมุน · Delete ลบ',
+    floor: 'ลากคลุมพื้นที่เพื่อปูพื้นเป็นสี่เหลี่ยม',
+    wall: 'กดที่มุมกริดแล้วลากเป็นเส้นตรงเพื่อก่อผนัง',
+    opening: 'คลิกผนังเพื่อเจาะช่องเปิด · เลือกแล้วดูแผงขวาเพื่อเลื่อนตำแหน่ง/ปรับความกว้าง',
+    wallart: 'คลิกบนผนังตรงจุดที่จะแขวน · เลือกแล้วปรับตำแหน่ง/ความสูงที่แผงขวา',
+    paint: 'คลิกผนังเพื่อทาสี · ลากยาวเพื่อทารวดเดียวหลายช่วง · ปิด "ทาทั้งสองด้าน" เพื่อแยกสีในกับนอก',
+    furn: 'คลิกเพื่อวาง · R หรือคลิกขวาเพื่อหมุนก่อนวาง · ปิด Snap เพื่อวางอิสระ',
+    erase: 'คลิกพื้น ผนัง หรือของ เพื่อลบทีละชิ้น'
+  };
+  function updateHint() {
+    elHint.textContent = mode === 'play' ? 'ขวาลากเพื่อหมุนดูรอบบ้าน · เลื่อนเวลาที่แถบล่าง' : (HINTS[tool] || '');
+  }
+
+  // ---------- side panel ----------
+  function buildSide() {
+    elSide.innerHTML = '';
+    if (mode === 'play') { elSide.classList.add('hide'); return; }
+    elSide.classList.remove('hide');
+
+    if (tool === 'floor') {
+      addGroup('วัสดุพื้น');
+      var nf = document.createElement('div'); nf.className = 'nowplacing';
+      FLOORS.forEach(function (f) { if (f.id === floorMatId) nf.innerHTML = 'กำลังปู: <b>' + f.th + '</b>'; });
+      elSide.appendChild(nf);
+      var sw = document.createElement('div'); sw.className = 'swatches';
+      FLOORS.forEach(function (f) {
+        var b = document.createElement('button');
+        b.style.background = f.css;
+        b.title = f.th;
+        b.setAttribute('aria-pressed', String(f.id === floorMatId));
+        b.addEventListener('click', function () { floorMatId = f.id; buildSide(); });
+        sw.appendChild(b);
+      });
+      elSide.appendChild(sw);
+    } else if (tool === 'wall') {
+      addGroup('ผนัง');
+      var npw = document.createElement('div'); npw.className = 'nowplacing';
+      npw.innerHTML = 'สีที่จะก่อ: <b>' + PAINT_BY[paintId].th + '</b> · เปลี่ยนได้ที่เครื่องมือทาสี';
+      elSide.appendChild(npw);
+      var notew = document.createElement('div');
+      notew.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
+      notew.textContent = 'ก่อผนังทึบก่อน แล้วเจาะประตู/หน้าต่างทีหลังด้วยเครื่องมือ "ช่องเปิด"';
+      elSide.appendChild(notew);
+    } else if (tool === 'opening') {
+      addGroup('ประตู / หน้าต่าง');
+      var npo = document.createElement('div'); npo.className = 'nowplacing';
+      npo.innerHTML = 'กำลังเจาะ: <b>' + OPENING_KIND_BY[openingKind].ic + ' ' + OPENING_KIND_BY[openingKind].th + '</b>';
+      elSide.appendChild(npo);
+      var po = document.createElement('div'); po.className = 'palette';
+      OPENING_KINDS.forEach(function (k) {
+        var b = document.createElement('button');
+        b.innerHTML = '<span class="ic">' + k.ic + '</span>' + k.th;
+        b.setAttribute('aria-pressed', String(k.id === openingKind));
+        b.addEventListener('click', function () { openingKind = k.id; buildSide(); });
+        po.appendChild(b);
+      });
+      elSide.appendChild(po);
+      var tipo = document.createElement('div');
+      tipo.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
+      tipo.textContent = 'คลิกบนผนังทึบเพื่อเจาะ · หนึ่งช่วงผนังเจาะได้ทีละหนึ่งช่อง';
+      elSide.appendChild(tipo);
+    } else if (tool === 'wallart') {
+      addGroup('ของแขวนผนัง');
+      var npa = document.createElement('div'); npa.className = 'nowplacing';
+      npa.innerHTML = 'กำลังแขวน: <b>' + WALLART_BY[wallArtKind].ic + ' ' + WALLART_BY[wallArtKind].th + '</b>';
+      elSide.appendChild(npa);
+      var pa = document.createElement('div'); pa.className = 'palette';
+      WALLART.forEach(function (w) {
+        var b = document.createElement('button');
+        b.innerHTML = '<span class="ic">' + w.ic + '</span>' + w.th;
+        b.setAttribute('aria-pressed', String(w.id === wallArtKind));
+        b.addEventListener('click', function () { wallArtKind = w.id; buildSide(); refreshPreview(); });
+        pa.appendChild(b);
+      });
+      elSide.appendChild(pa);
+      var tipa = document.createElement('div');
+      tipa.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
+      tipa.textContent = 'คลิกบนผนังตรงจุดที่จะแขวน — สูงเท่าไหร่ก็เอาตามจุดที่คลิก ปรับละเอียดทีหลังได้ที่แผงขวา';
+      elSide.appendChild(tipa);
+    } else if (tool === 'paint') {
+      addGroup('สีผนัง / วอลเปเปอร์');
+      var npp = document.createElement('div'); npp.className = 'nowplacing';
+      npp.innerHTML = 'กำลังทา: <b>' + PAINT_BY[paintId].th + '</b> · ' + (paintBothSides ? 'ทั้งสองด้าน' : 'เฉพาะด้านที่คลิก');
+      elSide.appendChild(npp);
+      var pb = document.createElement('div'); pb.className = 'palette';
+      var pbBtn = document.createElement('button');
+      pbBtn.innerHTML = '<span class="ic">' + (paintBothSides ? '⇄' : '◐') + '</span>' + (paintBothSides ? 'ทาทั้งสองด้าน' : 'ทาด้านเดียว');
+      pbBtn.setAttribute('aria-pressed', String(paintBothSides));
+      pbBtn.style.gridColumn = '1 / -1';
+      pbBtn.addEventListener('click', function () { paintBothSides = !paintBothSides; buildSide(); });
+      pb.appendChild(pbBtn);
+      elSide.appendChild(pb);
+      var swp = document.createElement('div'); swp.className = 'swatches';
+      PAINTS.forEach(function (pt) {
+        var b = document.createElement('button');
+        b.style.background = pt.sw;
+        b.style.backgroundSize = 'cover';
+        b.title = pt.th;
+        b.setAttribute('aria-pressed', String(pt.id === paintId));
+        b.addEventListener('click', function () { paintId = pt.id; buildSide(); });
+        swp.appendChild(b);
+      });
+      elSide.appendChild(swp);
+      var tipp = document.createElement('div');
+      tipp.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
+      tipp.textContent = paintBothSides
+        ? 'ทาทั้งสองด้านพร้อมกันในคลิกเดียว — ปิดสวิตช์ด้านบนถ้าจะแยกสี'
+        : 'ทาเฉพาะด้านที่คลิกอยู่ — หมุนกล้องไปอีกฝั่งแล้วทาสีที่ต้องการแยกได้';
+      elSide.appendChild(tipp);
+    } else if (tool === 'furn') {
+      addGroup('เฟอร์นิเจอร์');
+      var np = document.createElement('div'); np.className = 'nowplacing';
+      np.innerHTML = 'กำลังวาง: <b>' + FURN_BY[furnId].ic + ' ' + FURN_BY[furnId].th + '</b>';
+      elSide.appendChild(np);
+      addGroup('ความละเอียดกริด');
+      var pg = document.createElement('div'); pg.className = 'palette';
+      [[1, '1 ม.'], [0.5, '0.5 ม.'], [0.25, '0.25 ม.']].forEach(function (gr) {
+        var b = document.createElement('button');
+        b.textContent = gr[1];
+        b.setAttribute('aria-pressed', String(gr[0] === furnGrid));
+        b.addEventListener('click', function () { furnGrid = gr[0]; buildSide(); });
+        pg.appendChild(b);
+      });
+      elSide.appendChild(pg);
+      var gnote = document.createElement('div');
+      gnote.style.cssText = 'padding:8px 14px 2px;font-size:.78rem;color:var(--ink-2);line-height:1.6';
+      gnote.textContent = furnGrid === 1
+        ? 'ค่าปกติของ Sims — ขอบของชิ้นตกบนเส้นกริดเสมอไม่ว่าจะกว้างเท่าไหร่'
+        : 'ล็อกทุก ' + (furnGrid === 0.5 ? '0.5' : '0.25') + ' เมตรตรง ๆ ไม่อิงขนาดของชิ้น';
+      elSide.appendChild(gnote);
+      var pf = document.createElement('div'); pf.className = 'palette';
+      FURN.forEach(function (f) {
+        var b = document.createElement('button');
+        b.innerHTML = '<span class="ic">' + f.ic + '</span>' + f.th;
+        b.setAttribute('aria-pressed', String(f.id === furnId));
+        b.addEventListener('click', function () { furnId = f.id; buildSide(); refreshPreview(); });
+        pf.appendChild(b);
+      });
+      elSide.appendChild(pf);
+    } else {
+      addGroup(tool === 'erase' ? 'เครื่องมือลบ' : 'เลือก / ย้าย');
+      var note = document.createElement('div');
+      note.style.cssText = 'padding:12px 14px;font-size:.84rem;color:var(--ink-2);line-height:1.65';
+      note.textContent = tool === 'erase'
+        ? 'คลิกอะไรก็ได้ในบ้านเพื่อลบชิ้นนั้น — ลบประตู/หน้าต่างจะเหลือผนังทึบไว้ · ลบผิดกด "ย้อน" ได้'
+        : 'คลิกเฟอร์นิเจอร์ ประตู/หน้าต่าง หรือของแขวนผนังเพื่อเลือก แล้วปรับได้ที่แผงขวา';
+      elSide.appendChild(note);
+    }
+    function addGroup(t) { var h = document.createElement('div'); h.className = 'sgroup'; h.textContent = t; elSide.appendChild(h); }
+  }
+
+  // ---------- toolbar wiring ----------
+  function wireSeg(id, cb) {
+    var el = document.getElementById(id);
+    el.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      Array.prototype.forEach.call(el.querySelectorAll('button'), function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      cb(b.getAttribute('data-v'));
+    });
+  }
+  wireSeg('segMode', function (v) { setMode(v); });
+  wireSeg('segTool', function (v) {
+    tool = v; select(null); clearPreview(); clearHover(); buildSide(); updateHint();
+    hoverPick = false; updateCursor();
+  });
+
+  function setMode(v) {
+    mode = v;
+    var build = mode === 'build';
+    document.getElementById('segTool').style.display = build ? '' : 'none';
+    document.getElementById('lblTool').style.display = build ? '' : 'none';
+    ['btnSnap', 'btnFound', 'btnUndo', 'btnClear'].forEach(function (id) {
+      document.getElementById(id).style.display = build ? '' : 'none';
+    });
+    grid.visible = build;
+    elPlaybar.classList.toggle('show', !build);
+    if (!build) { select(null); clearPreview(); clearHover(); wallView = 0; applyWallView(); syncWallBtn(); }
+    updateSelVisual();
+    buildSide();
+    updateHint();
+    hoverPick = false;
+    updateCursor();
+  }
+
+  var btnSnap = document.getElementById('btnSnap');
+  btnSnap.addEventListener('click', function () { toggleSnap(); });
+  function toggleSnap() {
+    snapOn = !snapOn;
+    btnSnap.setAttribute('aria-pressed', String(snapOn));
+    btnSnap.textContent = '🧲 Snap: ' + (snapOn ? 'เปิด' : 'ปิด');
+    if (selected && selectedType === 'opening') syncOpeningSliders(selected);
+  }
+  var btnFound = document.getElementById('btnFound');
+  btnFound.addEventListener('click', function () {
+    snap();
+    world.foundation = !world.foundation;
+    btnFound.setAttribute('aria-pressed', String(world.foundation));
+    select(null); rebuildAll(); save();
+  });
+  var btnWalls = document.getElementById('btnWalls');
+  btnWalls.addEventListener('click', function () { wallView = (wallView + 1) % 3; applyWallView(); syncWallBtn(); });
+  function syncWallBtn() { btnWalls.textContent = 'ผนัง: ' + ['เต็ม', 'ครึ่ง', 'ซ่อน'][wallView]; }
+  function applyWallView() {
+    gWalls.visible = wallView !== 2;
+    gWalls.scale.y = wallView === 1 ? 0.36 : 1;
+    gOpenings.visible = wallView !== 2;
+    gOpenings.scale.y = wallView === 1 ? 0.36 : 1;
+    gWallArt.visible = wallView !== 2;
+    gWallArt.scale.y = wallView === 1 ? 0.36 : 1;
+  }
+  document.getElementById('btnUndo').addEventListener('click', undo);
+  document.getElementById('btnClear').addEventListener('click', function () {
+    snap();
+    world.floors = {}; world.walls = {}; world.openings = []; world.objects = [];
+    select(null); rebuildAll(); save();
+  });
+  function undo() {
+    if (!undoStack.length) return;
+    var s = JSON.parse(undoStack.pop());
+    world.floors = {}; Object.keys(s.floors).forEach(function (k) { world.floors[k] = { mat: s.floors[k].mat }; });
+    world.walls = {}; Object.keys(s.walls).forEach(function (k) {
+      var wd = s.walls[k] || {};
+      world.walls[k] = { paintOut: wd.paintOut || wd.paint || 'plaster', paintIn: wd.paintIn || wd.paint || 'plaster' };
+    });
+    world.openings = (s.openings || []).map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; });
+    world.wallArt = (s.wallArt || []).map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; });
+    world.foundation = s.foundation;
+    world.objects = s.objects.map(function (o) { return { def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l }; });
+    btnFound.setAttribute('aria-pressed', String(world.foundation));
+    select(null); rebuildAll(); save();
+  }
+
+  // ---------- inspector ----------
+  var ispScale = document.getElementById('ispScale');
+  var ispLift = document.getElementById('ispLift');
+  function select(o, type) {
+    selected = o;
+    selectedType = o ? type : null;
+    elInsp.classList.toggle('show', !!o && mode === 'build');
+    elIspFurn.style.display = selectedType === 'furn' ? '' : 'none';
+    elIspOpen.style.display = selectedType === 'opening' ? '' : 'none';
+    elIspWallArt.style.display = selectedType === 'wallart' ? '' : 'none';
+    if (!o) { updateSelVisual(); return; }   // clears the highlight box/pad too, not just the panel
+    if (selectedType === 'furn') {
+      document.getElementById('ispName').textContent = FURN_BY[o.def].th;
+      ispScale.value = String(Math.round(o.scale * 100));
+      document.getElementById('ispScaleVal').textContent = o.scale.toFixed(2) + '×';
+      ispLift.value = String(Math.round(o.lift * 100));
+      document.getElementById('ispLiftVal').textContent = o.lift.toFixed(2);
+      document.getElementById('ispDel').textContent = '🗑 ลบชิ้นนี้';
+    } else if (selectedType === 'opening') {
+      document.getElementById('ispName').textContent = OPENING_KIND_BY[o.kind].ic + ' ' + OPENING_KIND_BY[o.kind].th;
+      syncOpeningSliders(o);
+      document.getElementById('ispDel').textContent = '🗑 ลบช่องเปิดนี้';
+    } else {
+      document.getElementById('ispName').textContent = WALLART_BY[o.def].ic + ' ' + WALLART_BY[o.def].th;
+      ispArtOffset.value = String(o.offset);
+      document.getElementById('ispArtOffVal').textContent = Math.abs(o.offset) < 0.005 ? 'กลาง' : o.offset.toFixed(2);
+      ispArtHeight.value = String(o.height);
+      document.getElementById('ispArtHVal').textContent = o.height.toFixed(2);
+      document.getElementById('ispDel').textContent = '🗑 ลบของแขวนนี้';
+    }
+    updateSelVisual();
+  }
+  function syncOpeningSliders(o) {
+    var maxOff = 0.49 - o.width / 2;
+    var step = snapOn ? 0.1 : 0.01;
+    ispOffset.step = String(step);
+    ispOffset.min = String(-maxOff);
+    ispOffset.max = String(maxOff);
+    ispOffset.value = String(o.offset);
+    ispWidth.step = String(step);
+    ispWidth.value = String(o.width);
+    document.getElementById('ispOffVal').textContent = Math.abs(o.offset) < 0.005 ? 'กลาง' : o.offset.toFixed(2);
+    document.getElementById('ispWidthVal').textContent = o.width.toFixed(2);
+  }
+  ispScale.addEventListener('input', function () {
+    if (!selected || selectedType !== 'furn') return;
+    selected.scale = +ispScale.value / 100;
+    document.getElementById('ispScaleVal').textContent = selected.scale.toFixed(2) + '×';
+    selected.mesh.scale.setScalar(selected.scale);
+    if (selected.light && selected.mesh.userData.lampAt) selected.light.position.y = selected.mesh.userData.lampAt[1] * selected.scale;
+    updateSelVisual(); saveSoon();
+  });
+  ispLift.addEventListener('input', function () {
+    if (!selected || selectedType !== 'furn') return;
+    selected.lift = +ispLift.value / 100;
+    document.getElementById('ispLiftVal').textContent = selected.lift.toFixed(2);
+    selected.mesh.position.y = floorY() + selected.lift;
+    updateSelVisual(); saveSoon();
+  });
+  document.getElementById('ispRotL').addEventListener('click', function () { rotateSel(-1); });
+  document.getElementById('ispRotR').addEventListener('click', function () { rotateSel(1); });
+  // right-click while a ghost is showing: turn the piece that's about to be placed,
+  // same step size as the R key — and nudge the ghost itself so it doesn't wait for
+  // the next pointermove to catch up
+  function rotatePlacement() {
+    placeRot += snapOn ? ROT_STEP_SNAP : ROT_STEP_FREE;
+    if (previewObj) previewObj.rotation.y = placeRot;
+  }
+  // right-click on a piece: pick it up as the selection, then turn it one step
+  function rotateUnderPointer(e) {
+    var o = pickObject(e);
+    if (!o) return;
+    select(o, 'furn');
+    rotateSel(1);
+  }
+  function rotateSel(dir) {
+    if (!selected || selectedType !== 'furn') return;
+    snap();
+    var step = snapOn ? ROT_STEP_SNAP : ROT_STEP_FREE;
+    selected.rotY += dir * step;
+    selected.mesh.rotation.y = selected.rotY;
+    updateSelVisual(); saveSoon();
+  }
+  document.getElementById('ispDel').addEventListener('click', function () {
+    if (!selected) return;
+    snap();
+    if (selectedType === 'furn') removeObject(selected);
+    else if (selectedType === 'opening') removeOpening(selected);
+    else removeWallArt(selected);
+    select(null); updateStats(); save();
+  });
+  var ispArtOffset = document.getElementById('ispArtOffset');
+  var ispArtHeight = document.getElementById('ispArtHeight');
+  ispArtOffset.addEventListener('input', function () {
+    if (!selected || selectedType !== 'wallart') return;
+    selected.offset = +ispArtOffset.value;
+    document.getElementById('ispArtOffVal').textContent = Math.abs(selected.offset) < 0.005 ? 'กลาง' : selected.offset.toFixed(2);
+    removeWallArtMesh(selected); addWallArtMesh(selected);
+    updateSelVisual(); saveSoon();
+  });
+  ispArtHeight.addEventListener('input', function () {
+    if (!selected || selectedType !== 'wallart') return;
+    selected.height = +ispArtHeight.value;
+    document.getElementById('ispArtHVal').textContent = selected.height.toFixed(2);
+    removeWallArtMesh(selected); addWallArtMesh(selected);
+    updateSelVisual(); saveSoon();
+  });
+  function removeOpening(op) {
+    removeOpeningMesh(op);
+    var i = world.openings.indexOf(op);
+    if (i >= 0) world.openings.splice(i, 1);
+    refreshWall(op.wall);
+  }
+  var ispOffset = document.getElementById('ispOffset');
+  var ispWidth = document.getElementById('ispWidth');
+  ispOffset.addEventListener('input', function () {
+    if (!selected || selectedType !== 'opening') return;
+    selected.offset = +ispOffset.value;
+    document.getElementById('ispOffVal').textContent = Math.abs(selected.offset) < 0.005 ? 'กลาง' : selected.offset.toFixed(2);
+    refreshWall(selected.wall);
+    updateSelVisual(); saveSoon();
+  });
+  ispWidth.addEventListener('input', function () {
+    if (!selected || selectedType !== 'opening') return;
+    selected.width = +ispWidth.value;
+    var maxOff = 0.49 - selected.width / 2;
+    selected.offset = Math.max(-maxOff, Math.min(maxOff, selected.offset));
+    syncOpeningSliders(selected);
+    refreshWall(selected.wall);
+    updateSelVisual(); saveSoon();
+  });
+
+  // ---------- play bar ----------
+  var timeSlider = document.getElementById('timeSlider');
+  timeSlider.addEventListener('input', function () { setHour(+timeSlider.value / 60); });
+  Array.prototype.forEach.call(document.querySelectorAll('.presets button'), function (b) {
+    b.addEventListener('click', function () { setHour(+b.getAttribute('data-h')); });
+  });
+
+  // ===================== day / night =====================
+  var SKY = [
+    [0, 0x141A2A], [4.5, 0x1B2340], [6.2, 0x5E5A6E], [7.5, 0xA9B3C4],
+    [11, 0xCFE0EC], [15, 0xC9DCEA], [17.5, 0xE0B98C], [19, 0xA1738A],
+    [20.5, 0x3B3A5C], [24, 0x141A2A]
+  ];
+  function rampColor(h) {
+    for (var i = 0; i < SKY.length - 1; i++) {
+      if (h >= SKY[i][0] && h <= SKY[i + 1][0]) {
+        var t = (h - SKY[i][0]) / (SKY[i + 1][0] - SKY[i][0]);
+        return new THREE.Color(SKY[i][1]).lerp(new THREE.Color(SKY[i + 1][1]), t);
+      }
+    }
+    return new THREE.Color(SKY[0][1]);
+  }
+  function setHour(h) {
+    hour = Math.max(0, Math.min(24, h));
+    timeSlider.value = String(Math.round(hour * 60));
+    var hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60);
+    document.getElementById('clock').textContent = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+    applySky();
+  }
+  function applySky() {
+    var ang = (hour - 6) / 12 * Math.PI;
+    var sy = Math.sin(ang), sx = Math.cos(ang);
+    sun.position.set(sx * 22, Math.max(0.6, sy * 24), 9 + sy * 4);
+    var day = Math.max(0, sy);
+    var dusk = Math.max(0, 1 - Math.abs(hour - 18) / 2.2);
+    sun.intensity = day * 0.95;
+    sun.color.setHSL(0.09 + dusk * 0.02, 0.35 + dusk * 0.35, 0.72 - dusk * 0.1);
+    var night = Math.max(0, Math.min(1, (0.16 - sy) / 0.34));
+    hemi.intensity = 0.8 - night * 0.5;
+    hemi.color.set(night > 0.5 ? 0xBACBEC : 0xFFF6E2);
+    moon.intensity = night * 0.34;
+    lawnMat.color.setRGB(1 - night * 0.55, 1 - night * 0.48, 1 - night * 0.35);
+    GLOW.forEach(function (m) {
+      if (!m.emissive) m.emissive = new THREE.Color();
+      var e = new THREE.Color(m.userData.glow);
+      m.emissive.setRGB(e.r * night, e.g * night, e.b * night);
+    });
+    world.objects.forEach(function (o) { if (o.light) o.light.intensity = night * 1.5; });
+    renderer.setClearColor(rampColor(hour), 1);
+  }
+
+  // ===================== picking helpers =====================
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), hit = new THREE.Vector3();
+  function setNdc(e) {
+    var r = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+  }
+  function groundPoint(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    pickPlane.constant = -floorY();
+    if (!ray.ray.intersectPlane(pickPlane, hit)) return null;
+    return hit;
+  }
+  function cellOf(p) { return { cx: Math.floor(p.x), cz: Math.floor(p.z) }; }
+  function inBounds(cx, cz) { return cx >= -HALF && cx < HALF && cz >= -HALF && cz < HALF; }
+  function cornerOf(p) { return { cx: Math.round(p.x), cz: Math.round(p.z) }; }
+
+  function pickObject(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gObjects.children, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && !o.userData.objRef) o = o.parent;
+    return o ? o.userData.objRef : null;
+  }
+  function pickWall(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gWalls.children, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && !o.userData.wallKey) o = o.parent;
+    return o ? o.userData.wallKey : null;
+  }
+  function pickOpening(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gOpenings.children, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && !o.userData.openingRef) o = o.parent;
+    return o ? o.userData.openingRef : null;
+  }
+  function pickWallArt(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gWallArt.children, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && !o.userData.wallArtRef) o = o.parent;
+    return o ? o.userData.wallArtRef : null;
+  }
+
+  // footprint-aware snap: even spans land on grid lines, odd spans on cell centres (Sims rule)
+  function snapFurn(px, pz, def, rot) {
+    if (furnGrid !== 1) {
+      // finer than 1m: plain rounding to the chosen step, no footprint-parity cleverness
+      return { x: Math.round(px / furnGrid) * furnGrid, z: Math.round(pz / furnGrid) * furnGrid };
+    }
+    var q = Math.round(rot / (Math.PI / 2)) & 3;
+    var w = (q % 2) ? def.fp[1] : def.fp[0];
+    var d = (q % 2) ? def.fp[0] : def.fp[1];
+    var x = (w % 2) ? Math.floor(px) + 0.5 : Math.round(px);
+    var z = (d % 2) ? Math.floor(pz) + 0.5 : Math.round(pz);
+    return { x: x, z: z };
+  }
+
+  // ===================== preview ghosts =====================
+  var previewObj = null, previewFor = null, tilePool = [];
+  function clearPreview() {
+    while (gPreview.children.length) gPreview.remove(gPreview.children[0]);
+    previewObj = null; previewFor = null;
+  }
+  function refreshPreview() { clearPreview(); }
+  function tileFromPool(i) {
+    if (!tilePool[i]) {
+      var m = new THREE.Mesh(hoverGeo, hoverMat);
+      m.rotation.x = -Math.PI / 2;
+      tilePool[i] = m;
+    }
+    return tilePool[i];
+  }
+
+  function showWallArtPreview(e) {
+    var def = WALLART_BY[wallArtKind];
+    if (previewFor !== wallArtKind || !previewObj) {
+      clearPreview();
+      previewObj = def.b();
+      previewObj.traverse(function (m) {
+        if (m.isMesh) {
+          m.material = new THREE.MeshBasicMaterial({ color: 0x5C7AB8, transparent: true, opacity: 0.42, depthWrite: false });
+        }
+      });
+      gPreview.add(previewObj);
+      previewFor = wallArtKind;
+    }
+    var hit = wallArtHitInfo(e);
+    if (!hit) { previewObj.visible = false; return; }
+    var tr = wallArtTransform(hit.wall, hit.offset, hit.height, hit.side);
+    previewObj.visible = true;
+    previewObj.position.set(tr.x, tr.y, tr.z);
+    previewObj.rotation.y = tr.rotY;
+  }
+  function showFurnPreview(px, pz) {
+    var def = FURN_BY[furnId];
+    if (previewFor !== furnId || !previewObj) {
+      clearPreview();
+      previewObj = def.b();
+      previewObj.traverse(function (m) {
+        if (m.isMesh) {
+          m.material = new THREE.MeshBasicMaterial({ color: 0x5C7AB8, transparent: true, opacity: 0.42, depthWrite: false });
+        }
+      });
+      gPreview.add(previewObj);
+      previewFor = furnId;
+    }
+    var pos = snapOn ? snapFurn(px, pz, def, placeRot) : { x: px, z: pz };
+    previewObj.position.set(pos.x, floorY() + 0.01, pos.z);
+    previewObj.rotation.y = placeRot;
+  }
+  function showRectPreview(a, b, y) {
+    clearPreview();
+    var x0 = Math.min(a.cx, b.cx), x1 = Math.max(a.cx, b.cx);
+    var z0 = Math.min(a.cz, b.cz), z1 = Math.max(a.cz, b.cz);
+    var i = 0;
+    for (var x = x0; x <= x1 && i < 400; x++) for (var z = z0; z <= z1 && i < 400; z++) {
+      if (!inBounds(x, z)) continue;
+      var m = tileFromPool(i++);
+      m.position.set(x + 0.5, y + 0.02, z + 0.5);
+      gPreview.add(m);
+    }
+  }
+  function showLinePreview(a, b) {
+    clearPreview();
+    var segs = wallRun(a, b);
+    segs.forEach(function (s) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(1, WALL_H, 0.2), hoverMat);
+      if (s.dir === 'h') m.position.set(s.x + 0.5, floorY() + WALL_H / 2, s.z);
+      else { m.position.set(s.x, floorY() + WALL_H / 2, s.z + 0.5); m.rotation.y = Math.PI / 2; }
+      gPreview.add(m);
+    });
+  }
+  function wallRun(a, b) {
+    var out = [];
+    var dx = Math.abs(b.cx - a.cx), dz = Math.abs(b.cz - a.cz);
+    if (dx >= dz) {
+      var z = a.cz, x0 = Math.min(a.cx, b.cx), x1 = Math.max(a.cx, b.cx);
+      for (var x = x0; x < x1; x++) if (x >= -HALF && x < HALF && z >= -HALF && z <= HALF) out.push({ dir: 'h', x: x, z: z });
+      if (x0 === x1) out.push({ dir: 'h', x: x0, z: z });
+    } else {
+      var xx = a.cx, z0 = Math.min(a.cz, b.cz), z1 = Math.max(a.cz, b.cz);
+      for (var zz = z0; zz < z1; zz++) if (zz >= -HALF && zz < HALF && xx >= -HALF && xx <= HALF) out.push({ dir: 'v', x: xx, z: zz });
+      if (z0 === z1) out.push({ dir: 'v', x: xx, z: z0 });
+    }
+    return out.filter(function (s) {
+      return s.dir === 'h'
+        ? (s.x >= -HALF && s.x < HALF && s.z >= -HALF && s.z <= HALF)
+        : (s.z >= -HALF && s.z < HALF && s.x >= -HALF && s.x <= HALF);
+    });
+  }
+
+  // ===================== input =====================
+  var act = null;       // {kind, start, ...}
+  var camDrag = null;   // {mode:'orbit'|'pan', x, y}
+  var pinch = null, twoFinger = null;
+  var spaceDown = false;
+
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  canvas.addEventListener('pointerleave', function () { clearHover(); setHoverPick(false); });
+
+  canvas.addEventListener('pointerdown', function (e) {
+    canvas.setPointerCapture(e.pointerId);
+    var wantPan = e.button === 1 || (e.button === 0 && spaceDown);
+    var wantOrbit = e.button === 2;
+    if (wantPan || wantOrbit || mode === 'play') {
+      camDrag = {
+        mode: wantPan ? 'pan' : 'orbit', x: e.clientX, y: e.clientY,
+        button: e.button, sx: e.clientX, sy: e.clientY, t: performance.now()
+      };
+      updateCursor();
+      return;
+    }
+    if (e.button !== 0) return;
+    startAction(e);
+    updateCursor();
+  });
+
+  function startAction(e) {
+    var p = groundPoint(e);
+    if (!p) return;
+    if (tool === 'select') {
+      var o = pickObject(e);
+      if (o) {
+        select(o, 'furn');
+        act = { kind: 'move', o: o, moved: false };
+        snap();
+      } else {
+        var op = pickOpening(e);
+        if (op) { select(op, 'opening'); }
+        else {
+          var wa = pickWallArt(e);
+          if (wa) {
+            select(wa, 'wallart');
+            act = { kind: 'moveArt', o: wa, moved: false };
+            snap();
+          } else select(null);
+        }
+      }
+    } else if (tool === 'floor') {
+      act = { kind: 'rect', a: cellOf(p) };
+      showRectPreview(act.a, act.a, floorY());
+    } else if (tool === 'wall') {
+      act = { kind: 'line', a: cornerOf(p) };
+      showLinePreview(act.a, act.a);
+    } else if (tool === 'furn') {
+      placeFurniture(p);
+    } else if (tool === 'opening') {
+      snap();
+      act = { kind: 'opening', hit: false, lastKey: null };
+      placeOpeningAt(e);
+    } else if (tool === 'wallart') {
+      placeWallArtAt(e);
+    } else if (tool === 'paint') {
+      snap();
+      act = { kind: 'paint', hit: false };
+      paintAt(e);
+    } else if (tool === 'erase') {
+      eraseAt(e, p);
+    }
+  }
+  function placeOpeningAt(e) {
+    var wk = pickWall(e);
+    if (!wk || wk === (act && act.lastKey)) return;
+    if (act) act.lastKey = wk;
+    if (openingOf(wk)) return; // occupied — the red hover already told them why
+    var def = OPENING_KIND_BY[openingKind];
+    var op = { kind: openingKind, wall: wk, offset: 0, width: def.width };
+    world.openings.push(op);
+    refreshWall(wk); // rebuilds the wall's gap and adds this opening's mesh in one pass
+    if (act) act.hit = true;
+  }
+
+  // one shot: raycast the walls, resolve which segment/face was hit, and turn that into
+  // an (offset, height) pair — snapped to the furniture grid, same as floor placement,
+  // whenever Snap is on. Shared by first placement, the drag-preview ghost, and dragging
+  // an already-placed piece, so all three read the wall exactly the same way.
+  function wallArtHitInfo(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gWalls.children, true);
+    if (!hits.length) return null;
+    var hit0 = hits[0], o = hit0.object;
+    while (o && !o.userData.wallKey) o = o.parent;
+    if (!o) return null;
+    var wk = o.userData.wallKey;
+    var t = wallTransform(wk);
+    var side = (hit0.face && hit0.face.normal.z < 0) ? -1 : 1;
+    var hp = hit0.point;
+    var loc = worldToLocalOffset(t.rotY, hp.x - t.x, hp.z - t.z);
+    var offset = Math.max(-0.45, Math.min(0.45, loc.lx));
+    var height = Math.max(0.3, Math.min(2.4, hp.y - floorY()));
+    if (snapOn) {
+      offset = Math.max(-0.45, Math.min(0.45, Math.round(offset / furnGrid) * furnGrid));
+      height = Math.max(0.3, Math.min(2.4, Math.round(height / furnGrid) * furnGrid));
+    }
+    return { wall: wk, offset: offset, height: height, side: side };
+  }
+  function placeWallArtAt(e) {
+    var hit = wallArtHitInfo(e);
+    if (!hit) return;
+    snap();
+    var art = { def: wallArtKind, wall: hit.wall, offset: hit.offset, height: hit.height, side: hit.side };
+    world.wallArt.push(art);
+    addWallArtMesh(art);
+    updateStats(); save();
+  }
+
+  function paintAt(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gWalls.children, true);
+    if (!hits.length) return;
+    var hit0 = hits[0], o = hit0.object;
+    while (o && !o.userData.wallKey) o = o.parent;
+    if (!o) return;
+    var wk = o.userData.wallKey;
+    var w = world.walls[wk];
+    if (!w) return;
+    var changed = false;
+    if (paintBothSides) {
+      if (w.paintOut !== paintId) { w.paintOut = paintId; changed = true; }
+      if (w.paintIn !== paintId) { w.paintIn = paintId; changed = true; }
+    } else {
+      // click = paint what you can actually see: the raycast only ever hits the face
+      // pointed at the camera, so its local normal.z tells us which side that is
+      var side = (hit0.face && hit0.face.normal.z < 0) ? 'paintIn' : 'paintOut';
+      if (w[side] !== paintId) { w[side] = paintId; changed = true; }
+    }
+    if (!changed) return;
+    removeWallMesh(wk);
+    addWallMesh(wk);
+    applyWallView();
+    if (act) act.hit = true;
+  }
+
+  canvas.addEventListener('pointermove', function (e) {
+    if (camDrag) {
+      var dx = e.clientX - camDrag.x, dy = e.clientY - camDrag.y;
+      camDrag.x = e.clientX; camDrag.y = e.clientY;
+      if (camDrag.mode === 'orbit') {
+        cam.azim -= dx * 0.008;
+        cam.elev = Math.max(0.18, Math.min(1.45, cam.elev + dy * 0.006));
+      } else { panBy(dx, dy); }
+      return;
+    }
+    var p = groundPoint(e);
+    if (!p) return;
+    if (act) {
+      if (act.kind === 'rect') showRectPreview(act.a, cellOf(p), floorY());
+      else if (act.kind === 'line') showLinePreview(act.a, cornerOf(p));
+      else if (act.kind === 'paint') { paintAt(e); }
+      else if (act.kind === 'opening') { placeOpeningAt(e); }
+      else if (act.kind === 'move') {
+        var def = FURN_BY[act.o.def];
+        var pos = snapOn ? snapFurn(p.x, p.z, def, act.o.rotY) : { x: p.x, z: p.z };
+        act.o.x = pos.x; act.o.z = pos.z;
+        act.o.mesh.position.set(pos.x, floorY() + act.o.lift, pos.z);
+        updateSelVisual();
+        act.moved = true;
+      } else if (act.kind === 'moveArt') {
+        var hitA = wallArtHitInfo(e);
+        if (hitA) {
+          act.o.wall = hitA.wall; act.o.offset = hitA.offset; act.o.height = hitA.height; act.o.side = hitA.side;
+          removeWallArtMesh(act.o); addWallArtMesh(act.o);
+          updateSelVisual();
+          act.moved = true;
+        }
+      }
+    } else if (mode === 'build' && tool === 'furn') {
+      showFurnPreview(p.x, p.z);
+      clearHover();
+    } else if (mode === 'build' && tool === 'paint') {
+      var pw2 = pickWall(e);
+      if (pw2) hoverWallKey(pw2, SEL_COLOR); else clearHover();
+    } else if (mode === 'build' && tool === 'opening') {
+      var pw3 = pickWall(e);
+      if (pw3) hoverWallKey(pw3, openingOf(pw3) ? ERASE_COLOR : SEL_COLOR); else clearHover();
+    } else if (mode === 'build' && tool === 'wallart') {
+      showWallArtPreview(e);
+      clearHover();
+    } else if (mode === 'build' && (tool === 'select' || tool === 'erase')) {
+      var col = tool === 'erase' ? ERASE_COLOR : SEL_COLOR;
+      var ho = pickObject(e) || pickOpening(e) || pickWallArt(e);   // furniture, then doors/windows, then wall art
+      if (ho) { hoverObject(ho, col); setHoverPick(true); return; }
+      setHoverPick(false);
+      if (tool === 'erase') {
+        var hw = pickWall(e);
+        if (hw) { hoverWallKey(hw, col); return; }
+        var hc = cellOf(p);
+        if (world.floors[hc.cx + ',' + hc.cz]) { hoverCell(hc.cx, hc.cz, col); return; }
+      }
+      clearHover();
+    } else {
+      clearHover();
+    }
+  });
+
+  function endPointer(e) {
+    try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (camDrag) {
+      // right button released without a real drag = a click, so rotate what's under it
+      // instead of leaving the camera where a 2px twitch put it
+      var tapped = camDrag.button === 2 &&
+        Math.hypot(e.clientX - camDrag.sx, e.clientY - camDrag.sy) < 5 &&
+        (performance.now() - camDrag.t) < 400;
+      camDrag = null;
+      if (tapped && mode === 'build' && tool === 'select') rotateUnderPointer(e);
+      else if (tapped && mode === 'build' && tool === 'furn') rotatePlacement();
+      updateCursor();
+      return;
+    }
+    if (!act) { updateCursor(); return; }
+    var p = groundPoint(e);
+    if (act.kind === 'rect' && p) commitRect(act.a, cellOf(p));
+    else if (act.kind === 'line' && p) commitLine(act.a, cornerOf(p));
+    else if (act.kind === 'move') { if (act.moved) save(); else undoStack.pop(); }
+    else if (act.kind === 'moveArt') { if (act.moved) save(); else undoStack.pop(); }
+    else if (act.kind === 'paint') { if (act.hit) save(); else undoStack.pop(); }
+    else if (act.kind === 'opening') { if (act.hit) save(); else undoStack.pop(); }
+    if (act.kind !== 'move') clearPreview();
+    act = null;
+    updateCursor();
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  function panBy(dx, dy) {
+    var k = cam.dist * 0.0016;
+    var right = new THREE.Vector3(Math.cos(cam.azim), 0, -Math.sin(cam.azim));
+    var fwd = new THREE.Vector3(Math.sin(cam.azim), 0, Math.cos(cam.azim));
+    cam.tx -= (right.x * dx + fwd.x * -dy) * k;
+    cam.tz -= (right.z * dx + fwd.z * -dy) * k;
+    cam.tx = Math.max(-HALF - 6, Math.min(HALF + 6, cam.tx));
+    cam.tz = Math.max(-HALF - 6, Math.min(HALF + 6, cam.tz));
+  }
+
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    cam.dist = Math.max(7, Math.min(64, cam.dist + e.deltaY * 0.03));
+  }, { passive: false });
+
+  canvas.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2) {
+      act = null; camDrag = null; clearPreview();
+      pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      twoFinger = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function (e) {
+    if (e.touches.length === 2 && pinch) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      cam.dist = Math.max(7, Math.min(64, cam.dist * (pinch / d)));
+      pinch = d;
+      var mx = (e.touches[0].clientX + e.touches[1].clientX) / 2, my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      panBy(mx - twoFinger.x, my - twoFinger.y);
+      twoFinger = { x: mx, y: my };
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchend', function (e) { if (e.touches.length < 2) { pinch = null; twoFinger = null; } }, { passive: true });
+
+  window.addEventListener('keydown', function (e) {
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' || t === 'TEXTAREA') return;
+    if (e.code === 'Space') { spaceDown = true; e.preventDefault(); return; }
+    if (e.key === 'r' || e.key === 'R') {
+      if (selected) rotateSel(1);
+      else { placeRot += snapOn ? ROT_STEP_SNAP : ROT_STEP_FREE; }
+    } else if (e.key === 'g' || e.key === 'G') { toggleSnap(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selected) {
+        snap();
+        if (selectedType === 'furn') removeObject(selected);
+        else if (selectedType === 'opening') removeOpening(selected);
+        else removeWallArt(selected);
+        select(null); updateStats(); save();
+      }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); }
+  });
+  window.addEventListener('keyup', function (e) { if (e.code === 'Space') spaceDown = false; });
+
+  // ===================== commits =====================
+  function commitRect(a, b) {
+    var x0 = Math.min(a.cx, b.cx), x1 = Math.max(a.cx, b.cx);
+    var z0 = Math.min(a.cz, b.cz), z1 = Math.max(a.cz, b.cz);
+    var any = false;
+    snap();
+    for (var x = x0; x <= x1; x++) for (var z = z0; z <= z1; z++) {
+      if (!inBounds(x, z)) continue;
+      var key = x + ',' + z;
+      if (world.floors[key]) { removeFloorMesh(key); }
+      world.floors[key] = { mat: floorMatId };
+      addFloorMesh(key);
+      any = true;
+    }
+    if (!any) undoStack.pop(); else { updateStats(); save(); }
+  }
+  function commitLine(a, b) {
+    var segs = wallRun(a, b);
+    if (!segs.length) return;
+    snap();
+    segs.forEach(function (s) {
+      world.walls[s.dir + ',' + s.x + ',' + s.z] = { paintOut: paintId, paintIn: paintId };
+    });
+    rebuildWalls(); updateStats(); save();
+  }
+  function placeFurniture(p) {
+    var def = FURN_BY[furnId];
+    var pos = snapOn ? snapFurn(p.x, p.z, def, placeRot) : { x: p.x, z: p.z };
+    snap();
+    var o = { def: furnId, x: pos.x, z: pos.z, rotY: placeRot, scale: 1, lift: 0 };
+    world.objects.push(o);
+    addObjectMesh(o);
+    updateStats(); save();
+  }
+  function eraseAt(e, p) {
+    var o = pickObject(e);
+    if (o) { snap(); removeObject(o); updateStats(); save(); return; }
+    var op = pickOpening(e);
+    if (op) { snap(); removeOpening(op); updateStats(); save(); return; }
+    var wa = pickWallArt(e);
+    if (wa) { snap(); removeWallArt(wa); updateStats(); save(); return; }
+    var wk = pickWall(e);
+    if (wk && world.walls[wk]) {
+      snap();
+      var hosted = openingOf(wk);
+      if (hosted) { removeOpeningMesh(hosted); world.openings.splice(world.openings.indexOf(hosted), 1); }
+      world.wallArt.filter(function (a) { return a.wall === wk; }).forEach(removeWallArtMesh);
+      world.wallArt = world.wallArt.filter(function (a) { return a.wall !== wk; });
+      removeWallMesh(wk); delete world.walls[wk];
+      rebuildWalls(); updateStats(); save(); return;
+    }
+    var c = cellOf(p), key = c.cx + ',' + c.cz;
+    if (world.floors[key]) { snap(); removeFloorMesh(key); delete world.floors[key]; updateStats(); save(); }
+  }
+
+  // ===================== persistence =====================
+  var KEY = 'nyan-home-builder-v1';
+  var saveT = null;
+  function saveSoon() { clearTimeout(saveT); saveT = setTimeout(save, 400); }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(plainState()));
+    } catch (e) {}
+  }
+  function load() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    try {
+      var s = JSON.parse(raw);
+      world.floors = {}; Object.keys(s.floors || {}).forEach(function (k) { world.floors[k] = { mat: s.floors[k].mat }; });
+      world.walls = {}; var legacyOpenings = [];
+      Object.keys(s.walls || {}).forEach(function (k) {
+        var wd = s.walls[k] || {};
+        if (wd.type === 'door' || wd.type === 'window') {
+          legacyOpenings.push({ kind: wd.type, wall: k, offset: 0, width: wd.type === 'door' ? 0.9 : 0.8 });
+        }
+        var po = PAINT_BY[wd.paintOut] ? wd.paintOut : (PAINT_BY[wd.paint] ? wd.paint : 'plaster');
+        var pi = PAINT_BY[wd.paintIn] ? wd.paintIn : (PAINT_BY[wd.paint] ? wd.paint : 'plaster');
+        world.walls[k] = { paintOut: po, paintIn: pi };
+      });
+      world.openings = (s.openings || legacyOpenings).map(function (op) {
+        return { kind: op.kind, wall: op.wall, offset: op.offset || 0, width: op.width || (op.kind === 'door' ? 0.9 : 0.8) };
+      }).filter(function (op) { return world.walls[op.wall]; });
+      world.wallArt = (s.wallArt || []).filter(function (a) { return WALLART_BY[a.def] && world.walls[a.wall]; })
+        .map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset || 0, height: a.height || 1.5, side: a.side || 1 }; });
+      world.foundation = !!s.foundation;
+      world.objects = (s.objects || []).filter(function (o) { return FURN_BY[o.d]; })
+        .map(function (o) { return { def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0 }; });
+      return true;
+    } catch (e) { return false; }
+  }
+
+  // ===================== starter home =====================
+  function starter() {
+    for (var x = -4; x < 3; x++) for (var z = -3; z < 3; z++) world.floors[x + ',' + z] = { mat: (x >= 0 ? 'tile' : 'oak') };
+    var walls = [];
+    for (var i = -4; i < 3; i++) { walls.push(['h', i, -3]); walls.push(['h', i, 3]); }
+    for (var j = -3; j < 3; j++) { walls.push(['v', -4, j]); walls.push(['v', 3, j]); }
+    walls.forEach(function (w) { world.walls[w[0] + ',' + w[1] + ',' + w[2]] = { paintOut: 'plaster', paintIn: 'plaster' }; });
+    world.openings.push(
+      { kind: 'door', wall: 'h,-1,3', offset: 0, width: 0.9 },
+      { kind: 'window', wall: 'h,-3,-3', offset: 0, width: 0.8 },
+      { kind: 'window', wall: 'h,1,-3', offset: 0, width: 0.8 },
+      { kind: 'window', wall: 'v,-4,0', offset: 0, width: 0.8 }
+    );
+    ['h,-4,-3', 'h,-3,-3', 'h,-2,-3', 'h,-1,-3', 'h,0,-3', 'h,1,-3', 'h,2,-3'].forEach(function (k) {
+      if (world.walls[k]) { world.walls[k].paintOut = 'sage'; world.walls[k].paintIn = 'sage'; }
+    });
+    world.wallArt.push({ def: 'frameSq', wall: 'h,-2,-3', offset: 0, height: 1.7, side: 1 });
+    [['sofa', -2.5, 1.5, 0], ['tv', -2.5, -1.5, Math.PI], ['rug', -2, 0, 0],
+     ['table', 1, 1.5, 0], ['chair', 1.5, 0.5, Math.PI], ['counter', 2.5, -2.5, 0],
+     ['stove', 1.5, -2.5, 0], ['fridge', 0.5, -2.5, 0], ['lamp', -3.5, 2.5, 0],
+     ['plant', 2.5, 2.5, 0], ['bookshelf', -3.5, -2.5, 0]
+    ].forEach(function (a) {
+      world.objects.push({ def: a[0], x: a[1], z: a[2], rotY: a[3], scale: 1, lift: 0 });
+    });
+  }
+
+  // ===================== boot =====================
+  function resize() {
+    var w = stageEl.clientWidth, h = stageEl.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    applyCamera();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stageEl);
+  window.addEventListener('resize', resize);
+
+  if (!load()) { starter(); save(); }
+  btnFound.setAttribute('aria-pressed', String(world.foundation));
+  syncWallBtn();
+  rebuildAll();
+  buildSide();
+  updateHint();
+  setHour(14);
+  setMode('build');
+  resize();
+
+  function tick(now) {
+    updateSubGrid();
+    if (selPad.visible && !reduce) {
+      var pl = 0.34 + Math.sin(now * 0.005) * 0.12;
+      selPad.material.opacity = pl;
+      selBox.material.opacity = 0.75 + Math.sin(now * 0.005) * 0.25;
+    }
+    applyCamera();
+    renderer.render(scene, camo);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>

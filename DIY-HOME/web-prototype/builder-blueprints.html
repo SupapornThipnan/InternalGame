@@ -1,0 +1,1060 @@
+<title>Home Builder Blueprints</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F1E8D8; --card:#FBF7EE; --sunk:#E7DCC7;
+  --ink:#1C2233; --ink-2:#565F75; --ink-3:#8B93A6;
+  --line:#D7CAB1; --line-soft:#E3D8C2;
+  --indigo:#2F4373; --indigo-2:#5C7AB8;
+  --kraft:#A0702B; --lantern:#BB4629; --sel:#0E9E7E;
+  --on-accent:#FBF7EE;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+    --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+    --line:#2F3547; --line-soft:#262B3A;
+    --indigo:#9BB4EA; --indigo-2:#7189C2;
+    --kraft:#D8A461; --lantern:#E5805F; --sel:#3FD9B4;
+    --on-accent:#141721;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+  --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+  --line:#2F3547; --line-soft:#262B3A;
+  --indigo:#9BB4EA; --indigo-2:#7189C2;
+  --kraft:#D8A461; --lantern:#E5805F; --sel:#3FD9B4;
+  --on-accent:#141721;
+}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Thai","Helvetica Neue",Arial,sans-serif;line-height:1.72;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:0 22px}
+.wide{max-width:1100px;margin:0 auto;padding:0 22px}
+h1,h2,h3{font-family:Mitr,"IBM Plex Sans Thai",sans-serif;font-weight:500;margin:0;line-height:1.34;text-wrap:balance}
+h1{font-size:clamp(1.7rem,1.3rem + 1.8vw,2.4rem);font-weight:600;letter-spacing:-.01em}
+h2{font-size:clamp(1.2rem,1.06rem + .6vw,1.5rem)}
+h3{font-size:1.02rem}
+p{margin:0}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--kraft)}
+
+header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:44px 0 34px}
+.mast .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.mast h1{margin-bottom:12px}
+.mast .lead{color:var(--ink-2);font-size:1.02rem;max-width:66ch}
+.vbadge{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;color:var(--on-accent);background:var(--sel);border-radius:999px;padding:2px 10px;font-weight:500}
+.backlink{display:inline-flex;align-items:center;gap:7px;margin-top:18px;font-size:.9rem;color:var(--indigo);text-decoration:none;border:1px solid var(--line);border-radius:5px;padding:7px 14px;background:var(--paper)}
+.backlink:hover{border-color:var(--indigo-2)}
+
+nav.toc{border-bottom:1px solid var(--line);background:var(--sunk);padding:12px 0;position:sticky;top:0;z-index:5}
+nav.toc .inner{display:flex;gap:6px;flex-wrap:wrap;max-width:1100px;margin:0 auto;padding:0 22px}
+nav.toc a{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--card);white-space:nowrap}
+nav.toc a:hover{color:var(--ink);border-color:var(--indigo-2)}
+
+section{padding:46px 0}
+section+section{border-top:1px solid var(--line-soft)}
+.sechead{margin-bottom:22px;max-width:68ch}
+.sechead .n{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--kraft);letter-spacing:.1em}
+.sechead h2{margin-top:5px}
+.sechead .sub{color:var(--ink-2);margin-top:8px;font-size:.95rem}
+
+/* --- drafting sheet: deliberately the same warm paper in both themes, so every
+       drawing keeps one predictable ground and currentColor stays pinned to ink --- */
+figure{margin:0 0 8px}
+.sheet{
+  background:#F4EDDD;color:#24304A;
+  border:1px solid #C9B996;border-radius:5px;
+  padding:20px 18px 14px;overflow-x:auto;
+  background-image:
+    repeating-linear-gradient(0deg,transparent 0 23px,rgba(36,48,74,.06) 23px 24px),
+    repeating-linear-gradient(90deg,transparent 0 23px,rgba(36,48,74,.06) 23px 24px);
+}
+.sheet svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.sheet pre.mermaid{background:none;border:0;margin:0;padding:0;text-align:center}
+figcaption{font-size:.88rem;color:var(--ink-2);line-height:1.6;margin-top:10px;padding-left:2px}
+figcaption b{color:var(--ink);font-weight:500}
+
+pre.code{
+  margin:0;overflow-x:auto;background:var(--sunk);border:1px solid var(--line);
+  border-left:3px solid var(--indigo-2);padding:16px 18px;
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;line-height:1.72;color:var(--ink);
+}
+pre.code .c{color:var(--ink-3)} pre.code .k{color:var(--indigo)} pre.code .s{color:var(--sel)}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;color:var(--kraft)}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.9rem}
+th,td{text-align:left;padding:10px 15px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);background:var(--sunk);border-bottom:1px solid var(--line);font-weight:400}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--indigo);white-space:nowrap}
+
+ul.plain{margin:0;padding-left:1.15em;color:var(--ink-2);font-size:.94rem;line-height:1.74}
+ul.plain li{margin-bottom:6px}
+ul.plain li::marker{color:var(--kraft)}
+ul.plain b{color:var(--ink);font-weight:500}
+.stack{display:flex;flex-direction:column;gap:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.note{border-left:3px solid var(--kraft);background:var(--card);padding:14px 18px;font-size:.92rem;color:var(--ink-2);line-height:1.66}
+.note b{color:var(--ink);font-weight:500}
+.fixed{border-left:3px solid var(--sel);background:var(--card);padding:10px 16px;font-size:.9rem;color:var(--ink-2);line-height:1.6;margin-top:14px}
+.fixed b{color:var(--sel);font-weight:500}
+footer{border-top:1px solid var(--line);padding:28px 0 52px;color:var(--ink-3);font-size:.8rem;font-family:"IBM Plex Mono",monospace}
+footer a{color:var(--indigo)}
+:focus-visible{outline:2px solid var(--indigo-2);outline-offset:3px}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+
+<header class="mast">
+  <div class="wrap">
+    <div class="row">
+      <span class="eyebrow">Nyan Kit Workshop · เอกสารช่าง</span>
+      <span class="vbadge">ตรงกับโค้ด v0.11.2</span>
+    </div>
+    <h1>Home Builder Blueprints</h1>
+    <p class="lead">
+      แผนผังการทำงานของระบบสร้างบ้าน — ข้อมูลไหลจากนิ้วไปถึงหน้าจอยังไง เก็บข้อมูลบ้านด้วยโครงสร้างอะไร
+      ทำไมผนังถึงต้องประกอบจากกล่องสามใบ และประตู/หน้าต่าง/ของแขวนผนังแยกออกจากผนังได้ยังไง
+    </p>
+    <a class="backlink" href="https://claude.ai/code/artifact/496a6eb1-4adc-4154-af2d-f589f2fb8b99">🏡 เปิดตัวเกม Nyan Home Builder</a>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#s1">1 ภาพรวม</a>
+    <a href="#s2">2 โมเดลข้อมูล</a>
+    <a href="#s3">3 กฎ Snap</a>
+    <a href="#s4">4 กริดปรับละเอียด</a>
+    <a href="#s5">5 วางเฟอร์นิเจอร์</a>
+    <a href="#s6">6 ประตู/หน้าต่าง</a>
+    <a href="#s7">7 วาดผนัง</a>
+    <a href="#s8">8 ทาสีสองด้าน</a>
+    <a href="#s9">9 กายวิภาคผนัง</a>
+    <a href="#s10">10 ของแขวนผนัง</a>
+    <a href="#s11">11 วงจร mesh</a>
+    <a href="#s12">12 Undo &amp; Save</a>
+    <a href="#s13">13 โหมด/เคอร์เซอร์</a>
+    <a href="#s14">14 กลางวัน-กลางคืน</a>
+    <a href="#s15">15 หนี้ทางเทคนิค</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="s1">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">01</span>
+      <h2>ภาพรวมระบบ</h2>
+      <p class="sub">
+        หัวใจของสถาปัตยกรรมนี้คือ <b>ข้อมูลบ้านกับ mesh แยกออกจากกันคนละชั้น</b> —
+        <code>world</code> เป็นออบเจกต์เปล่า ๆ ที่ไม่รู้จัก three.js เลย ส่วนชั้น mesh มีหน้าที่แปลข้อมูลเป็นของที่มองเห็น
+        แยกแบบนี้แล้วเซฟ ย้อน และโหลดกลับ ทำได้โดยไม่ต้องยุ่งกับฉากเลย — ตอนนี้ข้อมูลมี 5 หมวดแล้ว
+        (พื้น ผนัง ช่องเปิด ของแขวนผนัง เฟอร์นิเจอร์) แต่หลักการเดิมยังใช้ได้ทุกหมวด
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px','clusterBkg':'#EDE4D0','clusterBorder':'#C9B996'}}}%%
+flowchart TB
+  PT["pointerdown / move / up<br/>R · คลิกขวา · G · Delete · Ctrl+Z"]
+  ST["startAction()"]
+  CM["commitRect · commitLine<br/>placeFurniture · placeOpeningAt<br/>placeWallArtAt · paintAt · eraseAt"]
+  WD["world = floors · walls<br/>openings · wallArt · objects · foundation"]
+  AM["addFloorMesh · addWallMesh<br/>addOpeningMesh · addWallArtMesh · addObjectMesh"]
+  RB["rebuildAll()"]
+  SC["scene → renderer<br/>gFloors·gWalls·gOpenings·gWallArt·gObjects"]
+  UN["undoStack<br/>JSON 30 ชั้น"]
+  LS["localStorage"]
+
+  PT --> ST --> CM
+  CM -->|"เขียนข้อมูล"| WD
+  CM -->|"สร้างทีละชิ้น"| AM
+  CM -->|"snap() ก่อนแก้เสมอ"| UN
+  CM -->|"save()"| LS
+  WD -->|"สร้างใหม่ยกชุด"| RB
+  UN -->|"undo()"| WD
+  LS -->|"load() ตอนเปิดหน้า"| WD
+  AM --> SC
+  RB --> SC
+</pre>
+      </div>
+      <figcaption>
+        <b>เส้นทางเข้าฉากมีสองเส้นเหมือนเดิม</b> — ปกติจะแก้ mesh เฉพาะจุดที่เปลี่ยน (เร็ว) ส่วน <code>rebuildAll()</code>
+        จะรื้อสร้างใหม่ทั้งหมด ใช้เฉพาะตอนย้อน ล้างบ้าน หรือสลับใต้ถุน — ตอนนี้ต้องล้าง/สร้างใหม่ครบ 4 กลุ่ม
+        (<code>gWalls</code>, <code>gOpenings</code>, <code>gWallArt</code>, <code>gObjects</code>) ไม่ใช่ 3 กลุ่มเหมือนตอน v0.5.0
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s2">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">02</span>
+      <h2>โมเดลข้อมูล</h2>
+      <p class="sub">
+        พื้นกับผนังเก็บเป็น <b>dictionary ที่ใช้พิกัดเป็นคีย์</b> ไม่ใช่อาเรย์ — เพราะบ้านส่วนใหญ่มีช่องว่างเยอะ
+        และการเช็คว่า "ตรงนี้มีของอยู่หรือยัง" ต้องเร็วมาก เพราะเรียกทุกครั้งที่เมาส์ขยับ
+        ส่วนช่องเปิดกับของแขวนผนังเป็น<b>อาเรย์ที่อ้างอิงกลับไปที่คีย์ผนัง</b> แทนที่จะฝังอยู่ในตัวผนังเอง
+      </p>
+    </div>
+    <div class="wrap" style="padding:0;margin-bottom:22px">
+<pre class="code"><span class="c">// ข้อมูลบ้านทั้งหลังหน้าตาแบบนี้ ไม่มี mesh ปนอยู่เลย</span>
+world = {
+  floors:   { <span class="s">"3,-2"</span>: { mat: <span class="s">"oak"</span> }, ... },                    <span class="c">// คีย์ = "x,z" ของช่อง</span>
+  walls:    { <span class="s">"h,3,-2"</span>: { paintOut: <span class="s">"sage"</span>, paintIn: <span class="s">"plaster"</span> }, ... },  <span class="c">// ไม่มี type แล้ว!</span>
+  openings: [ { kind: <span class="s">"door"</span>, wall: <span class="s">"h,-1,3"</span>, offset: 0, width: 0.9 } ],
+  wallArt:  [ { def: <span class="s">"frameSq"</span>, wall: <span class="s">"h,-2,-3"</span>, offset: 0, height: 1.7, side: 1 } ],
+  objects:  [ { def: <span class="s">"sofa"</span>, x: 2.5, z: 1, rotY: 0, scale: 1, lift: 0 } ],
+  foundation: <span class="k">false</span>
+}</pre>
+    </div>
+    <figure>
+      <div class="sheet">
+        <svg viewBox="0 0 660 400" role="img" aria-label="ผังกริดแสดงว่าคีย์ของพื้นคือพิกัดช่อง ส่วนคีย์ของผนังมีตัวอักษรบอกทิศนำหน้า เพราะหนึ่งช่องมีขอบให้ก่อผนังได้สองด้าน">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+            </marker>
+          </defs>
+
+          <!-- grid cells -->
+          <g stroke="currentColor" stroke-opacity=".38" fill="none" stroke-width="1.5">
+            <rect x="200" y="90" width="120" height="120"/>
+            <rect x="320" y="90" width="120" height="120"/>
+            <rect x="200" y="210" width="120" height="120"/>
+            <rect x="320" y="210" width="120" height="120"/>
+          </g>
+
+          <!-- focus cell fill -->
+          <rect x="200" y="90" width="120" height="120" fill="#18C79E" fill-opacity=".13"/>
+
+          <!-- corner coordinate dots + labels -->
+          <g fill="currentColor" font-family="IBM Plex Mono, monospace" font-size="11">
+            <circle cx="200" cy="90" r="3.5"/>
+            <text x="192" y="80" text-anchor="end">(3,-2)</text>
+            <circle cx="320" cy="90" r="3.5"/>
+            <text x="320" y="78" text-anchor="middle">(4,-2)</text>
+            <circle cx="440" cy="90" r="3.5"/>
+            <text x="448" y="80">(5,-2)</text>
+            <circle cx="200" cy="210" r="3.5"/>
+            <text x="192" y="214" text-anchor="end">(3,-1)</text>
+            <circle cx="200" cy="330" r="3.5"/>
+            <text x="192" y="334" text-anchor="end">(3,0)</text>
+          </g>
+
+          <!-- floor key -->
+          <g font-family="IBM Plex Mono, monospace" font-size="12.5" fill="#0E7F66">
+            <text x="260" y="146" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity=".6">พื้นของช่องนี้</text>
+            <text x="260" y="166" text-anchor="middle" font-weight="500">"3,-2"</text>
+            <text x="260" y="186" text-anchor="middle" font-size="10.5" fill="currentColor" fill-opacity=".55">กลางช่อง = (3.5, -1.5)</text>
+          </g>
+
+          <!-- h wall on the north edge -->
+          <line x1="200" y1="90" x2="320" y2="90" stroke="#2F4373" stroke-width="9" stroke-linecap="round"/>
+          <line x1="352" y1="52" x2="290" y2="84" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar)"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="12">
+            <text x="358" y="44" fill="#2F4373" font-weight="500">"h,3,-2"</text>
+            <text x="358" y="60" font-size="10.5" fill="currentColor" fill-opacity=".6">ขอบเหนือ · ทอดตามแกน X</text>
+          </g>
+
+          <!-- v wall on the west edge -->
+          <line x1="200" y1="90" x2="200" y2="210" stroke="#BB4629" stroke-width="9" stroke-linecap="round"/>
+          <line x1="96" y1="176" x2="186" y2="152" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar)"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="12">
+            <text x="90" y="166" text-anchor="end" fill="#BB4629" font-weight="500">"v,3,-2"</text>
+            <text x="90" y="182" text-anchor="end" font-size="10.5" fill="currentColor" fill-opacity=".6">ขอบตะวันตก · ทอดตามแกน Z</text>
+          </g>
+
+          <!-- axes -->
+          <g stroke="currentColor" stroke-opacity=".5" stroke-width="1.4">
+            <line x1="200" y1="366" x2="290" y2="366" marker-end="url(#ar)"/>
+            <line x1="496" y1="90" x2="496" y2="180" marker-end="url(#ar)"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" fill-opacity=".7">
+            <text x="298" y="370">+X</text>
+            <text x="504" y="140">+Z</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        พื้นใช้คีย์ <code>"x,z"</code> ตรง ๆ เพราะหนึ่งช่องปูพื้นได้แผ่นเดียว
+        แต่ผนัง<b>ต้องมีตัวอักษรบอกทิศนำหน้า</b> เพราะมุมกริดจุดเดียวกันเป็นจุดเริ่มของผนังได้ทั้งแนวนอนและแนวตั้ง
+        — ถ้าไม่มี <code>h</code> กับ <code>v</code> ผนังสองด้านนี้จะทับคีย์กัน (ไดอะแกรมนี้ยังเป็นจริงเป๊ะตั้งแต่ v0.1.0 ไม่มีอะไรเปลี่ยน)
+      </figcaption>
+    </figure>
+    <div class="note" style="margin-top:20px">
+      <b>วิวัฒนาการของฟิลด์ <code>walls</code></b> — v0.1.0–v0.5.x เก็บ <code>{ type: "door"|"window"|"solid", paint }</code> ไว้ในตัวผนังเอง
+      v0.6.0 ย้าย <code>type</code> ออกไปเป็น <code>world.openings</code> (ลบประตูแล้วผนังไม่หายทั้งช่วงอีกต่อไป)
+      v0.7.0 แยก <code>paint</code> เดี่ยวเป็น <code>paintOut</code>/<code>paintIn</code> สองค่า — ทั้งสองรอบมีโค้ด <b>migration ใน <code>load()</code></b>
+      แปลงไฟล์เซฟรุ่นเก่าให้อัตโนมัติ ดูรายละเอียดที่หัวข้อ 12
+    </div>
+  </div>
+</section>
+
+<section id="s3">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">03</span>
+      <h2>กฎ Snap คู่ / คี่</h2>
+      <p class="sub">
+        กฎที่ยืมมาจาก Sims ตรง ๆ และเป็นจุดที่คนมักงงเวลาอ่านโค้ด:
+        ของที่กว้าง<b>จำนวนช่องคี่</b>ล็อกที่<b>กลางช่อง</b> ส่วนของที่กว้าง<b>จำนวนช่องคู่</b>ล็อกที่<b>เส้นกริด</b>
+        ทำแบบนี้แล้วขอบของทุกชิ้นจะตกลงบนเส้นกริดพอดีเสมอ ไม่ว่าจะกว้างเท่าไหร่ —
+        แต่กฎนี้ใช้เฉพาะตอนกริดหยาบ 1 เมตร เท่านั้น รายละเอียดตอนปรับกริดให้ละเอียดกว่านั้นอยู่หัวขัดถัดไป
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+        <svg viewBox="0 0 660 300" role="img" aria-label="เปรียบเทียบการล็อกตำแหน่ง ของกว้างหนึ่งช่องล็อกกลางช่อง ของกว้างสองช่องล็อกที่เส้นกริด ทำให้ขอบตกบนเส้นกริดทั้งคู่">
+          <!-- LEFT: odd -->
+          <g stroke="currentColor" stroke-opacity=".38" fill="none" stroke-width="1.5">
+            <line x1="30" y1="90" x2="270" y2="90"/><line x1="30" y1="150" x2="270" y2="150"/>
+            <line x1="30" y1="90" x2="30" y2="150"/><line x1="90" y1="90" x2="90" y2="150"/>
+            <line x1="150" y1="90" x2="150" y2="150"/><line x1="210" y1="90" x2="210" y2="150"/>
+            <line x1="270" y1="90" x2="270" y2="150"/>
+          </g>
+          <rect x="150" y="96" width="60" height="48" fill="#18C79E" fill-opacity=".22" stroke="#0E7F66" stroke-width="2"/>
+          <circle cx="180" cy="120" r="4" fill="#0E7F66"/>
+          <line x1="180" y1="150" x2="180" y2="186" stroke="#0E7F66" stroke-width="1.4" stroke-dasharray="3 3"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+            <text x="150" y="76" text-anchor="middle" font-size="12" font-weight="500">กว้าง 1 ช่อง (คี่)</text>
+            <text x="180" y="202" text-anchor="middle" fill="#0E7F66" font-weight="500">x = floor(px) + 0.5</text>
+            <text x="180" y="220" text-anchor="middle" fill-opacity=".62" font-size="10.5">จุดกึ่งกลางตกที่ 3.5</text>
+            <text x="150" y="252" text-anchor="middle" fill-opacity=".72" font-size="11">เก้าอี้ · โคมไฟ · ตู้เย็น</text>
+          </g>
+
+          <!-- divider -->
+          <line x1="330" y1="70" x2="330" y2="258" stroke="currentColor" stroke-opacity=".22" stroke-width="1.2"/>
+
+          <!-- RIGHT: even -->
+          <g stroke="currentColor" stroke-opacity=".38" fill="none" stroke-width="1.5">
+            <line x1="390" y1="90" x2="630" y2="90"/><line x1="390" y1="150" x2="630" y2="150"/>
+            <line x1="390" y1="90" x2="390" y2="150"/><line x1="450" y1="90" x2="450" y2="150"/>
+            <line x1="510" y1="90" x2="510" y2="150"/><line x1="570" y1="90" x2="570" y2="150"/>
+            <line x1="630" y1="90" x2="630" y2="150"/>
+          </g>
+          <rect x="450" y="96" width="120" height="48" fill="#2F4373" fill-opacity=".18" stroke="#2F4373" stroke-width="2"/>
+          <circle cx="510" cy="120" r="4" fill="#2F4373"/>
+          <line x1="510" y1="150" x2="510" y2="186" stroke="#2F4373" stroke-width="1.4" stroke-dasharray="3 3"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+            <text x="510" y="76" text-anchor="middle" font-size="12" font-weight="500">กว้าง 2 ช่อง (คู่)</text>
+            <text x="510" y="202" text-anchor="middle" fill="#2F4373" font-weight="500">x = round(px)</text>
+            <text x="510" y="220" text-anchor="middle" fill-opacity=".62" font-size="10.5">จุดกึ่งกลางตกที่ 4 พอดี</text>
+            <text x="510" y="252" text-anchor="middle" fill-opacity=".72" font-size="11">โซฟา · เตียง · โต๊ะกินข้าว</text>
+          </g>
+
+          <!-- shared conclusion -->
+          <text x="330" y="284" text-anchor="middle" font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor" fill-opacity=".78">ทั้งสองแบบ ขอบของชิ้นงานตกลงบนเส้นกริดพอดีเสมอ</text>
+        </svg>
+      </div>
+      <figcaption>
+        <b>การหมุนสลับด้านกว้างกับด้านลึกก่อนคำนวณ</b> — ในโค้ดคือ <code>q = round(rot / 90°) &amp; 3</code>
+        แล้วถ้า <code>q</code> เป็นเลขคี่ (หมุน 90°/45° หรือ 270°/225°) ก็สลับ <code>fp[0]</code> กับ <code>fp[1]</code>
+        ก่อนตัดสินว่าจะล็อกแบบคู่หรือคี่ — ค่าคงที่ยัง <code>Math.PI/2</code> เดิม ไม่เปลี่ยนตามสเต็ปหมุนที่ซอยละเอียดขึ้น (ดูหัวข้อ 5)
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s4">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">04</span>
+      <h2>กริดที่ปรับความละเอียดได้</h2>
+      <p class="sub">
+        v0.9.0 เพิ่มตัวเลือกความละเอียดกริด <b>1 / 0.5 / 0.25 เมตร</b> — ใช้ร่วมกันทั้งเฟอร์นิเจอร์พื้นและของแขวนผนัง (v0.11.0)
+        ตั้งใจแยกวิธีคิดของค่า 1 กับค่าที่ละเอียดกว่าให้ชัด เพราะกฎ Sims (หัวข้อ 3) ใช้ได้แค่ตอน 1 เมตรเท่านั้น
+      </p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>furnGrid</th><th>วิธีคำนวณ</th><th>ใช้ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td>1 (ค่าคงที่)</td><td>กฎคู่/คี่แบบ Sims — ดูจากขนาดของ</td><td>ค่าที่ตรงกับความรู้สึก "ต่อบล็อกกริด" ที่สุด</td></tr>
+          <tr><td>0.5 / 0.25</td><td><code>round(px / g) * g</code> ปัดตรง ๆ ไม่สนขนาดของ</td><td>จัดวางละเอียด ไม่ต้องพึ่งขนาดของชิ้น</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin:16px 0;color:var(--ink-2);font-size:.94rem">
+      <b style="color:var(--ink)">ค่าเริ่มต้นตั้งแต่ v0.11.2 คือ 0.25 เมตร</b> (เดิม v0.9.0 เริ่มที่ 1) — เปลี่ยนได้ที่แผงเครื่องมือเฟอร์นิเจอร์ตลอดเวลา
+      สลับไปมาไม่กระทบของที่วางไปแล้ว มีผลแค่กับการวาง/ลากครั้งถัดไป
+    </p>
+    <div class="note">
+      <b>เส้นกริดย่อยในฉาก</b> — เลือก 0.5 หรือ 0.25 จะเห็นเส้นตารางบางจริง ๆ ทับพื้น (ปั้นเองด้วยมือ ไม่ใช้ <code>GridHelper</code> ตรง ๆ
+      เพราะฟังก์ชันเส้นปะมาตรฐานของ three.js คำนวณระยะสะสมข้ามเส้น ทำให้จังหวะเส้นประของแต่ละเส้นเหลื่อมกัน ต้องปั้น
+      <code>lineDistance</code> เองให้รีเซ็ตทุกเส้น) เส้น 0.5 ม. เป็นเส้นทึบเข้ม (0.45) ส่วน 0.25 ม. เป็นเส้นปะจาง (0.28) —
+      อ่านเป็นลำดับชั้นกริดหลัก/กริดย่อยชัดเจน โผล่เฉพาะตอนกำลังวาง/ลากของ ไม่รบกวนตอนทำอย่างอื่น
+    </div>
+  </div>
+</section>
+
+<section id="s5">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">05</span>
+      <h2>เส้นทางการวางเฟอร์นิเจอร์</h2>
+      <p class="sub">ตั้งแต่นิ้วแตะจนของไปโผล่ในฉากและถูกเซฟ — ตอนนี้หมุนได้ 3 ทาง ไม่ใช่แค่ปุ่ม R</p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart TB
+  A["pointerdown · เครื่องมือ เฟอร์นิเจอร์"] --> B["groundPoint(e)<br/>ยิงเรย์ลงระนาบ y = floorY()"]
+  B --> C{"Snap เปิดอยู่ไหม"}
+  C -->|"เปิด + furnGrid=1"| D["snapFurn()<br/>กฎคู่/คี่ · หมุนทีละ 45°"]
+  C -->|"เปิด + furnGrid=0.5/0.25"| D2["round(px/g)*g<br/>หมุนทีละ 45°"]
+  C -->|"ปิด"| E["ใช้พิกัดดิบที่เรย์ตก<br/>หมุนทีละ 7.5°"]
+  D --> F["snap() เก็บสถานะไว้ย้อน"]
+  D2 --> F
+  E --> F
+  F --> G["push เข้า world.objects"]
+  G --> H["addObjectMesh()<br/>ถ้าเป็นโคมไฟจะแนบ PointLight ไปด้วย"]
+  H --> I["updateStats() + save()"]
+</pre>
+      </div>
+      <figcaption>
+        <b>สามทางที่ทำให้ของหมุนได้</b> — ปุ่ม <code>R</code>, คลิกขวาที่เงาก่อนวาง (v0.11.1), คลิกขวาที่ของที่วางไปแล้วตอนอยู่เครื่องมือ "เลือก" (v0.8.0)
+        ทั้งสามทางใช้ค่าสเต็ปเดียวกัน <code>ROT_STEP_SNAP</code>/<code>ROT_STEP_FREE</code> — แก้ตัวเลขที่เดียว มีผลทุกทาง ·
+        จุดที่ต้องระวังเวลาแก้โค้ด: <code>groundPoint()</code> ตั้ง <code>pickPlane.constant = -floorY()</code> ใหม่ทุกครั้ง
+        ถ้าลืมบรรทัดนี้ ของจะไปวางที่ระดับพื้นดินแทนที่จะเป็นระดับพื้นบ้าน
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s6">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">06</span>
+      <h2>ประตู/หน้าต่าง: แยกจากผนัง</h2>
+      <p class="sub">
+        v0.6.0 รื้อออกจากของเดิมที่ผนังหนึ่งช่วง = ชนิดเดียว (<code>type: "door"</code>) มาเป็น <b>"งานปูน" กับ "งานไม้" คนละชั้น</b> —
+        ผนังมีหน้าที่แค่เว้นรูให้ถูกขนาด ส่วนวงกบ/บาน/กระจกเป็นของแยกที่แขวนอยู่บนรูนั้น
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px','clusterBkg':'#EDE4D0','clusterBorder':'#C9B996'}}}%%
+flowchart TB
+  A["คลิกผนังทึบด้วยเครื่องมือ ช่องเปิด"] --> B{"ผนังช่วงนี้<br/>มีช่องเปิดอยู่แล้วไหม"}
+  B -->|"มีแล้ว"| X["ไม่ทำอะไร — hover แดงบอกไว้ก่อนคลิกแล้ว"]
+  B -->|"ว่าง"| C["push เข้า world.openings<br/>{kind, wall, offset:0, width}"]
+  C --> D["refreshWall(key)"]
+  D --> E["buildWallPanels(): เว้นรูตามช่องเปิด"]
+  D --> F["addOpeningMesh(): สร้างวงกบ/บาน/กระจก"]
+</pre>
+      </div>
+      <figcaption>
+        <b>ทำไมแยกเป็นสองกลุ่ม (<code>gWalls</code> / <code>gOpenings</code>)</b> — ลบประตูแค่ลบออกจาก <code>world.openings</code> แล้ว
+        <code>refreshWall()</code> จะสร้างผนังทึบใหม่เอง <b>ไม่ต้องลบทั้งช่วงผนัง</b> เหมือนตอนที่ประตูยังเป็น <code>type</code> ฝังอยู่
+        · ลบผนังทั้งช่วง (เครื่องมือ "ลบ") จะ cascade ลบช่องเปิดกับของแขวนผนังที่ผูกอยู่กับช่วงนั้นด้วย เพื่อไม่ให้เหลือของลอยไม่มีผนังรองรับ
+      </figcaption>
+    </figure>
+
+    <div class="two" style="margin-top:24px">
+      <div>
+        <h3 style="margin-bottom:10px">ประตู — เว้นรูจากพื้นถึง 2.05 ม.</h3>
+        <p style="color:var(--ink-2);font-size:.92rem;line-height:1.66">
+          แผงซ้าย/ขวาข้างช่องสูงแค่ระดับหัวประตู เหนือกว่านั้นเป็น<b>คานทับหลังเต็มความกว้าง</b> —
+          บัวล่างมีแค่สองข้างของช่อง (ข้ามช่วงที่เป็นทางเดินไป) แต่บัวบนวิ่งเต็มความกว้างเสมอ
+        </p>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">หน้าต่าง — เว้นรูแค่ช่วงกลาง</h3>
+        <p style="color:var(--ink-2);font-size:.92rem;line-height:1.66">
+          พื้นใต้ขอบล่าง (sill) กับด้านบนเป็น<b>แผงเต็มความกว้าง</b>ทั้งคู่ เพราะช่องหน้าต่างไม่ถึงพื้น —
+          บัวล่างจึงวิ่งต่อเนื่องไม่ขาดเลย ต่างจากประตูที่บัวขาดเป็นช่วง (นี่คือของแถมที่ได้มาฟรีตอนแยกสถาปัตยกรรมใหม่)
+        </p>
+      </div>
+    </div>
+
+    <figure style="margin-top:26px">
+      <div class="sheet">
+        <svg viewBox="0 0 680 260" role="img" aria-label="แผนภาพแสดงว่าวงกบซ้ายบวกบานประตูบวกวงกบขวาต้องรวมกันได้เท่ากับความกว้างช่องเปิดพอดี ไม่ว่าจะปรับความกว้างเท่าไหร่">
+          <!-- opening span -->
+          <line x1="60" y1="140" x2="500" y2="140" stroke="currentColor" stroke-opacity=".3" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <!-- lining left -->
+          <rect x="60" y="70" width="42" height="130" fill="#8A5F2A" fill-opacity=".55" stroke="#8A5F2A" stroke-width="1.6"/>
+          <!-- door leaf -->
+          <rect x="102" y="70" width="356" height="130" fill="#B4704E" fill-opacity=".45" stroke="#B4704E" stroke-width="1.6"/>
+          <!-- lining right -->
+          <rect x="458" y="70" width="42" height="130" fill="#8A5F2A" fill-opacity=".55" stroke="#8A5F2A" stroke-width="1.6"/>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor">
+            <text x="81" y="45" text-anchor="middle">t</text>
+            <text x="280" y="45" text-anchor="middle" font-weight="500">width − 2t</text>
+            <text x="479" y="45" text-anchor="middle">t</text>
+          </g>
+          <line x1="60" y1="55" x2="102" y2="55" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="102" y1="55" x2="458" y2="55" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="458" y1="55" x2="500" y2="55" stroke="currentColor" stroke-width="1.2"/>
+
+          <text x="280" y="230" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" fill="#0E7F66" font-weight="500">
+            t + (width − 2t) + t = width — เท่ากันเสมอ ไม่ว่า width จะเท่าไหร่
+          </text>
+          <text x="590" y="130" font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor" fill-opacity=".78" text-anchor="middle">t = ความหนา<tspan x="590" dy="16">วงกบ (0.04 ม.)</tspan></text>
+        </svg>
+      </div>
+      <figcaption>
+        <b>บั๊กที่เจอใน v0.6.0 และแก้ใน v0.6.1</b> — รอบแรกวงกบวางไว้ <em>นอก</em> ช่องเปิดแทนที่จะซ้อนทับรอยต่อ เหลือรูโล่งข้างละ 6 ซม.
+        แก้โดยให้ทุกชิ้นวางด้วย "ช่วง" แทนจุดกึ่งกลาง แล้วพิสูจน์ด้วยสคริปต์ Python ว่าที่ความกว้าง 0.4/0.55/0.9/0.98 เมตร
+        (ช่วงที่ปรับได้จริงในเกม) ช่วงทั้งหมดต่อกันสนิทไม่มีรูและไม่ทับกันเลยสักเคส — ใช้สูตรเดียวกันกับกระจกหน้าต่างด้วย
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s7">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">07</span>
+      <h2>เส้นทางการวาดผนัง</h2>
+      <p class="sub">
+        ผนังไม่ได้วางทีละก้อนแบบเฟอร์นิเจอร์ แต่<b>ลากเป็นเส้น</b>แล้วระบบตัดเป็นช่วงให้เอง
+        และบังคับให้เป็นแนวตรงเสมอ เพราะบ้านที่ผนังเฉียงจะทำให้ระบบพื้น/หลังคาในอนาคตพังหมด
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart TB
+  A["pointerdown"] --> B["cornerOf(p) = round(x), round(z)<br/>ปัดเข้ามุมกริดใกล้สุด"]
+  B --> C["เก็บเป็นจุดตั้งต้น act.a"]
+  C --> D["ลากนิ้ว → showLinePreview()<br/>โชว์เงาผนังตามเส้น"]
+  D --> E["wallRun(a, b)"]
+  E --> F{"dx ≥ dz ?"}
+  F -->|"ใช่"| G["ล็อกเป็นแนวนอน<br/>ออกช่วง h,x,z ทีละหนึ่ง"]
+  F -->|"ไม่"| H["ล็อกเป็นแนวตั้ง<br/>ออกช่วง v,x,z ทีละหนึ่ง"]
+  G --> I["กรองช่วงที่หลุดขอบกริดทิ้ง"]
+  H --> I
+  I --> J["pointerup → commitLine()"]
+  J --> K["เขียน world.walls (paintOut/paintIn)<br/>rebuildWalls() คำนวณมุมใหม่ทั้งบ้าน"]
+</pre>
+      </div>
+      <figcaption>
+        <b>เปลี่ยนไปจาก v0.5.0</b> — เดิม <code>commitLine()</code> เขียน <code>{type: wallTypeId, paint}</code>
+        (มีตัวเลือก "ชนิดผนัง" ในเครื่องมือผนังเอง) ตอนนี้เครื่องมือผนัง<b>ก่อได้แค่ทึบ</b> เจาะช่องเปิดทีหลังด้วยเครื่องมือแยก (หัวข้อ 6) —
+        และหลังวาดเสร็จจะเรียก <code>rebuildWalls()</code> แทน <code>addWallMesh()</code> ทีละช่วง เพราะการเพิ่มผนังอาจทำให้
+        เพื่อนบ้านต้องอ้อมมุมใหม่ (หัวข้อ 9) ซึ่งกระทบมากกว่าแค่ช่วงที่เพิ่งวาด
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s8">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">08</span>
+      <h2>ทาสีแยกสองด้าน</h2>
+      <p class="sub">
+        v0.7.0 แยก <code>paint</code> เดี่ยวเป็น <code>paintOut</code>/<code>paintIn</code> — แต่ตั้งใจ<b>ไม่ใช้คำว่า "ใน/นอก"</b>
+        ในตัวเกม เพราะระบบยังไม่รู้จักแนวคิด "ห้อง" เลยไม่มีทางรู้จริงว่าฝั่งไหนคือข้างในบ้าน (ดูหัวข้อ 15)
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart LR
+  A["คลิกผนัง"] --> B["raycast gWalls.children"]
+  B --> C{"paintBothSides<br/>เปิดอยู่ไหม"}
+  C -->|"เปิด (ค่าเริ่มต้น)"| D["ทา paintOut และ paintIn<br/>เป็นสีเดียวกันทั้งคู่"]
+  C -->|"ปิด"| E["hit.face.normal.z"]
+  E -->|"≥ 0"| F["ทาแค่ paintOut"]
+  E -->|"< 0"| G["ทาแค่ paintIn"]
+</pre>
+      </div>
+      <figcaption>
+        <b>หลักการ: คลิก = ทาหน้าที่มองเห็นอยู่</b> — raycast ชนได้แค่หน้าที่หันเข้าหากล้องเท่านั้น (หน้าตรงข้ามถูกบังเสมอ)
+        เลยไม่มีทางกดผิดฝั่งโดยไม่ตั้งใจ ไม่ต้องมีป้ายบอกทิศ ไม่ต้องเดา — เป็นเทคนิคเดียวกับที่ใช้ตัดสิน "ฝั่งไหน" ของ
+        ของแขวนผนังในหัวข้อ 10 ด้วย
+      </figcaption>
+    </figure>
+
+    <figure style="margin-top:26px">
+      <div class="sheet">
+        <svg viewBox="0 0 660 300" role="img" aria-label="แผนภาพแสดงว่ากล่องผนังใช้ material หกตัว โดยลายวอลเปเปอร์อยู่แค่สองหน้ากว้างและตอนนี้แยกกันคนละสีต่อหน้า ส่วนสี่หน้าบางได้สีหน้าตัดเรียบ">
+          <!-- the box drawn in simple axonometric -->
+          <g stroke="currentColor" stroke-width="1.8" fill="none">
+            <!-- front face -->
+            <rect x="90" y="80" width="150" height="170" fill="#B4704E" fill-opacity=".55"/>
+            <!-- top face -->
+            <polygon points="90,80 240,80 288,46 138,46" fill="#E6DCC6" fill-opacity=".9"/>
+            <!-- right face -->
+            <polygon points="240,80 288,46 288,216 240,250" fill="#7B8FA8" fill-opacity=".45"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+            <text x="165" y="172" text-anchor="middle" font-weight="500" fill="#7A4326">+Z</text>
+            <text x="165" y="190" text-anchor="middle" font-size="10" fill="#7A4326">paintOut</text>
+            <text x="196" y="66" text-anchor="middle" font-weight="500">+Y</text>
+            <text x="272" y="150" text-anchor="middle" font-weight="500">+X</text>
+            <text x="272" y="167" text-anchor="middle" font-size="10" fill="#3A4F70">−Z ก็คือ<tspan x="272" dy="13">paintIn (มองไม่เห็นจากมุมนี้)</tspan></text>
+          </g>
+
+          <!-- material array strip -->
+          <g font-family="IBM Plex Mono, monospace" font-size="11">
+            <text x="380" y="72" fill="currentColor" fill-opacity=".7">material array ของ BoxGeometry</text>
+            <g stroke="currentColor" stroke-width="1.5">
+              <rect x="380" y="88" width="42" height="42" fill="#E6DCC6"/>
+              <rect x="422" y="88" width="42" height="42" fill="#E6DCC6"/>
+              <rect x="464" y="88" width="42" height="42" fill="#E6DCC6"/>
+              <rect x="506" y="88" width="42" height="42" fill="#E6DCC6"/>
+              <rect x="548" y="88" width="42" height="42" fill="#B4704E" fill-opacity=".55"/>
+              <rect x="590" y="88" width="42" height="42" fill="#7B8FA8" fill-opacity=".45"/>
+            </g>
+            <g fill="currentColor" font-size="10.5" text-anchor="middle">
+              <text x="401" y="146">+X</text><text x="443" y="146">−X</text>
+              <text x="485" y="146">+Y</text><text x="527" y="146">−Y</text>
+              <text x="569" y="146">+Z</text><text x="611" y="146">−Z</text>
+            </g>
+            <g fill="currentColor" font-size="13" text-anchor="middle" font-weight="500">
+              <text x="401" y="115">e</text><text x="443" y="115">e</text>
+              <text x="485" y="115">e</text><text x="527" y="115">e</text>
+              <text x="569" y="115" fill="#7A4326">fOut</text><text x="611" y="115" fill="#3A4F70">fIn</text>
+            </g>
+          </g>
+
+          <!-- legend -->
+          <g font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor">
+            <rect x="380" y="182" width="18" height="18" fill="#B4704E" fill-opacity=".55" stroke="currentColor" stroke-width="1.4"/>
+            <text x="406" y="196"><tspan font-family="IBM Plex Mono, monospace" font-size="11">fOut/fIn</tspan> = faceMat(paintOut/paintIn) — คนละสีได้แล้ว</text>
+            <rect x="380" y="212" width="18" height="18" fill="#E6DCC6" stroke="currentColor" stroke-width="1.4"/>
+            <text x="406" y="226"><tspan font-family="IBM Plex Mono, monospace" font-size="11">e</tspan> = edgeOf(paintOut) — หน้าตัดยึดตามสีนอก ไม่มีคู่ของตัวเอง</text>
+          </g>
+          <text x="90" y="284" font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor" fill-opacity=".78">ต่างจาก v0.4.0 แค่บรรทัดเดียว: −Z ไม่ใช้ fOut ซ้ำอีกต่อไป แต่คำนวณ fIn แยก</text>
+        </svg>
+      </div>
+      <figcaption>
+        <b>ทำไมหน้าตัด (edge) ไม่แยกสีตามด้วย</b> — ในความเป็นจริงหน้าตัด/เนื้อไม้อัดข้างในผนังเป็นวัสดุเดียวกันไม่ว่าจะทาสีฝั่งไหน
+        ต่างจากบัว/คิ้วที่เป็นไม้จริงและมีรอบเดียว จึงให้ <code>edgeOf()</code> อ้างอิงแค่ <code>paintOut</code> เพื่อไม่ต้องเพิ่มพารามิเตอร์ที่ไม่มีความหมายทางกายภาพ
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s9">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">09</span>
+      <h2>กายวิภาคผนัง และมุมที่เนียน</h2>
+      <p class="sub">
+        สองปัญหาที่เจอคนละช่วงเวลากัน แต่เป็นบทเรียนเรื่องเดียวกัน: <b>อย่าให้พื้นผิวสองชิ้นอยู่ระนาบเดียวกันโดยไม่ตั้งใจ</b>
+        — ไม่ว่าจะเป็นซ้อนทับกัน (z-fighting) หรือขาดจากกัน (รอยบาก)
+      </p>
+    </div>
+
+    <figure>
+      <div class="sheet">
+        <svg viewBox="0 0 700 400" role="img" aria-label="ภาพตัดผนัง เปรียบเทียบก่อนและหลังแก้ ก่อนแก้บัวฝังอยู่ในตัวผนังทำให้หน้าบนอยู่ระนาบเดียวกันเกิด z-fighting หลังแก้เป็นสามท่อนต่อกันไม่ทับกัน">
+          <defs>
+            <pattern id="zf" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke="#BB4629" stroke-width="3"/>
+            </pattern>
+          </defs>
+
+          <!-- ===== BEFORE ===== -->
+          <text x="160" y="42" text-anchor="middle" font-family="Mitr, sans-serif" font-size="15" fill="#BB4629">ก่อน v0.4.0 — กล่องซ้อนกัน</text>
+
+          <!-- wall body full height -->
+          <rect x="100" y="70" width="120" height="250" fill="currentColor" fill-opacity=".1" stroke="currentColor" stroke-width="1.8"/>
+          <text x="160" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" fill-opacity=".72">ตัวผนัง 0 → 2.7</text>
+
+          <!-- crown embedded inside the top -->
+          <rect x="92" y="70" width="136" height="26" fill="#BB4629" fill-opacity=".18" stroke="#BB4629" stroke-width="1.8"/>
+          <!-- base embedded at the bottom -->
+          <rect x="92" y="288" width="136" height="32" fill="#BB4629" fill-opacity=".18" stroke="#BB4629" stroke-width="1.8"/>
+
+          <!-- coplanar top marker -->
+          <rect x="92" y="66" width="136" height="8" fill="url(#zf)" opacity=".85"/>
+          <line x1="240" y1="70" x2="292" y2="70" stroke="#BB4629" stroke-width="1.4"/>
+          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="#BB4629">
+            <text x="298" y="62">หน้าบนของทั้งสองกล่อง</text>
+            <text x="298" y="77">อยู่ที่ y = 2.7 เท่ากันเป๊ะ</text>
+            <text x="298" y="92" font-weight="500">→ z-fighting</text>
+          </g>
+          <line x1="240" y1="304" x2="292" y2="304" stroke="#BB4629" stroke-width="1.4"/>
+          <text x="298" y="308" font-family="IBM Plex Mono, monospace" font-size="11" fill="#BB4629">ก้นกล่องก็ชนกันแบบเดียวกัน</text>
+
+          <!-- ===== AFTER ===== -->
+          <line x1="350" y1="30" x2="350" y2="370" stroke="currentColor" stroke-opacity=".2" stroke-width="1.2"/>
+          <text x="530" y="42" text-anchor="middle" font-family="Mitr, sans-serif" font-size="15" fill="#0E7F66">หลัง v0.4.0 — สามท่อนต่อกัน</text>
+
+          <!-- crown -->
+          <rect x="462" y="70" width="136" height="26" fill="#0E7F66" fill-opacity=".2" stroke="#0E7F66" stroke-width="1.8"/>
+          <!-- body -->
+          <rect x="470" y="100" width="120" height="184" fill="currentColor" fill-opacity=".1" stroke="currentColor" stroke-width="1.8"/>
+          <!-- base -->
+          <rect x="462" y="288" width="136" height="32" fill="#0E7F66" fill-opacity=".2" stroke="#0E7F66" stroke-width="1.8"/>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" fill-opacity=".8">
+            <text x="612" y="86">บัวบน 2.63 → 2.7</text>
+            <text x="612" y="196">ตัวผนัง 0.14 → 2.63</text>
+            <text x="612" y="308">บัวล่าง 0 → 0.14</text>
+          </g>
+
+          <!-- gap markers -->
+          <line x1="440" y1="96" x2="606" y2="96" stroke="#0E7F66" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <line x1="440" y1="288" x2="606" y2="288" stroke="#0E7F66" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="434" y="100" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#0E7F66">ต่อกันพอดี</text>
+          <text x="434" y="292" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#0E7F66">ไม่ทับกัน</text>
+
+          <text x="530" y="352" text-anchor="middle" font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor" fill-opacity=".78">บัวยังหดกว้างเหลือ 0.995 เพื่อไม่ให้หน้าปลายชนกับตัวผนัง</text>
+          <text x="160" y="352" text-anchor="middle" font-family="IBM Plex Sans Thai, sans-serif" font-size="12" fill="currentColor" fill-opacity=".78">บัวกว้าง 1.0 เท่าตัวผนัง หน้าปลายจึงทับกันด้วย</text>
+        </svg>
+      </div>
+      <figcaption>
+        ภาพตัดข้าง <b>ไม่ได้วาดตามสัดส่วนจริง</b> — บัวถูกขยายให้เห็นชัด ของจริงบัวล่างสูงแค่ 14 ซม. จากผนัง 2.7 ม.
+        · บทเรียน: <b>อย่าให้ของทึบสองชิ้นมีหน้าอยู่ระนาบเดียวกัน</b> ถ้าเลี่ยงไม่ได้จริง ๆ ค่อยคิดถึง <code>polygonOffset</code>
+      </figcaption>
+    </figure>
+
+    <div class="fixed">
+      <b>อัปเดต v0.6.0:</b> ปัญหา "บัวขาดตรงประตู/หน้าต่าง" ที่เคยเขียนไว้ในหัวข้อนี้ตอน v0.5.0 แก้ไปแล้ว —
+      ดูสาเหตุและวิธีคิดที่หัวข้อ 6 (การแยกผนัง/ช่องเปิดทำให้โค้ดทำบัวเหลือสาขาเดียว)
+    </div>
+
+    <figure style="margin-top:26px">
+      <div class="sheet">
+        <svg viewBox="0 0 700 320" role="img" aria-label="แผนภาพมุมผนัง เปรียบเทียบก่อนและหลัง v0.7.1 ก่อนแก้ผนังสองแผ่นต่อก้นกันเหลือรอยบาก 8 เซนติเมตรตรงมุม หลังแก้แผ่นที่จบตรงมุมจะยืดอ้อมไปอีกฝั่ง 7.8 มิลลิเมตร ฝังหน้าตัดไว้ข้างใน">
+          <text x="165" y="34" text-anchor="middle" font-family="Mitr, sans-serif" font-size="15" fill="#BB4629">ก่อน v0.7.1 — ต่อก้นกัน</text>
+          <!-- h wall -->
+          <rect x="40" y="140" width="180" height="34" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.6"/>
+          <!-- v wall -->
+          <rect x="186" y="40" width="34" height="140" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.6"/>
+          <!-- notch -->
+          <rect x="186" y="140" width="34" height="34" fill="url(#zf)" stroke="#BB4629" stroke-width="1.6"/>
+          <text x="203" y="270" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#BB4629">รอยบาก 8 ซม.<tspan x="203" dy="14">โชว์สีหน้าตัด</tspan></text>
+
+          <line x1="350" y1="20" x2="350" y2="300" stroke="currentColor" stroke-opacity=".2" stroke-width="1.2"/>
+
+          <text x="515" y="34" text-anchor="middle" font-family="Mitr, sans-serif" font-size="15" fill="#0E7F66">หลัง v0.7.1 — อ้อมมุม</text>
+          <!-- h wall extended -->
+          <rect x="390" y="140" width="198" height="34" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.6"/>
+          <!-- v wall extended -->
+          <rect x="536" y="40" width="34" height="158" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="588" y1="140" x2="588" y2="174" stroke="#0E7F66" stroke-width="2" stroke-dasharray="3 2"/>
+          <line x1="536" y1="174" x2="570" y2="174" stroke="#0E7F66" stroke-width="2" stroke-dasharray="3 2"/>
+          <text x="640" y="150" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#0E7F66">ยืดออก<tspan x="640" dy="13">7.8 มม.</tspan><tspan x="640" dy="13">(เว้น 2 มม.</tspan><tspan x="640" dy="13">กันชนกัน)</tspan></text>
+        </svg>
+      </div>
+      <figcaption>
+        <b>กฎว่าเมื่อไหร่ถึงจะยืด</b> — ยืดเฉพาะปลายที่ "แนวเส้นจบตรงนี้ <em>และ</em> มีผนังตั้งฉากต่อไป" เท่านั้น
+        (ฟังก์ชัน <code>cornerNeedsExt()</code>) ถ้าเป็นรอยต่อกลางแนวตรงยาว ๆ <b>ห้ามยืด</b> ไม่งั้นจะไปทับเพื่อนบ้านแล้วเกิด z-fighting แบบเดิม —
+        พิสูจน์ด้วยสคริปต์ 6 ผังทดสอบ (แนวตรง, ผนังเดี่ยว, มุม L, สามแยก T, สี่แยก, ห้องปิด 2×2) ผ่านครบทุกเคส
+        รวมถึงเช็คว่าหน้าตัดถูก<b>ฝังลึก 2 มม. ไม่ทับระนาบเดียวกันเลย</b> — เหลือรอยบากจริงแค่ ~1-2 มม. ที่ระยะมองปกติไม่ถึง 1 พิกเซล
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s10">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">10</span>
+      <h2>ของแขวนผนัง</h2>
+      <p class="sub">
+        v0.10.0 เพิ่มหมวดที่สาม (<code>world.wallArt</code>) ที่ไม่มีพิกัด X/Z ของตัวเองเลย — ตำแหน่งทุกอย่างอ้างอิงกับ
+        <b>ผนังที่แขวนอยู่ + ตำแหน่งในผนัง + ความสูง + ฝั่งที่คลิก</b> ต้องแปลงพิกัดโลกไป-กลับพิกัดท้องถิ่นของผนังตลอดเวลา
+      </p>
+    </div>
+    <pre class="code"><span class="c">// แปลงพิกัดโลก → ท้องถิ่นของผนัง (ตอนคลิกวาง)</span>
+<span class="k">function</span> worldToLocalOffset(rotY, dx, dz) {
+  <span class="k">return</span> rotY === 0 ? { lx: dx, lz: dz } : { lx: -dz, lz: dx };
+}
+<span class="c">// แปลงกลับ ท้องถิ่น → โลก (ตอนวาง mesh) พร้อมพลิกหน้าถ้าแขวนฝั่งตรงข้าม</span>
+<span class="k">function</span> wallArtTransform(key, offset, height, side) {
+  <span class="k">var</span> t = wallTransform(key);
+  <span class="k">var</span> lx = offset, lz = side * WALLART_DEPTH;
+  <span class="k">var</span> d = t.rotY === 0 ? { dx: lx, dz: lz } : { dx: lz, dz: -lx };
+  <span class="k">return</span> {
+    x: t.x + d.dx, y: floorY() + height, z: t.z + d.dz,
+    rotY: t.rotY + (side < 0 ? Math.PI : 0)   <span class="c">// ฝั่งตรงข้าม = หมุนกลับหน้า</span>
+  };
+}</pre>
+    <figure style="margin-top:22px">
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart TB
+  A["คลิก/ลากบนผนัง"] --> B["wallArtHitInfo(e)<br/>raycast gWalls.children"]
+  B --> C["side = hit.face.normal.z ≥ 0 ? +1 : -1"]
+  C --> D["worldToLocalOffset() หาตำแหน่งในผนัง"]
+  D --> E{"Snap เปิดอยู่ไหม"}
+  E -->|"เปิด"| F["ปัดเข้า furnGrid<br/>เหมือนเฟอร์นิเจอร์พื้นเป๊ะ"]
+  E -->|"ปิด"| G["ใช้ค่าดิบ"]
+  F --> H["wallArtTransform() → ตำแหน่ง+หมุนจริง"]
+  G --> H
+  H --> I["ใช้ร่วมกัน 3 จุด: วางใหม่ · เงา ghost · ลากของเดิม"]
+</pre>
+      </div>
+      <figcaption>
+        <b>หนึ่งฟังก์ชัน สามผู้ใช้</b> — <code>wallArtHitInfo()</code> ตัวเดียวถูกเรียกจากทั้ง <code>placeWallArtAt()</code> (วางใหม่),
+        <code>showWallArtPreview()</code> (เงาก่อนวาง), และการลากของที่วางไปแล้ว (<code>act.kind === 'moveArt'</code>) —
+        วิธีคิดตำแหน่งจึงเหมือนกันเป๊ะทุกที่ ไม่มีทางที่จุดหนึ่งคำนวณแบบหนึ่งอีกจุดคำนวณอีกแบบแล้วผลลัพธ์เพี้ยนกัน
+        (บทเรียนเดียวกับ <code>plainState()</code> ในหัวข้อ 12)
+      </figcaption>
+    </figure>
+    <div class="note" style="margin-top:20px">
+      <b>ทำไม side ต้องพลิกหน้า 180°</b> — ของแขวนทุกชิ้นปั้นให้หน้าตรงกับแกน local +Z เสมอ ถ้าแขวนฝั่ง local −Z (side = -1)
+      แล้วไม่พลิก ผู้ชมที่ยืนอยู่ฝั่งนั้นจะเห็น<b>ด้านหลัง</b>ของกรอบรูปแทน จึงต้องบวก <code>Math.PI</code> เข้าไปที่ <code>rotY</code>
+      เพื่อให้หน้าเสมอหันออกหาคนดูฝั่งที่คลิกไว้เสมอ — ยืนยันด้วยสคริปต์ 12 เคส (2 แนวผนัง × 3 ตำแหน่ง × 2 ฝั่ง) ผ่านครบทุกเคส
+    </div>
+  </div>
+</section>
+
+<section id="s11">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">11</span>
+      <h2>วงจรชีวิตของ mesh</h2>
+      <p class="sub">ข้อมูลหนึ่งชิ้นกลายเป็นของในฉากได้ยังไง และเมื่อไหร่ที่ต้องรื้อสร้างใหม่ทั้งหมด</p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px','clusterBkg':'#EDE4D0','clusterBorder':'#C9B996'}}}%%
+flowchart TB
+  subgraph inc["เส้นทางปกติ — แก้เฉพาะจุด"]
+    A1["แก้ข้อมูล 1 คีย์"] --> A2["addFloorMesh / addWallMesh<br/>addOpeningMesh / addWallArtMesh / addObjectMesh"]
+    A2 --> A3["เก็บ ref ของ mesh ไว้ในตัวข้อมูล<br/>เพื่อลบทีหลังได้"]
+  end
+  subgraph full["เส้นทางรื้อใหม่ — ทุกอย่างขยับพร้อมกัน"]
+    B1["undo · ล้างทั้งหมด · สลับใต้ถุน"] --> B2["rebuildAll()"]
+    B2 --> B3["ล้าง gFloors·gWalls·gOpenings·gWallArt·gObjects"]
+    B3 --> B4["ไล่สร้างจาก world ใหม่หมด"]
+    B4 --> B5["select(null) ทิ้ง selection เก่า"]
+  end
+  subgraph mid["เส้นทางกลาง — โครงสร้างผนังเปลี่ยนเฉพาะจุด"]
+    C1["วาด/ลบผนัง"] --> C2["rebuildWalls()"]
+    C2 --> C3["ล้าง+สร้างใหม่แค่ gWalls<br/>(มุมข้างเคียงอาจต้องอ้อมใหม่)"]
+  end
+</pre>
+      </div>
+      <figcaption>
+        <b>กับดักที่เคยเจอมาแล้ว</b> — <code>rebuildAll()</code> สร้าง mesh ชุดใหม่ ของเก่าถูกทิ้ง
+        ถ้าลืม <code>select(null)</code> ตัวแปร <code>selected</code> จะยังชี้ไป mesh ที่หลุดจากฉากไปแล้ว
+        แล้วสไลเดอร์ปรับขนาดจะไปแก้ของที่มองไม่เห็น (บั๊กนี้เกิดจริงตอนสลับใต้ถุน แก้ไปแล้วใน v0.2.0) ·
+        <code>rebuildWalls()</code> เป็นเส้นทางที่สามที่เพิ่มมาใน v0.7.1 — ถูกกว่า <code>rebuildAll()</code> เพราะไม่แตะพื้น/เฟอร์นิเจอร์
+        แต่แพงกว่าการแก้จุดเดียว เพราะการเพิ่ม/ลบผนังหนึ่งช่วงอาจทำให้เพื่อนบ้านต้องคำนวณมุมใหม่
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s12">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">12</span>
+      <h2>Undo และการบันทึก</h2>
+      <p class="sub">
+        ทั้งสองอย่างใช้ฟังก์ชันแปลงข้อมูลตัวเดียวกันคือ <code>plainState()</code>
+        ซึ่งคัดเอาเฉพาะข้อมูลเปล่า ๆ ออกมา ไม่มี mesh ติดไปด้วย — ตอนนี้ครอบคลุมครบ 5 หมวดแล้ว
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart TB
+  P["plainState()<br/>floors·walls(paintOut/In)·openings·wallArt·objects"]
+  A["ก่อนแก้ทุกครั้ง เรียก snap()"] --> P
+  P --> B["JSON.stringify → push undoStack<br/>เก็บ 30 ชั้นล่าสุด"]
+  C["แก้ข้อมูลสำเร็จ"] --> D["save() → localStorage"]
+  P --> D
+  E["กด Undo หรือ Ctrl+Z"] --> F["pop undoStack"]
+  F --> G["เขียนทับ world ทั้งก้อน"]
+  G --> H["rebuildAll() + save()"]
+  I["ยกเลิกกลางคัน<br/>เช่น คลิกแล้วไม่ได้ย้ายอะไร"] --> J["undoStack.pop()<br/>ทิ้ง snapshot ที่ไม่ได้ใช้"]
+  K["load() พบไฟล์เซฟรุ่นเก่า"] -->|"มี wall.type แต่ไม่มี openings"| L["แปลงเป็น legacyOpenings"]
+  K -->|"มี wall.paint เดี่ยว"| M["ก็อปเป็นทั้ง paintOut และ paintIn"]
+</pre>
+      </div>
+      <figcaption>
+        <b>บั๊กที่เจอตอน v0.3.0</b> — เดิม <code>snap()</code> ส่ง <code>world</code> เข้า <code>JSON.stringify</code> ตรง ๆ
+        แต่ในนั้นมี ref ของ mesh อยู่ และ <code>Object3D</code> ของ three.js มีเมธอด <code>toJSON()</code> ในตัว
+        <code>stringify</code> จึงไป serialize geometry ทั้งบ้านลงทุก snapshot × 30 ชั้น ตอนนี้บีบผ่าน <code>plainState()</code> แล้ว ·
+        <b>การ migrate ไฟล์เซฟเก่า</b> (v0.6.0, v0.7.0) ทำใน <code>load()</code> เท่านั้น ไม่ใช่ใน <code>plainState()</code> —
+        เซฟใหม่ทุกครั้งจะเขียนด้วยรูปแบบล่าสุดเสมอ ครั้งต่อไปที่โหลดจึงไม่ต้อง migrate ซ้ำ
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s13">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">13</span>
+      <h2>โหมด เครื่องมือ และเคอร์เซอร์</h2>
+      <p class="sub">โหมดเป็นตัวกำหนดว่าคลิกซ้ายทำอะไร ซึ่งเป็นเรื่องที่ต้องชัดเพราะกล้องกับเครื่องมือแย่งปุ่มเดียวกัน —
+      ตั้งแต่ v0.7.2 เคอร์เซอร์ก็คำนวณจากสถานะเดียวกันนี้ด้วย</p>
+    </div>
+    <figure>
+      <div class="sheet">
+<pre class="mermaid">
+%%{init:{'theme':'base','themeVariables':{'primaryColor':'#FBF7EE','primaryTextColor':'#24304A','primaryBorderColor':'#A0702B','lineColor':'#3E5C8A','secondaryColor':'#E4EEF7','tertiaryColor':'#DCF0E8','fontFamily':'IBM Plex Sans Thai,sans-serif','fontSize':'13px'}}}%%
+flowchart LR
+  M{"mode"}
+  M -->|"build"| B["กริดโชว์ · แถบเครื่องมือโชว์<br/>ซ้ายลาก = เครื่องมือที่เลือก<br/>ขวาลาก = หมุนกล้อง · ขวาแตะ = หมุนของ<br/>กลางลาก หรือ Space+ซ้าย = เลื่อน"]
+  M -->|"play"| P["กริดซ่อน · เครื่องมือซ่อน · แผงขวาซ่อน<br/>ซ้ายลาก = หมุนกล้อง<br/>แถบเวลา 24 ชม. โชว์<br/>ผนังถูกดันกลับเป็น เต็ม เสมอ"]
+</pre>
+      </div>
+      <figcaption>
+        ตอนกลับเข้าโหมด Play ระบบจะ<b>รีเซ็ตมุมมองผนังกลับเป็น "เต็ม"</b> เพราะผนังครึ่งหรือผนังซ่อน
+        เป็นเครื่องมือช่วยจัดของ ไม่ใช่สภาพบ้านจริงที่ควรเอาไปอวด
+      </figcaption>
+    </figure>
+
+    <div class="tablewrap" style="margin-top:22px">
+      <table>
+        <thead><tr><th>เครื่องมือ</th><th>pointerdown ทำอะไร</th><th>ลากแล้วทำอะไร</th><th>commit ตอนปล่อย</th></tr></thead>
+        <tbody>
+          <tr><td>select</td><td>pickObject → pickOpening → pickWallArt แล้วเลือก</td><td>ย้ายของตาม snap (furn/wallart)</td><td>save() ถ้าย้ายจริง</td></tr>
+          <tr><td>floor</td><td>จำช่องตั้งต้น</td><td>โชว์กรอบสี่เหลี่ยม</td><td>commitRect()</td></tr>
+          <tr><td>wall</td><td>จำมุมกริดตั้งต้น</td><td>โชว์เงาผนังตามเส้น</td><td>commitLine() → rebuildWalls()</td></tr>
+          <tr><td>opening</td><td>เจาะช่องเปิดทันที (ถ้าว่าง)</td><td>เจาะต่อทุกช่วงที่ลากผ่าน</td><td>save() ถ้าเจาะโดนอย่างน้อยหนึ่ง</td></tr>
+          <tr><td>wallart</td><td>แขวนทันทีตรงจุดที่คลิก</td><td>—</td><td>—</td></tr>
+          <tr><td>paint</td><td>ทาช่วงที่ชี้อยู่ทันที (หน้าที่คลิกหรือทั้งคู่)</td><td>ทาต่อไปเรื่อย ๆ ที่ลากผ่าน</td><td>save() ถ้าทาโดนอย่างน้อยหนึ่งช่วง</td></tr>
+          <tr><td>furn</td><td>วางทันทีหนึ่งชิ้น</td><td>—</td><td>—</td></tr>
+          <tr><td>erase</td><td>ลบของ → ช่องเปิด → ของแขวนผนัง → ผนัง → พื้น ตามลำดับ</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note" style="margin-top:20px">
+      <b>ระบบเคอร์เซอร์ (v0.7.2)</b> — <code>updateCursor()</code> ตัดสินใจจากสถานะเดียวกับที่ตารางด้านบนใช้อยู่แล้ว:
+      กำลังลากกล้อง/ลากของ (furn หรือ wallart) → มือกำ · โหมด Play → มือเปิด ·
+      เครื่องมือ "เลือก" ชี้โดนของที่เลือกได้ → นิ้วชี้ · เครื่องมืออื่นทุกตัว → กากบาท —
+      ไม่มี state แยกใหม่ อ่านจากตัวแปรที่มีอยู่แล้วล้วน ๆ
+      <br><br>
+      <b>แยกคลิก-จากลากด้วยเวลา+ระยะ (v0.8.0)</b> — ขวาปล่อยโดยขยับไม่ถึง 5px และไม่เกิน 400ms
+      นับเป็น "แตะ" (หมุนของ/เงา) ไม่ใช่ "ลาก" (หมุนกล้อง) ค่าทั้งสองใช้ร่วมกันทั้งตอนแตะของที่วางแล้วกับแตะเงาก่อนวาง (v0.11.1)
+    </div>
+  </div>
+</section>
+
+<section id="s14">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">14</span>
+      <h2>วงจรกลางวัน-กลางคืน</h2>
+      <p class="sub">
+        สไลเดอร์เวลาป้อนค่าชั่วโมงเข้า <code>applySky()</code> ตัวเดียว
+        แล้วทุกอย่าง — ทิศแดด ความสว่าง สีฟ้า และไฟในบ้าน — คำนวณออกมาจากค่านั้นค่าเดียว (ไม่เปลี่ยนตั้งแต่ v0.1.0)
+      </p>
+    </div>
+    <figure>
+      <div class="sheet">
+        <svg viewBox="0 0 660 280" role="img" aria-label="กราฟความสูงของดวงอาทิตย์ตลอด 24 ชั่วโมง มีเส้นขอบฟ้าที่ 6 โมงและ 18 นาฬิกา และแถบช่วงเปลี่ยนผ่านที่ไฟในบ้านค่อยติด">
+          <!-- night bands -->
+          <rect x="40" y="40" width="87" height="180" fill="#2F4373" fill-opacity=".12"/>
+          <rect x="481" y="40" width="135" height="180" fill="#2F4373" fill-opacity=".12"/>
+          <!-- transition bands -->
+          <rect x="127" y="40" width="31" height="180" fill="#BB4629" fill-opacity=".12"/>
+          <rect x="450" y="40" width="31" height="180" fill="#BB4629" fill-opacity=".12"/>
+
+          <!-- horizon -->
+          <line x1="40" y1="130" x2="628" y2="130" stroke="currentColor" stroke-opacity=".45" stroke-width="1.4" stroke-dasharray="5 4"/>
+          <text x="34" y="134" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" fill-opacity=".6">ขอบฟ้า</text>
+
+          <!-- sun curve -->
+          <polyline fill="none" stroke="#D98F2E" stroke-width="2.6" stroke-linejoin="round"
+            points="40,220 64,217 88,208 112,194 136,175 160,153 184,130 208,107 232,85 256,66 280,52 304,43 328,40 352,43 376,52 400,66 424,85 448,107 472,130 496,153 520,175 544,194 568,208 592,217 616,220"/>
+
+          <!-- hour ticks -->
+          <g stroke="currentColor" stroke-opacity=".35" stroke-width="1.2">
+            <line x1="40" y1="220" x2="40" y2="228"/>
+            <line x1="184" y1="220" x2="184" y2="228"/>
+            <line x1="328" y1="220" x2="328" y2="228"/>
+            <line x1="472" y1="220" x2="472" y2="228"/>
+            <line x1="616" y1="220" x2="616" y2="228"/>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" fill-opacity=".72" text-anchor="middle">
+            <text x="40" y="244">00:00</text>
+            <text x="184" y="244">06:00</text>
+            <text x="328" y="244">12:00</text>
+            <text x="472" y="244">18:00</text>
+            <text x="616" y="244">24:00</text>
+          </g>
+
+          <!-- labels -->
+          <g font-family="IBM Plex Sans Thai, sans-serif" font-size="11.5" fill="currentColor">
+            <text x="328" y="30" text-anchor="middle" font-family="IBM Plex Mono, monospace" fill="#D98F2E">sy = sin((h − 6) / 12 × π)</text>
+            <text x="84" y="196" text-anchor="middle" fill-opacity=".72">ไฟในบ้านติด</text>
+            <text x="549" y="196" text-anchor="middle" fill-opacity=".72">ไฟในบ้านติด</text>
+            <text x="328" y="118" text-anchor="middle" fill-opacity=".72">แดดจัด · ไฟดับ</text>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="#BB4629" text-anchor="middle">
+            <text x="142" y="266">ช่วงไล่</text>
+            <text x="465" y="266">ช่วงไล่</text>
+          </g>
+          <text x="330" y="268" text-anchor="middle" font-family="IBM Plex Sans Thai, sans-serif" font-size="11.5" fill="currentColor" fill-opacity=".7">night = clamp((0.16 − sy) / 0.34) → คุมทั้งความสว่าง สีฟ้า และ emissive ของโคมไฟ</text>
+        </svg>
+      </div>
+      <figcaption>
+        ค่า <code>night</code> ตัวเดียวคุมทุกอย่างพร้อมกัน — ลดแสงหลัก เปลี่ยนสีฟ้า
+        ไล่ <code>emissive</code> ของวัสดุที่อยู่ในอาเรย์ <code>GLOW</code> และเร่ง <code>PointLight</code> ที่แนบอยู่กับโคมไฟแต่ละดวง
+        · โคมไฟจึง<b>ค่อย ๆ สว่างขึ้น</b>ไม่ใช่ติดปุบปับ (ระบบนี้ยังไม่ถูกแตะเลยตั้งแต่ v0.1.0)
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="s15">
+  <div class="wide">
+    <div class="sechead">
+      <span class="n">15</span>
+      <h2>หนี้ทางเทคนิคและของที่ยังไม่มี</h2>
+      <p class="sub">รายการนี้อัปเดตทุกครั้งที่พี่แยมสั่งให้ sync กับโค้ด (ไม่ใช่ทุกครั้งที่แก้โค้ดแล้ว — ดูหมายเหตุท้ายหน้า)</p>
+    </div>
+    <div class="stack">
+      <div>
+        <h3 style="margin-bottom:10px">รู้อยู่แล้วว่ายังไม่ดี</h3>
+        <ul class="plain">
+          <li><b>หนึ่งช่วงผนังเจาะช่องเปิดได้แค่ชิ้นเดียว</b> — คลิกช่วงที่มีช่องเปิดอยู่แล้วจะไม่ทำอะไร (hover แดงเตือนไว้ก่อน) ตั้งใจจำกัดสโคปไว้ตั้งแต่ v0.6.0</li>
+          <li><b>ของแขวนผนังปรับขนาดไม่ได้</b> — มีแค่ตำแหน่งแนวนอน+ความสูง ยังไม่มีสไลเดอร์ scale เหมือนเฟอร์นิเจอร์พื้น (v0.10.0 ตั้งใจตัดสโคปไว้ก่อน)</li>
+          <li><b>ของแขวนผนังชนกันได้</b> — ไม่เช็ก overlap ระหว่างชิ้น ต่างจากช่องเปิดที่กันไว้ 1 ชิ้น/ช่วง</li>
+          <li><b>ผนังที่ต่อกันกลางแนว (ไม่ใช่มุม) ยังวาดหน้าปลายซ้อนกันข้างใน</b> — การอ้อมมุมของ v0.7.1 แก้เฉพาะปลายที่เจอมุมจริงเท่านั้น มองไม่เห็นแต่เปลืองสามเหลี่ยม ยังไม่คุ้มแก้</li>
+          <li><b>เซฟอยู่แค่ในเครื่อง</b> — <code>localStorage</code> ผูกกับเบราว์เซอร์นั้น ย้ายเครื่องแล้วบ้านไม่ตามไป</li>
+          <li><b>มีฟังก์ชันตายค้างอยู่</b> — <code>diningRugSmall()</code> ไม่ถูกเรียกจากไหนเลย (ยังไม่ได้ลบ)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">ยังไม่มีในระบบ</h3>
+        <ul class="plain">
+          <li><b>บ้านหลายชั้น</b> — ต้องเพิ่มมิติ <code>level</code> เข้าไปในคีย์ทุกตัว กระทบทั้งไฟล์เซฟ</li>
+          <li><b>หลังคาและบันได</b> — ทั้งคู่ต้องรู้จักรูปร่างห้อง ซึ่งตอนนี้ระบบยังไม่มีแนวคิด "ห้อง" เลย มีแค่ช่องพื้นกับช่วงผนัง</li>
+          <li><b>ระบบ "ใน/นอก" ของจริง</b> — <code>paintOut</code>/<code>paintIn</code> (หัวข้อ 8) ตั้งชื่อตามหน้าผนังเฉย ๆ ไม่ได้รู้จริงว่าฝั่งไหนคือข้างในบ้าน เพราะไม่มีแนวคิด "ห้อง" เหมือนกัน</li>
+          <li><b>สระว่ายน้ำ ผนังโค้ง พื้นต่างระดับ</b></li>
+          <li><b>ตัวละครและ pathfinding</b> — งานคนละก้อน ต้องคุยสโคปแยก</li>
+        </ul>
+      </div>
+      <div class="note">
+        <b>ข้อสังเกตสำหรับงานต่อไป</b> — รายการ "ยังไม่มี" เกือบทั้งหมดผูกกันที่จุดเดียวคือ
+        ระบบยังไม่มีแนวคิด <b>"ห้อง"</b> (พื้นที่ปิดล้อมด้วยผนัง) ถ้าจะทำหลังคา บันได ระบบชั้น หรือแม้แต่ให้ <code>paintOut</code>/<code>paintIn</code>
+        รู้ความหมายจริงว่าฝั่งไหนคือข้างในบ้าน ควรสร้างตัวตรวจหาห้องจาก flood-fill บนช่องพื้นก่อน แล้วอย่างอื่นจะง่ายขึ้นทั้งหมด —
+        ยังไม่ได้เริ่มงานนี้ รอคุยสโคปก่อน
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Home Builder Blueprints · เอกสารตรงกับโค้ด v0.11.2 · sync ตามที่พี่แยมสั่งเท่านั้น ไม่ใช่ทุกครั้งที่แก้โค้ด ·
+    <a href="https://claude.ai/code/artifact/496a6eb1-4adc-4154-af2d-f589f2fb8b99">เปิดตัวเกม →</a>
+  </div>
+</footer>

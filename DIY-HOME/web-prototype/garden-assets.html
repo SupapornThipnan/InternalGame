@@ -1,0 +1,1277 @@
+<title>Miniature Garden Asset Set</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F1E8D8; --card:#FBF7EE; --sunk:#E7DCC7;
+  --ink:#1C2233; --ink-2:#565F75; --ink-3:#8B93A6;
+  --line:#D7CAB1; --line-soft:#E3D8C2;
+  --indigo:#2F4373; --indigo-2:#5C7AB8;
+  --kraft:#A0702B; --lantern:#BB4629; --bamboo:#47734D;
+  --on-accent:#FBF7EE;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+    --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+    --line:#2F3547; --line-soft:#262B3A;
+    --indigo:#9BB4EA; --indigo-2:#7189C2;
+    --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+    --on-accent:#141721;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+  --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+  --line:#2F3547; --line-soft:#262B3A;
+  --indigo:#9BB4EA; --indigo-2:#7189C2;
+  --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+  --on-accent:#141721;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Helvetica Neue",Arial,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+.wide{max-width:1220px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Mitr,"IBM Plex Sans Thai",sans-serif;font-weight:500;margin:0;line-height:1.36;text-wrap:balance}
+p{margin:0}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--kraft)}
+
+header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:26px 0 22px}
+.mast .row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mast h1{font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);font-weight:600}
+.mast .note{color:var(--ink-2);font-size:.92rem;margin-top:6px;max-width:76ch}
+.mast .note b{color:var(--ink);font-weight:500}
+
+/* ---------- workbench ---------- */
+.bench{display:grid;grid-template-columns:236px 1fr;gap:0;border:1px solid var(--line);margin-top:20px;background:var(--card)}
+@media (max-width:820px){.bench{grid-template-columns:1fr}}
+
+.nav{border-right:1px solid var(--line);overflow-y:auto;max-height:660px}
+@media (max-width:820px){.nav{border-right:0;border-bottom:1px solid var(--line);max-height:210px}}
+.nav .gtitle{
+  font-family:"IBM Plex Mono",monospace;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-3);padding:13px 16px 5px;background:var(--sunk);border-bottom:1px solid var(--line-soft);
+  position:sticky;top:0;
+}
+.nav button{
+  display:flex;width:100%;gap:9px;align-items:baseline;text-align:left;
+  font-family:inherit;font-size:.86rem;color:var(--ink-2);
+  background:none;border:0;border-bottom:1px solid var(--line-soft);
+  padding:8px 16px;cursor:pointer;line-height:1.45;
+}
+.nav button:hover{background:var(--sunk);color:var(--ink)}
+.nav button[aria-current="true"]{background:var(--indigo);color:var(--on-accent)}
+.nav button .num{font-family:"IBM Plex Mono",monospace;font-size:.7rem;opacity:.75;min-width:16px}
+.nav button .cnt{margin-left:auto;font-family:"IBM Plex Mono",monospace;font-size:.68rem;opacity:.6}
+
+.stage{position:relative;background:var(--sunk);min-height:660px;overflow:hidden;user-select:none}
+@media (max-width:820px){.stage{min-height:460px}}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas.grabbing{cursor:grabbing}
+
+.hud{
+  position:absolute;left:14px;bottom:14px;max-width:280px;
+  background:color-mix(in srgb,var(--card) 92%,transparent);
+  border:1px solid var(--line);border-radius:5px;padding:12px 15px;
+}
+.hud .k{font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.hud .nm{font-family:Mitr,sans-serif;font-size:1.04rem;color:var(--ink);line-height:1.4;margin-top:2px}
+.hud .en{font-size:.8rem;color:var(--ink-2)}
+.hud .fn{font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--bamboo);margin-top:7px;word-break:break-all}
+
+.acts{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+.acts button{
+  font-family:inherit;font-size:.82rem;padding:6px 13px;cursor:pointer;line-height:1.5;
+  border:1px solid var(--line);border-radius:4px;
+  background:color-mix(in srgb,var(--card) 92%,transparent);color:var(--ink);
+}
+.acts button:hover{border-color:var(--indigo-2)}
+.acts button[aria-pressed="true"]{background:var(--indigo);border-color:var(--indigo);color:var(--on-accent)}
+.tips{
+  position:absolute;left:50%;transform:translateX(-50%);top:14px;
+  font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-3);
+  background:color-mix(in srgb,var(--card) 80%,transparent);padding:5px 12px;border-radius:3px;pointer-events:none;
+}
+.fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:32px;color:var(--ink-2)}
+:focus-visible{outline:2px solid var(--indigo-2);outline-offset:2px}
+
+section{padding:44px 0}
+section+section{border-top:1px solid var(--line-soft)}
+.sechead{margin-bottom:20px;max-width:68ch}
+.sechead h2{font-size:1.3rem;margin-top:6px}
+.sechead .sub{color:var(--ink-2);margin-top:6px;font-size:.95rem}
+ul.plain{margin:0;padding-left:1.15em;color:var(--ink-2);font-size:.94rem;line-height:1.72}
+ul.plain li{margin-bottom:5px}
+ul.plain li::marker{color:var(--kraft)}
+ul.plain b{color:var(--ink);font-weight:500}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;color:var(--kraft)}
+pre{margin:0;overflow-x:auto;background:var(--sunk);border:1px solid var(--line);border-left:3px solid var(--indigo-2);padding:16px 18px;font-family:"IBM Plex Mono",monospace;font-size:.8rem;line-height:1.7;color:var(--ink)}
+pre .c{color:var(--ink-3)} pre .k{color:var(--indigo)} pre .s{color:var(--bamboo)}
+footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);font-size:.8rem;font-family:"IBM Plex Mono",monospace}
+</style>
+
+<header class="mast">
+  <div class="wide">
+    <div class="row">
+      <span class="eyebrow">Nyan Kit Workshop · Asset Library</span>
+      <span class="eyebrow" style="color:var(--ink-3)">21 หมวด · 81 ชิ้น</span>
+    </div>
+    <h1>Miniature Garden Asset Set</h1>
+    <p class="note">
+      แปลงชีตที่พี่ส่งมาเป็นโมเดล 3D จริงทุกชิ้น จัดวางตาม 5 คอลัมน์เหมือนต้นฉบับ
+      <b>คลิกที่ของชิ้นไหนก็ได้เพื่อซูมดูใกล้ ๆ</b> หรือเลือกหมวดจากรายการซ้ายมือ
+      ทุกชิ้นปั้นจาก primitive ในโค้ด ไม่มีไฟล์โมเดลภายนอกเลยสักไฟล์
+    </p>
+  </div>
+</header>
+
+<main>
+<div class="wide">
+  <div class="bench">
+    <div class="nav" id="nav"></div>
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+      <div class="tips">ลากเพื่อหมุน · สกอร์ล/หนีบเพื่อซูม · คลิกของเพื่อดูใกล้</div>
+      <div class="acts">
+        <button id="btnAll">ดูทั้งชีต</button>
+        <button id="btnSpin" aria-pressed="true">หมุนชิ้นที่เลือก</button>
+        <button id="btnNight" aria-pressed="false">กลางคืน</button>
+      </div>
+      <div class="hud" id="hud">
+        <div class="k">กำลังดู</div>
+        <div class="nm" id="hudName">ทั้งชีต</div>
+        <div class="en" id="hudEn">Miniature Garden Asset Set</div>
+        <div class="fn" id="hudFn">81 ชิ้น · 21 หมวด</div>
+      </div>
+      <div class="fallback" id="fallback">เบราว์เซอร์นี้เปิด WebGL ไม่ได้ครับ ลองใช้ Chrome หรือ Safari รุ่นใหม่</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">วิธีเอาไปใช้ต่อ</span>
+      <h2>ชุดนี้ต่อยอดเข้างานเดิมได้ทันที</h2>
+      <p class="sub">
+        ของทุกชิ้นเป็นฟังก์ชันที่คืนค่า <code>THREE.Group</code> เสียบเข้า <code>KIT_DEFS</code> ของเดโม่ได้เลย
+        โดยไม่ต้องแก้เครื่องยนต์ลาก-สแนปแม้แต่บรรทัดเดียว
+      </p>
+    </div>
+    <pre><span class="c">// เพิ่มของประดับจากชุดสวนเข้าไปในสเตจ "ของประดับ" ของร้านไหนก็ได้</span>
+['กระถางเลมอน', <span class="s">pottedPlant</span>(<span class="s">'lemon'</span>), [3.4, 0, 1.6], [0, 0.3, 0], <span class="s">'ของประดับ'</span>],
+['ม้านั่งสวน',   <span class="s">bench</span>(<span class="s">'wood'</span>),        [-3.6, 0, 2.2], [0, -0.4, 0], <span class="s">'ของประดับ'</span>],
+['โคมหินญี่ปุ่น', <span class="s">lantern</span>(<span class="s">'stone'</span>),     [4.2, 0, 0.4],  [0, 0, 0], <span class="s">'ของประดับ'</span>]</pre>
+    <ul class="plain" style="margin-top:20px">
+      <li><b>ทุกชิ้นวาง pivot ไว้ที่ฐาน</b> (y = 0 คือจุดที่ของแตะพื้น) ตามกฎ authoring ใน Outline — เสียบลง socket แล้วไม่จม ไม่ลอย</li>
+      <li><b>วัสดุใช้ร่วมกันผ่าน cache</b> — สีเดียวกันใช้ material ตัวเดียวทั้งชีต ลดภาระ GPU ตอนมีของเยอะ ๆ พร้อมกันในหมู่บ้าน</li>
+      <li><b>เงาเป็นแผ่นวงกลมใต้ของ</b> ไม่ได้ใช้ shadow map — เทคนิคเดียวกับที่ห้องไอโซเมตริกใน reference ใช้ ทำให้วางของ 81 ชิ้นพร้อมกันได้โดยเฟรมเรตไม่ตก</li>
+      <li><b>โคมและตะเกียงมี material แยกของตัวเอง</b> เลยสั่งให้เรืองแสงตอนกลางคืนได้ทีละดวง (ลองกดปุ่ม "กลางคืน" ดูครับ)</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer><div class="wide">Nyan Kit Workshop · Garden asset library · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('cv');
+  var stageEl = document.getElementById('stage');
+  var renderer;
+  if (typeof THREE === 'undefined') { fail(); return; }
+  try { renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true }); } catch (e) { fail(); return; }
+  function fail() {
+    document.getElementById('fallback').style.display = 'grid';
+    document.querySelectorAll('.acts,.hud,.tips').forEach(function (n) { n.style.display = 'none'; });
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
+  var scene = new THREE.Scene();
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ISO_ELEV = Math.atan(1 / Math.SQRT2);
+
+  // ===================== palette + shared material cache =====================
+  var P = {
+    grass: 0x7FB53F, grassLt: 0x96C956, grassDk: 0x5E9435,
+    dirt: 0x8D6E4F, dirtDk: 0x6F5540,
+    stone: 0xAFA9A1, stoneDk: 0x8A847C, stoneLt: 0xC8C2B8,
+    water: 0x54C1D8, waterDk: 0x3AA0BC,
+    wood: 0xB07A45, woodDk: 0x8A5E33, woodLt: 0xD6A96E,
+    leaf: 0x5FA046, leafLt: 0x8AC45E, leafDk: 0x477C36,
+    pink: 0xF2A0C4, pinkDk: 0xDE7BA8,
+    white: 0xF7F3EA, cream: 0xEFE3C8,
+    red: 0xD1483B, redDk: 0xA83628,
+    yellow: 0xF0C33C, yellowDk: 0xD9A422,
+    purple: 0x9B7BC8, orange: 0xE08A3C,
+    brass: 0xC9A24A, metal: 0xBCC2C8, metalDk: 0x8D949B,
+    black: 0x3A3A42, terra: 0xC1704A, terraDk: 0x9E5738,
+    sky: 0x8FC7E8
+  };
+  var MC = {};
+  function M(hex) { if (!MC[hex]) MC[hex] = new THREE.MeshLambertMaterial({ color: hex }); return MC[hex]; }
+  function glowM(hex, e) {
+    var m = new THREE.MeshLambertMaterial({ color: hex });
+    m.userData.glow = e || 0x000000;
+    GLOW.push(m);
+    return m;
+  }
+  var GLOW = [];
+
+  function bx(w, h, d, c) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); }
+  function cyl(rt, rb, h, seg, c) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg || 12), M(c)); }
+  function sph(r, c, w, h) { return new THREE.Mesh(new THREE.SphereGeometry(r, w || 14, h || 10), M(c)); }
+  function cone(r, h, seg, c) { return new THREE.Mesh(new THREE.ConeGeometry(r, h, seg || 12), M(c)); }
+  function tor(r, t, c, arc) { return new THREE.Mesh(new THREE.TorusGeometry(r, t, 8, 18, arc || Math.PI * 2), M(c)); }
+  function G() { return new THREE.Group(); }
+  function put(o, x, y, z) { o.position.set(x || 0, y || 0, z || 0); return o; }
+
+  // ===================== 1. grass platforms =====================
+  function grassPlatform(v) {
+    var g = G(), seg = v === 0 ? 4 : (v === 1 ? 6 : 8);
+    var top = cyl(1.15, 1.05, 0.18, seg, P.grass); put(top, 0, 0.42); g.add(top);
+    var soil = cyl(1.05, 0.88, 0.34, seg, P.dirt); put(soil, 0, 0.17); g.add(soil);
+    if (v === 1) { var patch = cyl(0.42, 0.42, 0.04, 8, P.grassDk); put(patch, 0.3, 0.53, -0.2); g.add(patch); }
+    if (v === 2) {
+      for (var i = 0; i < 4; i++) { var st = cyl(0.16, 0.18, 0.06, 6, P.stone); put(st, -0.6 + i * 0.4, 0.53, 0.35 - i * 0.12); g.add(st); }
+    }
+    if (v === 3) {
+      var ch = bx(0.42, 0.1, 2.3, P.water); put(ch, 0.25, 0.5); g.add(ch);
+      var bank = bx(0.62, 0.06, 2.3, P.grassDk); put(bank, 0.25, 0.46); g.add(bank);
+    }
+    return g;
+  }
+
+  // ===================== 2. water stream tiles =====================
+  function streamTile(kind) {
+    var g = G();
+    var base = bx(2.1, 0.3, 2.1, P.grass); put(base, 0, 0.15); g.add(base);
+    var soil = bx(2.0, 0.22, 2.0, P.dirt); put(soil, 0, 0.02); g.add(soil);
+    function water(w, d, x, z) { var m = bx(w, 0.12, d, P.water); put(m, x || 0, 0.28, z || 0); g.add(m); }
+    if (kind === 'straight') water(0.8, 2.12);
+    else if (kind === 'corner') { water(0.8, 1.45, 0, -0.33); water(1.45, 0.8, 0.33, 0); }
+    else if (kind === 'tee') { water(2.12, 0.8); water(0.8, 1.45, 0, -0.33); }
+    else { water(0.8, 1.4, 0, -0.35); var pool = cyl(0.5, 0.5, 0.12, 12, P.waterDk); put(pool, 0, 0.28, 0.5); g.add(pool); }
+    return g;
+  }
+
+  // ===================== 3. ponds =====================
+  function pond(v) {
+    var g = G(), seg = v === 1 ? 16 : 8;
+    var bank = cyl(1.25, 1.15, 0.28, seg, P.grass); put(bank, 0, 0.14); g.add(bank);
+    var w = cyl(0.95, 0.95, 0.18, seg, P.water); put(w, 0, 0.26); g.add(w);
+    if (v === 0) for (var i = 0; i < 7; i++) {
+      var a = (i / 7) * Math.PI * 2, s = sph(0.13, P.stone, 8, 6);
+      put(s, Math.cos(a) * 1.06, 0.3, Math.sin(a) * 1.06); g.add(s);
+    }
+    if (v === 1) { var p1 = cyl(0.28, 0.28, 0.04, 10, P.leaf); put(p1, 0.3, 0.36, 0.2); g.add(p1); var p2 = cyl(0.2, 0.2, 0.04, 10, P.leafDk); put(p2, -0.35, 0.36, -0.25); g.add(p2); }
+    if (v === 2) {
+      var step = cyl(0.62, 0.62, 0.12, seg, P.stoneLt); put(step, 0, 0.32); g.add(step);
+      var w2 = cyl(0.44, 0.44, 0.1, seg, P.waterDk); put(w2, 0, 0.4); g.add(w2);
+    }
+    return g;
+  }
+
+  // ===================== 4. bridges =====================
+  function bridge(kind) {
+    var g = G();
+    if (kind === 'stone') {
+      var arch = tor(0.62, 0.14, P.stoneLt, Math.PI); put(arch, 0, 0.18, 0); g.add(arch);
+      var arch2 = arch.clone(); put(arch2, 0, 0.18, -0.5); g.add(arch2);
+      for (var i = 0; i < 9; i++) {
+        var t = i / 8, ang = Math.PI * t;
+        var pl = bx(0.2, 0.08, 0.72, i % 2 ? P.stone : P.stoneLt);
+        put(pl, -Math.cos(ang) * 0.62, 0.18 + Math.sin(ang) * 0.62, -0.25);
+        pl.rotation.z = -ang + Math.PI / 2; g.add(pl);
+      }
+    } else {
+      var railC = kind === 'plank' ? P.woodDk : P.wood;
+      for (var j = 0; j < 9; j++) {
+        var t2 = j / 8, y = kind === 'plank' ? 0.3 : 0.3 + Math.sin(Math.PI * t2) * 0.45;
+        var pl2 = bx(0.19, 0.07, 0.85, j % 2 ? P.wood : P.woodLt);
+        put(pl2, -0.72 + t2 * 1.44, y, 0);
+        if (kind !== 'plank') pl2.rotation.z = Math.cos(Math.PI * t2) * -0.5;
+        g.add(pl2);
+      }
+      [-1, 1].forEach(function (s) {
+        for (var k = 0; k < 4; k++) {
+          var t3 = k / 3, yy = kind === 'plank' ? 0.3 : 0.3 + Math.sin(Math.PI * t3) * 0.45;
+          var post = bx(0.07, 0.4, 0.07, railC); put(post, -0.7 + t3 * 1.4, yy + 0.2, s * 0.38); g.add(post);
+        }
+        var rail = bx(1.5, 0.07, 0.07, railC); put(rail, 0, kind === 'plank' ? 0.62 : 0.87, s * 0.38);
+        g.add(rail);
+      });
+    }
+    return g;
+  }
+
+  // ===================== 5. tree swings =====================
+  function swing(kind) {
+    var g = G();
+    if (kind === 'aframe') {
+      [-1, 1].forEach(function (s) {
+        [-1, 1].forEach(function (d) {
+          var leg = cyl(0.05, 0.06, 1.5, 6, P.wood); put(leg, s * 0.55, 0.75, d * 0.28);
+          leg.rotation.z = -s * 0.32; leg.rotation.x = -d * 0.14; g.add(leg);
+        });
+      });
+      var bar = cyl(0.05, 0.05, 1.3, 6, P.woodDk); bar.rotation.z = Math.PI / 2; put(bar, 0, 1.45); g.add(bar);
+    } else {
+      [-1, 1].forEach(function (s) { var post = cyl(0.07, 0.08, 1.6, 7, P.woodDk); put(post, s * 0.62, 0.8); g.add(post); });
+      var bar2 = cyl(0.06, 0.06, 1.42, 6, P.wood); bar2.rotation.z = Math.PI / 2; put(bar2, 0, 1.58); g.add(bar2);
+    }
+    if (kind === 'tire') {
+      var rope = cyl(0.02, 0.02, 0.72, 5, P.cream); put(rope, 0, 1.2); g.add(rope);
+      var tire = tor(0.22, 0.09, P.black); put(tire, 0, 0.78); tire.rotation.x = Math.PI / 2; g.add(tire);
+    } else {
+      [-1, 1].forEach(function (s) { var r = cyl(0.02, 0.02, 0.8, 5, P.cream); put(r, s * 0.3, 1.15); g.add(r); });
+      var seat = bx(0.78, 0.07, 0.28, kind === 'aframe' ? P.woodLt : P.wood); put(seat, 0, 0.74); g.add(seat);
+    }
+    return g;
+  }
+
+  // ===================== 6. benches =====================
+  function bench(kind) {
+    var g = G();
+    var c = kind === 'red' ? P.red : kind === 'stone' ? P.stoneLt : kind === 'ornate' ? P.leafDk : P.wood;
+    var legC = kind === 'stone' ? P.stone : kind === 'ornate' ? P.black : P.woodDk;
+    var seat = bx(1.5, 0.1, 0.5, c); put(seat, 0, 0.45); g.add(seat);
+    if (kind === 'stone') { [-1, 1].forEach(function (s) { var b = bx(0.22, 0.42, 0.46, legC); put(b, s * 0.58, 0.22); g.add(b); }); }
+    else {
+      [-1, 1].forEach(function (s) { [-1, 1].forEach(function (d) { var l = bx(0.08, 0.44, 0.08, legC); put(l, s * 0.62, 0.22, d * 0.18); g.add(l); }); });
+    }
+    if (kind !== 'stone') {
+      var back = bx(1.5, 0.34, 0.07, c); put(back, 0, 0.74, -0.21); back.rotation.x = -0.14; g.add(back);
+      if (kind === 'ornate') for (var i = 0; i < 7; i++) { var sl = bx(0.05, 0.3, 0.05, legC); put(sl, -0.6 + i * 0.2, 0.72, -0.22); g.add(sl); }
+      [-1, 1].forEach(function (s) { var arm = bx(0.08, 0.24, 0.42, c); put(arm, s * 0.7, 0.6, -0.02); g.add(arm); });
+    }
+    return g;
+  }
+
+  // ===================== 7. lanterns =====================
+  function lantern(kind) {
+    var g = G();
+    if (kind === 'stone') {
+      var base = cyl(0.3, 0.36, 0.16, 6, P.stone); put(base, 0, 0.08); g.add(base);
+      var shaft = cyl(0.11, 0.13, 0.68, 6, P.stoneLt); put(shaft, 0, 0.5); g.add(shaft);
+      var plate = cyl(0.3, 0.24, 0.09, 6, P.stone); put(plate, 0, 0.88); g.add(plate);
+      var housing = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.3, 6), glowM(P.cream, 0x6A4A16));
+      put(housing, 0, 1.07); g.add(housing);
+      var roof = cone(0.42, 0.28, 6, P.stoneDk); put(roof, 0, 1.35); g.add(roof);
+      var fin = sph(0.08, P.stoneDk, 8, 6); put(fin, 0, 1.52); g.add(fin);
+    } else if (kind === 'string') {
+      [-1, 1].forEach(function (s) { var p = cyl(0.06, 0.07, 1.5, 6, P.wood); put(p, s * 0.95, 0.75); g.add(p); });
+      for (var i = 0; i <= 8; i++) {
+        var t = i / 8, x = -0.95 + t * 1.9, sag = 1.42 - 0.34 * (1 - Math.pow(2 * t - 1, 2));
+        var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), glowM(P.yellow, 0x9A7412));
+        put(bulb, x, sag); g.add(bulb);
+      }
+    } else if (kind === 'hang') {
+      var arm = cyl(0.05, 0.05, 1.4, 6, P.woodDk); put(arm, 0, 0.7); g.add(arm);
+      var top = cyl(0.05, 0.05, 0.5, 6, P.woodDk); top.rotation.z = Math.PI / 2; put(top, 0.2, 1.42); g.add(top);
+      var body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 10), glowM(P.orange, 0x8C4A10));
+      body.scale.set(1, 1.25, 1); put(body, 0.42, 1.16); g.add(body);
+      var cap = cyl(0.09, 0.09, 0.06, 8, P.black); put(cap, 0.42, 1.36); g.add(cap);
+    } else {
+      var pole = cyl(0.06, 0.08, 1.35, 8, P.metalDk); put(pole, 0, 0.67); g.add(pole);
+      var head = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.3, 0.26), glowM(P.cream, 0x7A6A2A));
+      put(head, 0, 1.5); g.add(head);
+      var lid = cone(0.24, 0.16, 4, P.black); put(lid, 0, 1.73); g.add(lid);
+    }
+    return g;
+  }
+
+  // ===================== 8. stools & small tables =====================
+  function stoolTable(kind) {
+    var g = G();
+    if (kind === 'stump') {
+      var trunk = cyl(0.36, 0.4, 0.5, 12, P.woodDk); put(trunk, 0, 0.25); g.add(trunk);
+      var rings = cyl(0.34, 0.34, 0.04, 12, P.woodLt); put(rings, 0, 0.52); g.add(rings);
+      var r2 = cyl(0.18, 0.18, 0.02, 10, P.wood); put(r2, 0, 0.545); g.add(r2);
+    } else if (kind === 'round') {
+      var post = cyl(0.07, 0.09, 0.62, 8, P.metalDk); put(post, 0, 0.31); g.add(post);
+      var foot = cyl(0.26, 0.3, 0.05, 10, P.metalDk); put(foot, 0, 0.02); g.add(foot);
+      var top2 = cyl(0.44, 0.44, 0.06, 14, P.woodLt); put(top2, 0, 0.65); g.add(top2);
+    } else {
+      var post2 = cyl(0.06, 0.08, 0.58, 8, P.white); put(post2, 0, 0.29); g.add(post2);
+      var foot2 = cyl(0.24, 0.28, 0.05, 10, P.white); put(foot2, 0, 0.02); g.add(foot2);
+      var top3 = cyl(0.42, 0.42, 0.07, 14, P.cream); put(top3, 0, 0.62); g.add(top3);
+      for (var i = 0; i < 6; i++) {
+        var a = (i / 6) * Math.PI * 2;
+        var tile = bx(0.11, 0.02, 0.11, i % 2 ? P.water : P.pink);
+        put(tile, Math.cos(a) * 0.2, 0.66, Math.sin(a) * 0.2); tile.rotation.y = a; g.add(tile);
+      }
+    }
+    return g;
+  }
+
+  // ===================== 9. large trees =====================
+  function tree(kind) {
+    var g = G();
+    if (kind === 'pine') {
+      var tr = cyl(0.12, 0.18, 0.7, 8, P.woodDk); put(tr, 0, 0.35); g.add(tr);
+      for (var i = 0; i < 3; i++) {
+        var c = cone(0.72 - i * 0.18, 0.72, 9, i === 1 ? P.leafDk : P.leaf);
+        put(c, 0, 0.9 + i * 0.5); g.add(c);
+      }
+    } else if (kind === 'bonsai') {
+      var t1 = cyl(0.09, 0.13, 0.5, 7, P.woodDk); put(t1, 0, 0.25); t1.rotation.z = 0.2; g.add(t1);
+      var t2 = cyl(0.07, 0.09, 0.42, 7, P.woodDk); put(t2, -0.16, 0.62); t2.rotation.z = -0.5; g.add(t2);
+      [[-0.42, 0.86, 0.34], [0.12, 1.0, 0.3], [0.36, 0.74, 0.24]].forEach(function (p) {
+        var pad = sph(p[2], P.leafDk, 12, 8); pad.scale.set(1, 0.45, 1); put(pad, p[0], p[1]); g.add(pad);
+      });
+      var pot = cyl(0.42, 0.34, 0.2, 10, P.terra); put(pot, 0, 0.1); g.add(pot);
+    } else if (kind === 'willow') {
+      var tw = cyl(0.13, 0.2, 0.9, 8, P.wood); put(tw, 0, 0.45); g.add(tw);
+      var crown = sph(0.6, P.leafLt, 14, 10); crown.scale.set(1, 0.6, 1); put(crown, 0, 1.28); g.add(crown);
+      for (var j = 0; j < 10; j++) {
+        var a = (j / 10) * Math.PI * 2, r = 0.5 + (j % 2) * 0.08;
+        var dr = cyl(0.035, 0.02, 0.62, 5, P.leaf);
+        put(dr, Math.cos(a) * r, 0.98, Math.sin(a) * r); g.add(dr);
+      }
+    } else {
+      var tc = kind === 'cherry' ? P.pink : P.leaf;
+      var tc2 = kind === 'cherry' ? P.pinkDk : P.leafDk;
+      var tr2 = cyl(0.14, 0.21, 0.85, 8, P.woodDk); put(tr2, 0, 0.42); g.add(tr2);
+      [[0, 1.32, 0, 0.56], [-0.42, 1.08, 0.14, 0.4], [0.4, 1.12, -0.12, 0.42], [0.1, 1.5, 0.3, 0.34]].forEach(function (p, i) {
+        var b = sph(p[3], i % 2 ? tc2 : tc, 14, 10); b.scale.set(1, 0.88, 1); put(b, p[0], p[1], p[2]); g.add(b);
+      });
+      if (kind === 'cherry') for (var k = 0; k < 5; k++) {
+        var pet = bx(0.07, 0.02, 0.07, P.pink);
+        put(pet, -0.5 + k * 0.26, 0.18 + (k % 3) * 0.12, 0.4 - (k % 2) * 0.3);
+        pet.rotation.y = k; g.add(pet);
+      }
+    }
+    return g;
+  }
+
+  // ===================== 10. shrubs & ground cover =====================
+  function shrub(kind) {
+    var g = G();
+    if (kind === 'lavender') {
+      var base = sph(0.34, P.leafDk, 12, 8); base.scale.set(1, 0.5, 1); put(base, 0, 0.14); g.add(base);
+      for (var i = 0; i < 11; i++) {
+        var a = (i / 11) * Math.PI * 2, r = 0.1 + (i % 3) * 0.07;
+        var st = cyl(0.018, 0.018, 0.4, 4, P.leaf); put(st, Math.cos(a) * r, 0.35, Math.sin(a) * r); g.add(st);
+        var fl = cyl(0.045, 0.03, 0.2, 5, P.purple); put(fl, Math.cos(a) * r, 0.62, Math.sin(a) * r); g.add(fl);
+      }
+    } else if (kind === 'succulent') {
+      for (var j = 0; j < 9; j++) {
+        var a2 = (j / 9) * Math.PI * 2, lf = sph(0.16, j % 2 ? P.leafLt : P.leaf, 8, 6);
+        lf.scale.set(0.5, 0.34, 1.1);
+        put(lf, Math.cos(a2) * 0.19, 0.12, Math.sin(a2) * 0.19);
+        lf.rotation.y = -a2; lf.rotation.x = -0.5; g.add(lf);
+      }
+      var core = sph(0.12, P.leafLt, 8, 6); put(core, 0, 0.16); g.add(core);
+    } else if (kind === 'fern') {
+      for (var k = 0; k < 7; k++) {
+        var a3 = (k / 7) * Math.PI * 2;
+        var fr = bx(0.09, 0.5, 0.16, k % 2 ? P.leaf : P.leafDk);
+        put(fr, Math.cos(a3) * 0.16, 0.28, Math.sin(a3) * 0.16);
+        fr.rotation.z = Math.cos(a3) * 0.55; fr.rotation.x = -Math.sin(a3) * 0.55; g.add(fr);
+      }
+    } else {
+      [[0, 0.28, 0, 0.36], [-0.26, 0.2, 0.1, 0.26], [0.24, 0.22, -0.08, 0.28]].forEach(function (p, i) {
+        var b = sph(p[3], i === 0 ? P.leaf : P.leafDk, 12, 8); b.scale.set(1, 0.82, 1); put(b, p[0], p[1], p[2]); g.add(b);
+      });
+    }
+    return g;
+  }
+
+  // ===================== 11. potted plants =====================
+  function pottedPlant(kind) {
+    var g = G();
+    var pot = cyl(0.32, 0.24, 0.42, 12, kind === 'herb' ? P.woodDk : P.terra);
+    if (kind === 'herb') { pot = bx(0.86, 0.32, 0.36, P.woodDk); put(pot, 0, 0.16); }
+    else put(pot, 0, 0.21);
+    g.add(pot);
+    if (kind !== 'herb') { var rim = cyl(0.35, 0.33, 0.07, 12, P.terraDk); put(rim, 0, 0.4); g.add(rim); }
+
+    if (kind === 'lemon') {
+      var tr = cyl(0.05, 0.06, 0.4, 6, P.woodDk); put(tr, 0, 0.6); g.add(tr);
+      [[0, 1.0, 0, 0.32], [-0.24, 0.86, 0.1, 0.22], [0.22, 0.9, -0.08, 0.24]].forEach(function (p) {
+        var c = sph(p[3], P.leaf, 12, 8); put(c, p[0], p[1], p[2]); g.add(c);
+      });
+      [[-0.2, 0.94, 0.14], [0.18, 1.06, -0.1], [0.06, 0.8, 0.2]].forEach(function (p) {
+        var f = sph(0.08, P.yellow, 8, 6); f.scale.set(1, 1.2, 1); put(f, p[0], p[1], p[2]); g.add(f);
+      });
+    } else if (kind === 'olive') {
+      var tr2 = cyl(0.045, 0.055, 0.5, 6, P.woodDk); put(tr2, 0, 0.65); g.add(tr2);
+      for (var i = 0; i < 12; i++) {
+        var a = (i / 12) * Math.PI * 2, r = 0.16 + (i % 3) * 0.07;
+        var lf = bx(0.06, 0.24, 0.05, i % 2 ? P.leafLt : P.leafDk);
+        put(lf, Math.cos(a) * r, 0.98 + (i % 4) * 0.06, Math.sin(a) * r);
+        lf.rotation.z = Math.cos(a) * 0.6; g.add(lf);
+      }
+    } else if (kind === 'herb') {
+      for (var j = 0; j < 3; j++) {
+        var cl = sph(0.19, j === 1 ? P.leafLt : P.leaf, 10, 8); cl.scale.set(1, 0.8, 1);
+        put(cl, -0.26 + j * 0.26, 0.42, 0); g.add(cl);
+        var sp = cyl(0.03, 0.02, 0.22, 5, P.leafDk); put(sp, -0.26 + j * 0.26, 0.62, 0); g.add(sp);
+      }
+    } else {
+      var b = sph(0.3, P.leaf, 12, 8); b.scale.set(1, 0.9, 1); put(b, 0, 0.66); g.add(b);
+      var b2 = sph(0.17, P.leafLt, 10, 8); put(b2, 0.14, 0.86, -0.06); g.add(b2);
+    }
+    return g;
+  }
+
+  // ===================== 12. lotus =====================
+  function lotus(kind) {
+    var g = G();
+    var pad = cyl(0.45, 0.45, 0.04, 14, P.leafDk); put(pad, 0, 0.02); g.add(pad);
+    if (kind === 'pads') {
+      var p2 = cyl(0.3, 0.3, 0.035, 12, P.leaf); put(p2, 0.52, 0.018, 0.3); g.add(p2);
+      var p3 = cyl(0.22, 0.22, 0.035, 12, P.leafLt); put(p3, -0.44, 0.018, -0.34); g.add(p3);
+      return g;
+    }
+    var col = kind === 'white' ? P.white : P.pink;
+    for (var ring = 0; ring < 2; ring++) {
+      var n = ring ? 5 : 7, rad = ring ? 0.1 : 0.16, lift = ring ? 0.2 : 0.12;
+      for (var i = 0; i < n; i++) {
+        var a = (i / n) * Math.PI * 2 + ring * 0.4;
+        var pet = sph(0.13, ring ? col : (kind === 'white' ? P.cream : P.pinkDk), 8, 6);
+        pet.scale.set(0.55, 0.35, 1.15);
+        put(pet, Math.cos(a) * rad, lift, Math.sin(a) * rad);
+        pet.rotation.y = -a; pet.rotation.x = -0.85 + ring * 0.3; g.add(pet);
+      }
+    }
+    var core = sph(0.075, P.yellow, 8, 6); put(core, 0, 0.25); g.add(core);
+    return g;
+  }
+
+  // ===================== 13/14. tulips =====================
+  function tulip(col) {
+    var g = G();
+    var stem = cyl(0.022, 0.026, 0.46, 5, P.leaf); put(stem, 0, 0.23); g.add(stem);
+    [-1, 1].forEach(function (s) {
+      var lf = bx(0.07, 0.3, 0.03, P.leafDk); put(lf, s * 0.07, 0.2, 0);
+      lf.rotation.z = s * 0.4; g.add(lf);
+    });
+    var bloom = sph(0.1, col, 10, 8); bloom.scale.set(1, 1.25, 1); put(bloom, 0, 0.54); g.add(bloom);
+    for (var i = 0; i < 3; i++) {
+      var a = (i / 3) * Math.PI * 2;
+      var pt = cone(0.045, 0.13, 5, col);
+      put(pt, Math.cos(a) * 0.06, 0.63, Math.sin(a) * 0.06); g.add(pt);
+    }
+    return g;
+  }
+  function tulipCluster(mix) {
+    var g = G();
+    var cols = mix === 'red' ? [P.red, P.redDk, P.red] : mix === 'yellow' ? [P.yellow, P.yellowDk, P.yellow] : [P.red, P.yellow, P.pink, P.purple, P.white];
+    var n = mix === 'mixed' ? 6 : 5;
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * Math.PI * 2, r = 0.2 + (i % 2) * 0.1;
+      var t = tulip(cols[i % cols.length]);
+      put(t, Math.cos(a) * r, 0, Math.sin(a) * r);
+      t.scale.setScalar(0.85 + (i % 3) * 0.1); g.add(t);
+    }
+    var soil = cyl(0.5, 0.44, 0.1, 12, P.dirt); put(soil, 0, 0.05); g.add(soil);
+    return g;
+  }
+
+  // ===================== 15. mushrooms =====================
+  function mushroom(kind) {
+    var g = G();
+    function one(x, z, s, capC, spots) {
+      var stem = cyl(0.06 * s, 0.08 * s, 0.26 * s, 8, P.cream); put(stem, x, 0.13 * s, z); g.add(stem);
+      var cap = new THREE.Mesh(new THREE.SphereGeometry(0.19 * s, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(capC));
+      cap.scale.set(1, 0.78, 1); put(cap, x, 0.25 * s, z); g.add(cap);
+      if (spots) for (var i = 0; i < 4; i++) {
+        var a = (i / 4) * Math.PI * 2, sp = sph(0.032 * s, P.white, 6, 5);
+        sp.scale.set(1, 0.5, 1);
+        put(sp, x + Math.cos(a) * 0.1 * s, 0.3 * s, z + Math.sin(a) * 0.1 * s); g.add(sp);
+      }
+    }
+    if (kind === 'amanita') { one(0, 0, 1.25, P.red, true); one(-0.3, 0.22, 0.75, P.red, true); }
+    else if (kind === 'brown') { one(0, 0, 1.1, P.wood, false); one(0.28, -0.2, 0.8, P.woodDk, false); one(-0.26, -0.16, 0.6, P.wood, false); }
+    else if (kind === 'shelf') {
+      var log = cyl(0.16, 0.16, 0.7, 8, P.woodDk); log.rotation.z = Math.PI / 2; put(log, 0, 0.16); g.add(log);
+      for (var i = 0; i < 4; i++) {
+        var sh = cyl(0.19, 0.06, 0.05, 10, P.orange);
+        put(sh, -0.24 + i * 0.16, 0.26 + (i % 2) * 0.08, 0.06);
+        sh.rotation.x = 0.3; g.add(sh);
+      }
+    } else { one(0, 0, 0.6, P.cream, false); one(0.2, 0.12, 0.45, P.cream, false); one(-0.16, 0.16, 0.38, P.woodLt, false); }
+    return g;
+  }
+
+  // ===================== 16. animal friends =====================
+  function animal(kind) {
+    var g = G();
+    if (kind === 'ladybug') {
+      var body = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), M(P.red));
+      body.scale.set(1, 0.85, 1.2); put(body, 0, 0.04); g.add(body);
+      var head = sph(0.1, P.black, 10, 8); head.scale.set(1, 0.8, 0.8); put(head, 0, 0.06, 0.2); g.add(head);
+      var line = bx(0.02, 0.02, 0.42, P.black); put(line, 0, 0.21, -0.02); g.add(line);
+      [[-0.1, 0.06], [0.1, -0.02], [-0.08, -0.12], [0.09, 0.12]].forEach(function (p) {
+        var s = sph(0.035, P.black, 6, 5); put(s, p[0], 0.19, p[1]); g.add(s);
+      });
+    } else if (kind === 'butterfly') {
+      var b = cyl(0.032, 0.026, 0.3, 6, P.black); b.rotation.x = Math.PI / 2; put(b, 0, 0.34); g.add(b);
+      [-1, 1].forEach(function (s) {
+        [[0.09, 0.4, 0.24, P.orange], [-0.05, 0.3, 0.18, P.yellow]].forEach(function (w) {
+          var wing = sph(w[2], w[3], 10, 8); wing.scale.set(1.1, 0.09, 0.75);
+          put(wing, s * 0.2, w[1], w[0]); wing.rotation.z = s * 0.55; g.add(wing);
+        });
+      });
+      var st = cyl(0.015, 0.015, 0.34, 4, P.leafDk); put(st, 0, 0.17); g.add(st);
+    } else if (kind === 'squirrel') {
+      var bd = sph(0.19, P.orange, 12, 8); bd.scale.set(1, 1.15, 0.9); put(bd, 0, 0.2); g.add(bd);
+      var hd = sph(0.13, P.orange, 12, 8); put(hd, 0, 0.44, 0.06); g.add(hd);
+      [-1, 1].forEach(function (s) { var e = cone(0.055, 0.11, 5, P.orange); put(e, s * 0.08, 0.56, 0.04); g.add(e); });
+      var mz = sph(0.06, P.cream, 8, 6); put(mz, 0, 0.42, 0.16); g.add(mz);
+      [0, 1, 2].forEach(function (i) {
+        var t = sph(0.11 - i * 0.015, P.orange, 10, 8);
+        put(t, 0, 0.28 + i * 0.16, -0.22 - i * 0.04); g.add(t);
+      });
+    } else if (kind === 'frog') {
+      var bf = sph(0.22, P.leaf, 14, 10); bf.scale.set(1, 0.78, 1.15); put(bf, 0, 0.17); g.add(bf);
+      [-1, 1].forEach(function (s) {
+        var eye = sph(0.075, P.white, 8, 6); put(eye, s * 0.1, 0.32, 0.1); g.add(eye);
+        var pup = sph(0.04, P.black, 6, 5); put(pup, s * 0.11, 0.34, 0.15); g.add(pup);
+        var leg = sph(0.07, P.leafDk, 8, 6); leg.scale.set(1.3, 0.6, 1); put(leg, s * 0.22, 0.06, 0.12); g.add(leg);
+      });
+    } else {
+      var shell = tor(0.15, 0.075, P.terra); put(shell, 0, 0.22, -0.03); g.add(shell);
+      var shell2 = tor(0.08, 0.055, P.terraDk); put(shell2, 0, 0.22, -0.03); g.add(shell2);
+      var bs = cyl(0.06, 0.07, 0.34, 8, P.cream); bs.rotation.x = Math.PI / 2 - 0.2; put(bs, 0, 0.07, 0.14); g.add(bs);
+      var hd2 = sph(0.07, P.cream, 8, 6); put(hd2, 0, 0.12, 0.28); g.add(hd2);
+      [-1, 1].forEach(function (s) { var an = cyl(0.012, 0.012, 0.12, 4, P.cream); put(an, s * 0.035, 0.2, 0.28); g.add(an); });
+    }
+    return g;
+  }
+
+  // ===================== 17. water pumps =====================
+  function pump(kind) {
+    var g = G();
+    var c = kind === 'brass' ? P.brass : kind === 'red' ? P.red : P.metalDk;
+    var base = bx(0.44, 0.14, 0.44, P.stone); put(base, 0, 0.07); g.add(base);
+    var col = cyl(0.09, 0.11, 0.72, 10, c); put(col, 0, 0.5); g.add(col);
+    var head = bx(0.2, 0.22, 0.2, c); put(head, 0, 0.94); g.add(head);
+    var spout = cyl(0.055, 0.07, 0.34, 8, c); put(spout, 0, 0.86, 0.2); spout.rotation.x = 1.1; g.add(spout);
+    if (kind === 'crank') {
+      var wheel = tor(0.16, 0.03, c); put(wheel, 0.18, 0.96); wheel.rotation.y = Math.PI / 2; g.add(wheel);
+    } else {
+      var handle = bx(0.42, 0.06, 0.07, kind === 'brass' ? P.woodDk : c);
+      put(handle, -0.16, 1.06); handle.rotation.z = 0.3; g.add(handle);
+    }
+    var basin = cyl(0.28, 0.24, 0.14, 10, P.stoneLt); put(basin, 0, 0.14, 0.34); g.add(basin);
+    var w = cyl(0.22, 0.22, 0.05, 10, P.water); put(w, 0, 0.2, 0.34); g.add(w);
+    return g;
+  }
+
+  // ===================== 18. buckets & cans =====================
+  function bucket(kind) {
+    var g = G();
+    if (kind === 'can') {
+      var body = cyl(0.2, 0.24, 0.34, 12, P.metal); put(body, 0, 0.17); g.add(body);
+      var sp = cyl(0.05, 0.08, 0.42, 8, P.metal); put(sp, 0.26, 0.3); sp.rotation.z = -0.85; g.add(sp);
+      var rose = cyl(0.09, 0.06, 0.06, 8, P.metalDk); put(rose, 0.44, 0.44); rose.rotation.z = -0.85; g.add(rose);
+      var hd = tor(0.13, 0.022, P.metalDk, Math.PI); put(hd, -0.05, 0.36); hd.rotation.y = Math.PI / 2; g.add(hd);
+      return g;
+    }
+    var c = kind === 'wood' ? P.wood : kind === 'red' ? P.red : P.metal;
+    var b = cyl(0.22, 0.17, 0.36, 12, c); put(b, 0, 0.18); g.add(b);
+    var rim = tor(0.22, 0.022, kind === 'wood' ? P.woodDk : P.metalDk); put(rim, 0, 0.36); rim.rotation.x = Math.PI / 2; g.add(rim);
+    if (kind === 'wood') for (var i = 0; i < 2; i++) { var band = tor(0.2 + i * 0.015, 0.018, P.metalDk); put(band, 0, 0.1 + i * 0.16); band.rotation.x = Math.PI / 2; g.add(band); }
+    var handle = tor(0.2, 0.02, P.metalDk, Math.PI); put(handle, 0, 0.37); handle.rotation.y = Math.PI / 2; g.add(handle);
+    return g;
+  }
+
+  // ===================== 19. boots & gear =====================
+  function gear(kind) {
+    var g = G();
+    if (kind === 'gloves') {
+      [-1, 1].forEach(function (s) {
+        var palm = bx(0.17, 0.2, 0.09, s > 0 ? P.leafLt : P.yellow); put(palm, s * 0.13, 0.1, 0); palm.rotation.z = s * 0.2; g.add(palm);
+        var cuff = bx(0.15, 0.1, 0.1, s > 0 ? P.leaf : P.yellowDk); put(cuff, s * 0.16, 0.03, 0); g.add(cuff);
+        for (var i = 0; i < 3; i++) { var f = bx(0.04, 0.09, 0.06, s > 0 ? P.leafLt : P.yellow); put(f, s * 0.09, 0.24, -0.03 + i * 0.03); g.add(f); }
+      });
+      return g;
+    }
+    if (kind === 'trowel') {
+      var h = cyl(0.04, 0.045, 0.24, 8, P.woodDk); put(h, 0, 0.12); h.rotation.z = 0.35; g.add(h);
+      var neck = cyl(0.02, 0.02, 0.14, 6, P.metalDk); put(neck, -0.11, 0.26); neck.rotation.z = 0.35; g.add(neck);
+      var blade = cone(0.11, 0.3, 6, P.metal); put(blade, -0.2, 0.36); blade.rotation.z = 2.7; blade.scale.set(1, 1, 0.4); g.add(blade);
+      return g;
+    }
+    var c = kind === 'yellow' ? P.yellow : P.leaf;
+    var cDk = kind === 'yellow' ? P.yellowDk : P.leafDk;
+    [-1, 1].forEach(function (s) {
+      var leg = cyl(0.1, 0.11, 0.4, 10, c); put(leg, s * 0.14, 0.2); g.add(leg);
+      var foot = bx(0.19, 0.11, 0.28, c); put(foot, s * 0.14, 0.055, 0.09); g.add(foot);
+      var toe = sph(0.1, c, 8, 6); toe.scale.set(0.95, 0.55, 1); put(toe, s * 0.14, 0.06, 0.21); g.add(toe);
+      var sole = bx(0.2, 0.04, 0.3, cDk); put(sole, s * 0.14, 0.02, 0.09); g.add(sole);
+      var top = tor(0.1, 0.022, cDk); put(top, s * 0.14, 0.4); top.rotation.x = Math.PI / 2; g.add(top);
+    });
+    return g;
+  }
+
+  // ===================== 20. umbrellas =====================
+  function umbrella(kind) {
+    var g = G();
+    var c = kind === 'yellow' ? P.yellow : kind === 'red' ? P.red : kind === 'patio' ? P.cream : P.white;
+    var big = kind === 'patio';
+    var r = big ? 0.95 : 0.7, hgt = big ? 1.7 : 1.25;
+    var pole = cyl(0.035, 0.04, hgt, 8, big ? P.woodDk : P.metalDk); put(pole, 0, hgt / 2); g.add(pole);
+    var canopy = cone(r, 0.44, 8, c); put(canopy, 0, hgt - 0.1); g.add(canopy);
+    for (var i = 0; i < 8; i++) {
+      var a = (i / 8) * Math.PI * 2;
+      var rib = bx(0.03, 0.03, r * 0.98, i % 2 ? c : (kind === 'red' ? P.redDk : P.terraDk));
+      put(rib, Math.cos(a) * r * 0.48, hgt - 0.22, Math.sin(a) * r * 0.48);
+      rib.rotation.y = -a; rib.rotation.x = 0.42; g.add(rib);
+    }
+    var fin = sph(0.05, P.brass, 8, 6); put(fin, 0, hgt + 0.14); g.add(fin);
+    if (big) { var base = cyl(0.34, 0.4, 0.14, 12, P.stone); put(base, 0, 0.07); g.add(base); }
+    else { var tip = cyl(0.02, 0.02, 0.14, 5, P.metalDk); put(tip, 0, 0.02); g.add(tip); }
+    return g;
+  }
+
+  // ===================== 21. misc details =====================
+  function signTex(text) {
+    var c = document.createElement('canvas'); c.width = 384; c.height = 160;
+    var g2 = c.getContext('2d');
+    g2.fillStyle = '#E4C89A'; g2.fillRect(0, 0, 384, 160);
+    g2.strokeStyle = '#8A5E33'; g2.lineWidth = 10; g2.strokeRect(5, 5, 374, 150);
+    g2.fillStyle = '#5A3A1E'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.font = '700 52px Georgia, serif';
+    g2.fillText(text, 192, 82);
+    var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  function misc(kind) {
+    var g = G();
+    if (kind === 'birdbath') {
+      var base = cyl(0.28, 0.34, 0.1, 12, P.stone); put(base, 0, 0.05); g.add(base);
+      var stem = cyl(0.1, 0.12, 0.5, 10, P.stoneLt); put(stem, 0, 0.34); g.add(stem);
+      var bowl = cyl(0.38, 0.3, 0.14, 14, P.stoneLt); put(bowl, 0, 0.66); g.add(bowl);
+      var w = cyl(0.32, 0.32, 0.05, 14, P.water); put(w, 0, 0.72); g.add(w);
+    } else if (kind === 'pots') {
+      var sizes = [[0.3, 0.22, 0.34, 0], [0.24, 0.18, 0.28, 0.36], [0.19, 0.14, 0.22, 0.62]];
+      sizes.forEach(function (s, i) {
+        var p = cyl(s[0], s[1], s[2], 12, i % 2 ? P.terra : P.terraDk);
+        put(p, i * 0.06, s[3] + s[2] / 2, -i * 0.05); p.rotation.z = i * 0.05; g.add(p);
+      });
+    } else if (kind === 'sign') {
+      var post = cyl(0.05, 0.055, 0.8, 8, P.woodDk); put(post, 0, 0.4); g.add(post);
+      var board = bx(0.78, 0.32, 0.05, P.woodLt); put(board, 0, 0.82); g.add(board);
+      var face = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.28), new THREE.MeshLambertMaterial({ map: signTex('MY GARDEN') }));
+      put(face, 0, 0.82, 0.027); g.add(face);
+    } else {
+      for (var i = 0; i < 5; i++) {
+        var pk = cyl(0.035, 0.035, 0.42, 6, P.woodLt); put(pk, -0.4 + i * 0.2, 0.21); g.add(pk);
+        var tip = cone(0.04, 0.08, 5, P.woodLt); put(tip, -0.4 + i * 0.2, 0.46); g.add(tip);
+      }
+      [0.16, 0.32].forEach(function (y) { var r = bx(0.92, 0.05, 0.035, P.wood); put(r, 0, y); g.add(r); });
+    }
+    return g;
+  }
+
+  // ===================== the catalog =====================
+  var CATALOG = [
+    { group: 'Grounds & Structures', cats: [
+      { n: 1, th: 'แท่นหญ้าลอย', en: 'Isolated Grass Platforms', items: [
+        ['เหลี่ยมสี่', 'grassPlatform(0)', function () { return grassPlatform(0); }],
+        ['หกเหลี่ยม + หญ้าแซม', 'grassPlatform(1)', function () { return grassPlatform(1); }],
+        ['มีทางเดินหิน', 'grassPlatform(2)', function () { return grassPlatform(2); }],
+        ['มีลำธารผ่า', 'grassPlatform(3)', function () { return grassPlatform(3); }]
+      ]},
+      { n: 2, th: 'ลำธารต่อกระเบื้อง', en: 'Tiling Water Streams', items: [
+        ['ทางตรง', "streamTile('straight')", function () { return streamTile('straight'); }],
+        ['ทางโค้ง', "streamTile('corner')", function () { return streamTile('corner'); }],
+        ['สามแยก', "streamTile('tee')", function () { return streamTile('tee'); }],
+        ['ปลายทาง + แอ่ง', "streamTile('end')", function () { return streamTile('end'); }]
+      ]},
+      { n: 3, th: 'บ่อน้ำ', en: 'Water Ponds', items: [
+        ['บ่อขอบหิน', 'pond(0)', function () { return pond(0); }],
+        ['บ่อกลม + ใบบัว', 'pond(1)', function () { return pond(1); }],
+        ['บ่อสองชั้น', 'pond(2)', function () { return pond(2); }]
+      ]},
+      { n: 4, th: 'สะพาน', en: 'Bridges', items: [
+        ['สะพานไม้โค้ง', "bridge('arch')", function () { return bridge('arch'); }],
+        ['สะพานไม้แบน', "bridge('plank')", function () { return bridge('plank'); }],
+        ['สะพานหิน', "bridge('stone')", function () { return bridge('stone'); }]
+      ]}
+    ]},
+    { group: 'Small Structures & Furnishings', cats: [
+      { n: 5, th: 'ชิงช้า', en: 'Tree Swings', items: [
+        ['ชิงช้ายางรถ', "swing('tire')", function () { return swing('tire'); }],
+        ['ชิงช้าไม้กระดาน', "swing('plank')", function () { return swing('plank'); }],
+        ['ชิงช้าขาหยั่ง', "swing('aframe')", function () { return swing('aframe'); }]
+      ]},
+      { n: 6, th: 'ม้านั่งสวน', en: 'Garden Benches', items: [
+        ['ม้านั่งแดง', "bench('red')", function () { return bench('red'); }],
+        ['ม้านั่งไม้', "bench('wood')", function () { return bench('wood'); }],
+        ['ม้านั่งหิน', "bench('stone')", function () { return bench('stone'); }],
+        ['ม้านั่งเหล็กดัด', "bench('ornate')", function () { return bench('ornate'); }]
+      ]},
+      { n: 7, th: 'โคมไฟ', en: 'Lanterns', items: [
+        ['ไฟราวสาย', "lantern('string')", function () { return lantern('string'); }],
+        ['โคมแขวน', "lantern('hang')", function () { return lantern('hang'); }],
+        ['โคมหินญี่ปุ่น', "lantern('stone')", function () { return lantern('stone'); }],
+        ['เสาไฟสวน', "lantern('post')", function () { return lantern('post'); }]
+      ]},
+      { n: 8, th: 'ม้านั่งเตี้ย / โต๊ะเล็ก', en: 'Small Stools & Tables', items: [
+        ['ตอไม้', "stoolTable('stump')", function () { return stoolTable('stump'); }],
+        ['โต๊ะกลมไม้', "stoolTable('round')", function () { return stoolTable('round'); }],
+        ['โต๊ะโมเสก', "stoolTable('mosaic')", function () { return stoolTable('mosaic'); }]
+      ]}
+    ]},
+    { group: 'Large Plants & Flora', cats: [
+      { n: 9, th: 'ต้นไม้ใหญ่', en: 'Large Trees', items: [
+        ['ต้นโอ๊ก', "tree('oak')", function () { return tree('oak'); }],
+        ['ซากุระ', "tree('cherry')", function () { return tree('cherry'); }],
+        ['บอนไซ', "tree('bonsai')", function () { return tree('bonsai'); }],
+        ['ต้นหลิว', "tree('willow')", function () { return tree('willow'); }],
+        ['ต้นสน', "tree('pine')", function () { return tree('pine'); }]
+      ]},
+      { n: 10, th: 'พุ่มไม้ & ไม้คลุมดิน', en: 'Shrubs & Ground Cover', items: [
+        ['พุ่มกลม', "shrub('bush')", function () { return shrub('bush'); }],
+        ['ลาเวนเดอร์', "shrub('lavender')", function () { return shrub('lavender'); }],
+        ['ไม้อวบน้ำ', "shrub('succulent')", function () { return shrub('succulent'); }],
+        ['เฟิร์น', "shrub('fern')", function () { return shrub('fern'); }]
+      ]},
+      { n: 11, th: 'ไม้กระถาง', en: 'Potted Plants', items: [
+        ['ต้นเลมอน', "pottedPlant('lemon')", function () { return pottedPlant('lemon'); }],
+        ['ต้นมะกอก', "pottedPlant('olive')", function () { return pottedPlant('olive'); }],
+        ['รางสมุนไพร', "pottedPlant('herb')", function () { return pottedPlant('herb'); }],
+        ['กระถางเล็ก', "pottedPlant('small')", function () { return pottedPlant('small'); }]
+      ]}
+    ]},
+    { group: 'Specialized Plants & Small Details', cats: [
+      { n: 12, th: 'ดอกบัว', en: 'Lotus Flowers', items: [
+        ['บัวชมพู', "lotus('pink')", function () { return lotus('pink'); }],
+        ['บัวขาว', "lotus('white')", function () { return lotus('white'); }],
+        ['กลุ่มใบบัว', "lotus('pads')", function () { return lotus('pads'); }]
+      ]},
+      { n: 13, th: 'กอทิวลิป', en: 'Tulip Clusters', items: [
+        ['กอแดง', "tulipCluster('red')", function () { return tulipCluster('red'); }],
+        ['กอเหลือง', "tulipCluster('yellow')", function () { return tulipCluster('yellow'); }],
+        ['กอคละสี', "tulipCluster('mixed')", function () { return tulipCluster('mixed'); }]
+      ]},
+      { n: 14, th: 'ทิวลิปเดี่ยว', en: 'Individual Tulips', items: [
+        ['แดง', 'tulip(P.red)', function () { return tulip(P.red); }],
+        ['เหลือง', 'tulip(P.yellow)', function () { return tulip(P.yellow); }],
+        ['ชมพู', 'tulip(P.pink)', function () { return tulip(P.pink); }],
+        ['ม่วง', 'tulip(P.purple)', function () { return tulip(P.purple); }],
+        ['ส้ม', 'tulip(P.orange)', function () { return tulip(P.orange); }],
+        ['ขาว', 'tulip(P.white)', function () { return tulip(P.white); }]
+      ]},
+      { n: 15, th: 'กลุ่มเห็ด', en: 'Mushroom Groups', items: [
+        ['เห็ดแดงจุดขาว', "mushroom('amanita')", function () { return mushroom('amanita'); }],
+        ['เห็ดน้ำตาล', "mushroom('brown')", function () { return mushroom('brown'); }],
+        ['เห็ดหิ้งบนขอน', "mushroom('shelf')", function () { return mushroom('shelf'); }],
+        ['เห็ดจิ๋ว', "mushroom('tiny')", function () { return mushroom('tiny'); }]
+      ]},
+      { n: 16, th: 'เพื่อนตัวเล็ก', en: 'Animal Friends', items: [
+        ['เต่าทอง', "animal('ladybug')", function () { return animal('ladybug'); }],
+        ['ผีเสื้อ', "animal('butterfly')", function () { return animal('butterfly'); }],
+        ['กระรอก', "animal('squirrel')", function () { return animal('squirrel'); }],
+        ['กบ', "animal('frog')", function () { return animal('frog'); }],
+        ['หอยทาก', "animal('snail')", function () { return animal('snail'); }]
+      ]}
+    ]},
+    { group: 'Practical Items & Props', cats: [
+      { n: 17, th: 'ปั๊มน้ำ', en: 'Water Pumps', items: [
+        ['ปั๊มแดงมาตรฐาน', "pump('red')", function () { return pump('red'); }],
+        ['ปั๊มทองเหลือง', "pump('brass')", function () { return pump('brass'); }],
+        ['ปั๊มมือหมุน', "pump('crank')", function () { return pump('crank'); }]
+      ]},
+      { n: 18, th: 'ถังน้ำ & บัวรดน้ำ', en: 'Water Buckets', items: [
+        ['ถังสังกะสี', "bucket('metal')", function () { return bucket('metal'); }],
+        ['ถังไม้', "bucket('wood')", function () { return bucket('wood'); }],
+        ['ถังแดง', "bucket('red')", function () { return bucket('red'); }],
+        ['บัวรดน้ำ', "bucket('can')", function () { return bucket('can'); }]
+      ]},
+      { n: 19, th: 'รองเท้าบูต & อุปกรณ์', en: 'Boots & Gear', items: [
+        ['บูตเหลือง', "gear('yellow')", function () { return gear('yellow'); }],
+        ['บูตเขียว', "gear('green')", function () { return gear('green'); }],
+        ['ถุงมือ', "gear('gloves')", function () { return gear('gloves'); }],
+        ['เกรียงพรวนดิน', "gear('trowel')", function () { return gear('trowel'); }]
+      ]},
+      { n: 20, th: 'ร่ม', en: 'Umbrellas', items: [
+        ['ร่มเหลือง', "umbrella('yellow')", function () { return umbrella('yellow'); }],
+        ['ร่มขาวครีม', "umbrella('cream')", function () { return umbrella('cream'); }],
+        ['ร่มแดง', "umbrella('red')", function () { return umbrella('red'); }],
+        ['ร่มสนาม', "umbrella('patio')", function () { return umbrella('patio'); }]
+      ]},
+      { n: 21, th: 'ของกระจุกกระจิก', en: 'Miscellaneous Details', items: [
+        ['อ่างน้ำนก', "misc('birdbath')", function () { return misc('birdbath'); }],
+        ['กองกระถางดินเผา', "misc('pots')", function () { return misc('pots'); }],
+        ['ป้าย MY GARDEN', "misc('sign')", function () { return misc('sign'); }],
+        ['รั้วไม้เตี้ย', "misc('fence')", function () { return misc('fence'); }]
+      ]}
+    ]}
+  ];
+
+  // ===================== lights =====================
+  var hemi = new THREE.HemisphereLight(0xFFF6E2, 0x6E6450, 0.92);
+  scene.add(hemi);
+  var key = new THREE.DirectionalLight(0xFFEFD0, 0.78);
+  key.position.set(12, 20, 14);
+  scene.add(key);
+  var rim = new THREE.DirectionalLight(0xCBDCFF, 0.26);
+  rim.position.set(-12, 8, -10);
+  scene.add(rim);
+
+  // ===================== graph-paper ground (นับถือชีตต้นฉบับ) =====================
+  function paperTexture() {
+    var c = document.createElement('canvas'); c.width = 256; c.height = 256;
+    var g2 = c.getContext('2d');
+    g2.fillStyle = '#EFE7D5'; g2.fillRect(0, 0, 256, 256);
+    g2.strokeStyle = '#DCD0B6'; g2.lineWidth = 1;
+    for (var i = 0; i <= 256; i += 32) {
+      g2.beginPath(); g2.moveTo(i + .5, 0); g2.lineTo(i + .5, 256); g2.stroke();
+      g2.beginPath(); g2.moveTo(0, i + .5); g2.lineTo(256, i + .5); g2.stroke();
+    }
+    g2.strokeStyle = '#CDBF9F'; g2.lineWidth = 2;
+    g2.strokeRect(0, 0, 256, 256);
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(40, 22);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  var groundMat = new THREE.MeshLambertMaterial({ map: paperTexture() });
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 66), groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(26, -0.01, 14);
+  scene.add(ground);
+
+  // contact shadow disc (shared)
+  function shadowTexture() {
+    var c = document.createElement('canvas'); c.width = 128; c.height = 128;
+    var g2 = c.getContext('2d');
+    var grd = g2.createRadialGradient(64, 64, 4, 64, 64, 62);
+    grd.addColorStop(0, 'rgba(60,50,35,0.42)');
+    grd.addColorStop(0.55, 'rgba(60,50,35,0.18)');
+    grd.addColorStop(1, 'rgba(60,50,35,0)');
+    g2.fillStyle = grd; g2.fillRect(0, 0, 128, 128);
+    return new THREE.CanvasTexture(c);
+  }
+  var shadowMat = new THREE.MeshBasicMaterial({ map: shadowTexture(), transparent: true, depthWrite: false });
+  var shadowGeo = new THREE.PlaneGeometry(1, 1);
+
+  // ===================== billboard labels =====================
+  var labels = [];
+  function labelSprite(text, sub, big) {
+    var c = document.createElement('canvas');
+    c.width = 512; c.height = big ? 128 : 112;
+    var g2 = c.getContext('2d');
+    g2.clearRect(0, 0, c.width, c.height);
+    g2.fillStyle = big ? 'rgba(47,67,115,0.94)' : 'rgba(251,247,238,0.94)';
+    roundRect(g2, 4, 4, c.width - 8, c.height - 8, 14); g2.fill();
+    g2.strokeStyle = big ? 'rgba(47,67,115,1)' : 'rgba(160,112,43,0.8)';
+    g2.lineWidth = 3; roundRect(g2, 4, 4, c.width - 8, c.height - 8, 14); g2.stroke();
+    g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.fillStyle = big ? '#FBF7EE' : '#1C2233';
+    g2.font = (big ? '600 44px' : '500 40px') + ' "Mitr","Helvetica Neue",sans-serif';
+    g2.fillText(text, 256, sub ? c.height * 0.38 : c.height / 2);
+    if (sub) {
+      g2.font = '400 27px "IBM Plex Mono",monospace';
+      g2.fillStyle = big ? 'rgba(251,247,238,0.75)' : '#8B93A6';
+      g2.fillText(sub, 256, c.height * 0.72);
+    }
+    var t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    var m = new THREE.Mesh(
+      new THREE.PlaneGeometry(big ? 4.6 : 3.6, (big ? 4.6 : 3.6) * c.height / 512),
+      new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false })
+    );
+    labels.push(m);
+    return m;
+  }
+  function roundRect(g2, x, y, w, h, r) {
+    g2.beginPath();
+    g2.moveTo(x + r, y); g2.lineTo(x + w - r, y); g2.quadraticCurveTo(x + w, y, x + w, y + r);
+    g2.lineTo(x + w, y + h - r); g2.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    g2.lineTo(x + r, y + h); g2.quadraticCurveTo(x, y + h, x, y + h - r);
+    g2.lineTo(x, y + r); g2.quadraticCurveTo(x, y, x + r, y); g2.closePath();
+  }
+
+  // ===================== lay out the sheet =====================
+  var COL_W = 13.2, ROW_D = 6.6, ITEM_W = 2.62;
+  var ASSETS = [];   // {obj, th, en, fn, cat}
+  var CATS = [];     // {n, th, en, x, z, count}
+  var bboxV = new THREE.Box3(), sizeV = new THREE.Vector3(), ctrV = new THREE.Vector3();
+
+  CATALOG.forEach(function (grp, gi) {
+    var colX = gi * COL_W;
+    var head = labelSprite(grp.group, '', true);
+    head.position.set(colX, 3.4, -4.4);
+    scene.add(head);
+
+    grp.cats.forEach(function (cat, ri) {
+      var rowZ = ri * ROW_D;
+      var lab = labelSprite(cat.th, String(cat.n) + ' · ' + cat.en);
+      lab.position.set(colX, 2.5, rowZ - 2.15);
+      scene.add(lab);
+      CATS.push({ n: cat.n, th: cat.th, en: cat.en, x: colX, z: rowZ, count: cat.items.length });
+
+      var n = cat.items.length;
+      var span = Math.min(11.4, n * ITEM_W);
+      cat.items.forEach(function (it, k) {
+        var x = colX + (n === 1 ? 0 : -span / 2 + (span / (n - 1)) * k);
+        var obj = it[2]();
+        obj.position.set(x, 0, rowZ);
+        obj.userData.assetIndex = ASSETS.length;
+        scene.add(obj);
+
+        bboxV.setFromObject(obj);
+        bboxV.getSize(sizeV); bboxV.getCenter(ctrV);
+        var sd = new THREE.Mesh(shadowGeo, shadowMat);
+        sd.rotation.x = -Math.PI / 2;
+        var rad = Math.max(sizeV.x, sizeV.z) * 1.15 + 0.25;
+        sd.scale.set(rad, rad, 1);
+        sd.position.set(ctrV.x, 0.012, rowZ);
+        scene.add(sd);
+
+        ASSETS.push({ obj: obj, th: it[0], fn: it[1], en: cat.en, catN: cat.n, x: x, z: rowZ, h: sizeV.y });
+      });
+    });
+  });
+
+  var SHEET_CENTER = new THREE.Vector3((CATALOG.length - 1) * COL_W / 2, 1.2, 4 * ROW_D / 2 - 1);
+  var SHEET_DIST = 78;
+
+  // ===================== camera =====================
+  var camo = new THREE.OrthographicCamera(-5, 5, 5, -5, -140, 260);
+  var cam = { azim: -Math.PI / 4, elev: ISO_ELEV, dist: SHEET_DIST, tx: SHEET_CENTER.x, ty: SHEET_CENTER.y, tz: SHEET_CENTER.z };
+  var glide = { azim: null, elev: null };
+  var frameGoal = null;
+
+  function applyCamera() {
+    var w = stageEl.clientWidth || 1, h = stageEl.clientHeight || 1;
+    var aspect = w / h;
+    var fh = cam.dist * (aspect < 1 ? 0.30 : 0.215);
+    var fw = fh * aspect;
+    camo.left = -fw; camo.right = fw; camo.top = fh; camo.bottom = -fh;
+    camo.updateProjectionMatrix();
+    var r = Math.cos(cam.elev) * cam.dist;
+    camo.position.set(cam.tx + r * Math.sin(cam.azim), Math.sin(cam.elev) * cam.dist, cam.tz + r * Math.cos(cam.azim));
+    camo.lookAt(cam.tx, cam.ty, cam.tz);
+  }
+  function snapBack() { var s = Math.PI / 4; glide.azim = Math.round(cam.azim / s) * s; glide.elev = ISO_ELEV; }
+  function flyTo(x, y, z, d) { frameGoal = { tx: x, ty: y, tz: z, dist: d }; }
+
+  // ===================== UI =====================
+  var elNav = document.getElementById('nav');
+  var elName = document.getElementById('hudName');
+  var elEn = document.getElementById('hudEn');
+  var elFn = document.getElementById('hudFn');
+  var selected = null, spin = !reduce, night = 0, nightGoal = 0;
+  var navBtns = [];
+
+  CATALOG.forEach(function (grp) {
+    var h = document.createElement('div');
+    h.className = 'gtitle'; h.textContent = grp.group;
+    elNav.appendChild(h);
+    grp.cats.forEach(function (cat) {
+      var b = document.createElement('button');
+      b.innerHTML = '<span class="num">' + cat.n + '</span><span>' + cat.th + '</span><span class="cnt">' + cat.items.length + '</span>';
+      b.addEventListener('click', function () { focusCat(cat.n); });
+      b.setAttribute('data-cat', String(cat.n));
+      elNav.appendChild(b);
+      navBtns.push(b);
+    });
+  });
+
+  function markNav(n) {
+    navBtns.forEach(function (b) { b.setAttribute('aria-current', String(Number(b.getAttribute('data-cat')) === n)); });
+  }
+
+  function focusCat(n) {
+    var c = null;
+    for (var i = 0; i < CATS.length; i++) if (CATS[i].n === n) c = CATS[i];
+    if (!c) return;
+    selected = null;
+    markNav(n);
+    elName.textContent = c.th;
+    elEn.textContent = c.n + ' · ' + c.en;
+    elFn.textContent = c.count + ' แบบในหมวดนี้';
+    flyTo(c.x, 1.0, c.z, 15.5);
+  }
+
+  function focusAsset(a) {
+    selected = a;
+    markNav(a.catN);
+    elName.textContent = a.th;
+    elEn.textContent = a.en;
+    elFn.textContent = a.fn;
+    flyTo(a.x, Math.min(1.1, a.h * 0.5 + 0.25), a.z, 6.4);
+  }
+
+  function showAll() {
+    selected = null;
+    markNav(-1);
+    elName.textContent = 'ทั้งชีต';
+    elEn.textContent = 'Miniature Garden Asset Set';
+    elFn.textContent = ASSETS.length + ' ชิ้น · ' + CATS.length + ' หมวด';
+    flyTo(SHEET_CENTER.x, SHEET_CENTER.y, SHEET_CENTER.z, SHEET_DIST);
+  }
+
+  document.getElementById('btnAll').addEventListener('click', showAll);
+  var btnSpin = document.getElementById('btnSpin');
+  btnSpin.setAttribute('aria-pressed', String(spin));
+  btnSpin.addEventListener('click', function () { spin = !spin; btnSpin.setAttribute('aria-pressed', String(spin)); });
+  var btnNight = document.getElementById('btnNight');
+  btnNight.addEventListener('click', function () {
+    nightGoal = nightGoal ? 0 : 1;
+    btnNight.setAttribute('aria-pressed', String(!!nightGoal));
+    btnNight.textContent = nightGoal ? 'กลางวัน' : 'กลางคืน';
+  });
+
+  // ===================== input =====================
+  var drag = null, pinch = null, downAt = null;
+  var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+
+  function setNdc(e) {
+    var r = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'touch' && pinch) return;
+    canvas.setPointerCapture(e.pointerId);
+    drag = { x: e.clientX, y: e.clientY };
+    downAt = { x: e.clientX, y: e.clientY, t: performance.now() };
+    glide.azim = null; glide.elev = null;
+    canvas.classList.add('grabbing');
+  });
+  canvas.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY;
+    cam.azim -= dx * 0.008;
+    cam.elev = Math.max(0.16, Math.min(1.40, cam.elev + dy * 0.006));
+  });
+  function up(e) {
+    canvas.classList.remove('grabbing');
+    try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (!drag) return;
+    drag = null;
+    var moved = downAt ? Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) : 99;
+    var quick = downAt ? (performance.now() - downAt.t) < 420 : false;
+    if (moved < 6 && quick) {
+      setNdc(e);
+      ray.setFromCamera(ndc, camo);
+      var hits = ray.intersectObjects(ASSETS.map(function (a) { return a.obj; }), true);
+      if (hits.length) {
+        var o = hits[0].object;
+        while (o && o.userData.assetIndex === undefined) o = o.parent;
+        if (o) { focusAsset(ASSETS[o.userData.assetIndex]); return; }
+      }
+    }
+    snapBack();
+  }
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    cam.dist = Math.max(4.5, Math.min(96, cam.dist + e.deltaY * 0.05));
+  }, { passive: false });
+  canvas.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2) { drag = null; pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function (e) {
+    if (e.touches.length === 2 && pinch) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      cam.dist = Math.max(4.5, Math.min(96, cam.dist * (pinch / d))); pinch = d;
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchend', function (e) { if (e.touches.length < 2) pinch = null; }, { passive: true });
+
+  // ===================== night =====================
+  var nightClear = new THREE.Color(0x1A2030);
+  function themeClear() {
+    var v = getComputedStyle(document.body).getPropertyValue('--sunk').trim();
+    try { return new THREE.Color(v || '#E7DCC7'); } catch (e) { return new THREE.Color(0xE7DCC7); }
+  }
+  function applyNight() {
+    hemi.intensity = 0.92 - 0.62 * night;
+    key.intensity = 0.78 - 0.6 * night;
+    rim.intensity = 0.26 - 0.1 * night;
+    GLOW.forEach(function (m) {
+      if (!m.emissive) m.emissive = new THREE.Color();
+      var e = new THREE.Color(m.userData.glow);
+      m.emissive.setRGB(e.r * night, e.g * night, e.b * night);
+    });
+    groundMat.color.setRGB(1 - night * 0.55, 1 - night * 0.52, 1 - night * 0.42);
+    renderer.setClearColor(themeClear().clone().lerp(nightClear, night), 1);
+  }
+
+  // ===================== loop =====================
+  function resize() {
+    var w = stageEl.clientWidth, h = stageEl.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    applyCamera();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stageEl);
+  window.addEventListener('resize', resize);
+
+  var last = performance.now();
+  function tick(now) {
+    var dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+
+    if (frameGoal) {
+      var r = Math.min(1, dt * 3.6);
+      cam.tx += (frameGoal.tx - cam.tx) * r;
+      cam.ty += (frameGoal.ty - cam.ty) * r;
+      cam.tz += (frameGoal.tz - cam.tz) * r;
+      cam.dist += (frameGoal.dist - cam.dist) * r;
+      if (Math.abs(frameGoal.tx - cam.tx) + Math.abs(frameGoal.tz - cam.tz) + Math.abs(frameGoal.dist - cam.dist) < 0.05) {
+        cam.tx = frameGoal.tx; cam.ty = frameGoal.ty; cam.tz = frameGoal.tz; cam.dist = frameGoal.dist;
+        frameGoal = null;
+      }
+    }
+    if (glide.azim !== null && !drag) {
+      cam.azim += (glide.azim - cam.azim) * Math.min(1, dt * 9);
+      if (Math.abs(glide.azim - cam.azim) < 0.0008) { cam.azim = glide.azim; glide.azim = null; }
+    }
+    if (glide.elev !== null && !drag) {
+      cam.elev += (glide.elev - cam.elev) * Math.min(1, dt * 9);
+      if (Math.abs(glide.elev - cam.elev) < 0.0008) { cam.elev = glide.elev; glide.elev = null; }
+    }
+
+    ASSETS.forEach(function (a) {
+      if (a === selected && spin) a.obj.rotation.y += dt * 0.7;
+      else if (a !== selected && a.obj.rotation.y !== 0) {
+        a.obj.rotation.y *= (1 - Math.min(1, dt * 4));
+        if (Math.abs(a.obj.rotation.y) < 0.01) a.obj.rotation.y = 0;
+      }
+    });
+
+    if (night !== nightGoal) {
+      night += (nightGoal - night) * Math.min(1, dt * 2.2);
+      if (Math.abs(nightGoal - night) < 0.004) night = nightGoal;
+      applyNight();
+    }
+
+    applyCamera();
+    for (var i = 0; i < labels.length; i++) labels[i].quaternion.copy(camo.quaternion);
+    renderer.render(scene, camo);
+    requestAnimationFrame(tick);
+  }
+
+  applyNight();
+  resize();
+  showAll();
+  requestAnimationFrame(tick);
+
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', applyNight);
+})();
+</script>

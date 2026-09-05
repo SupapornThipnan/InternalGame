@@ -1,0 +1,991 @@
+<title>Nyan Kit 04 — Bread Mill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F1E8D8; --card:#FBF7EE; --sunk:#E7DCC7;
+  --ink:#1C2233; --ink-2:#565F75; --ink-3:#8B93A6;
+  --line:#D7CAB1; --line-soft:#E3D8C2;
+  --indigo:#2F4373; --indigo-2:#5C7AB8;
+  --kraft:#A0702B; --lantern:#BB4629; --bamboo:#47734D;
+  --on-accent:#FBF7EE;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+    --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+    --line:#2F3547; --line-soft:#262B3A;
+    --indigo:#9BB4EA; --indigo-2:#7189C2;
+    --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+    --on-accent:#141721;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141721; --card:#1D2130; --sunk:#191D2A;
+  --ink:#EDE5D6; --ink-2:#A2AABD; --ink-3:#767E92;
+  --line:#2F3547; --line-soft:#262B3A;
+  --indigo:#9BB4EA; --indigo-2:#7189C2;
+  --kraft:#D8A461; --lantern:#E5805F; --bamboo:#83B58B;
+  --on-accent:#141721;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Helvetica Neue",Arial,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+.wide{max-width:1120px;margin:0 auto;padding:0 20px}
+h1,h2,h3{font-family:Mitr,"IBM Plex Sans Thai",sans-serif;font-weight:500;margin:0;line-height:1.36;text-wrap:balance}
+p{margin:0}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--kraft)}
+
+header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:26px 0 22px}
+.mast .row{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mast h1{font-size:clamp(1.4rem,1.1rem + 1.2vw,1.9rem);font-weight:600}
+.mast .note{color:var(--ink-2);font-size:.92rem;margin-top:6px;max-width:74ch}
+.mast .note b{color:var(--ink);font-weight:500}
+
+.play{padding:20px 0 0}
+.stage{
+  position:relative;border:1px solid var(--line);background:var(--sunk);
+  aspect-ratio:16/10;min-height:420px;overflow:hidden;user-select:none;
+}
+@media (max-width:700px){.stage{aspect-ratio:3/4;min-height:480px}}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas.grabbing{cursor:grabbing}
+
+.panel{position:absolute;background:color-mix(in srgb,var(--card) 90%,transparent);border:1px solid var(--line);border-radius:4px}
+.stagebox{left:14px;top:14px;padding:10px 14px;min-width:180px}
+.stagebox .lbl{font-family:"IBM Plex Mono",monospace;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.stagebox .name{font-family:Mitr,sans-serif;font-size:1.02rem;color:var(--ink);line-height:1.4;margin-top:1px}
+.dots{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;max-width:180px}
+.dots i{width:14px;height:5px;border-radius:2px;background:var(--line);display:block}
+.dots i.on{background:var(--kraft)}
+.stagebox .of{font-family:"IBM Plex Mono",monospace;font-size:.66rem;color:var(--ink-3);margin-top:6px}
+
+.tips{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;font-size:.84rem;color:var(--ink-2);padding:7px 16px;text-align:center;transition:opacity .35s;pointer-events:none}
+.acts{position:absolute;right:14px;top:14px;display:flex;flex-direction:column;gap:7px;align-items:flex-end}
+.acts button{font-family:inherit;font-size:.82rem;padding:6px 13px;cursor:pointer;line-height:1.5;border:1px solid var(--line);border-radius:4px;background:color-mix(in srgb,var(--card) 92%,transparent);color:var(--ink)}
+.acts button:hover{border-color:var(--indigo-2)}
+.acts button[aria-pressed="true"]{background:var(--indigo);border-color:var(--indigo);color:var(--on-accent)}
+:focus-visible{outline:2px solid var(--indigo-2);outline-offset:2px}
+
+.finish{position:absolute;inset:auto 0 0 0;display:flex;justify-content:center;padding-bottom:52px;pointer-events:none;opacity:0;transition:opacity .5s}
+.finish.show{opacity:1;pointer-events:auto}
+.finish button{font-family:Mitr,sans-serif;font-size:1.02rem;font-weight:500;padding:11px 30px;border-radius:5px;cursor:pointer;background:var(--lantern);color:#FBF3E6;border:1px solid var(--lantern);box-shadow:0 6px 22px rgba(0,0,0,.18)}
+.fallback{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:32px;color:var(--ink-2)}
+
+section{padding:44px 0}
+section+section{border-top:1px solid var(--line-soft)}
+.sechead{margin-bottom:20px;max-width:68ch}
+.sechead h2{font-size:1.3rem;margin-top:6px}
+.sechead .sub{color:var(--ink-2);margin-top:6px;font-size:.95rem}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.check{background:var(--card);padding:18px 20px}
+.check .k{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.check h3{font-size:1rem;margin:5px 0 6px}
+.check p{font-size:.9rem;color:var(--ink-2);line-height:1.62}
+.check .val{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--bamboo);display:block;margin-top:7px}
+ul.plain{margin:0;padding-left:1.15em;color:var(--ink-2);font-size:.94rem;line-height:1.72}
+ul.plain li{margin-bottom:5px}
+ul.plain li::marker{color:var(--kraft)}
+ul.plain b{color:var(--ink);font-weight:500}
+code{font-family:"IBM Plex Mono",monospace;font-size:.86em;color:var(--kraft)}
+footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);font-size:.8rem;font-family:"IBM Plex Mono",monospace}
+</style>
+
+<header class="mast">
+  <div class="wide">
+    <div class="row">
+      <span class="eyebrow">Nyan Kit Workshop · Kit 04</span>
+      <span class="eyebrow" style="color:var(--ink-3)">โรงสีขนมปัง — กังหันหมุนจริง</span>
+    </div>
+    <h1>Bread Mill</h1>
+    <p class="note">
+      สร้างจากภาพอ้างอิงที่พี่ส่งมา — หอคอยกังหัน + ร้านเบเกอรี่ + เตาอบอิฐ
+      ชิ้นที่ต่างจาก M0 คือ <b>ใบพัดกังหัน</b> พอสแนปเข้าล็อกแล้วมันจะ<b>หมุนบนเพลาไปเรื่อย ๆ ด้วยตัวเอง</b>
+      — เป็นตัวอย่างว่า three.js ประกอบกลไกที่ขยับได้จริง ไม่ใช่แค่วางกล่องนิ่ง ๆ
+    </p>
+  </div>
+</header>
+
+<main>
+
+<div class="play">
+  <div class="wide">
+    <div class="stage" id="stage">
+      <canvas id="cv"></canvas>
+
+      <div class="panel stagebox">
+        <div class="lbl">สเตจที่ <span id="stgNo">1</span></div>
+        <div class="name" id="stgName">—</div>
+        <div class="dots" id="dots"></div>
+        <div class="of" id="stgOf">—</div>
+      </div>
+
+      <div class="acts">
+        <button id="btnHint">ใบ้ให้หน่อย</button>
+        <button id="btnSound" aria-pressed="true">เสียง: เปิด</button>
+        <button id="btnReset">รื้อใหม่</button>
+      </div>
+
+      <div class="tips" id="tips">แตะชิ้นส่วนในถาดค้างไว้ แล้วลากขึ้นไปที่เงาโปร่ง</div>
+
+      <div class="finish" id="finish"><button id="btnLight">เปิดไฟร้าน</button></div>
+
+      <div class="fallback" id="fallback">เบราว์เซอร์นี้เปิด WebGL ไม่ได้ครับ ลองใช้ Chrome หรือ Safari รุ่นใหม่</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">สิ่งที่เพิ่มจาก M0</span>
+      <h2>three.js ทำอะไรได้มากกว่ากล่องซ้อนกันบ้าง</h2>
+      <p class="sub">
+        รายการนี้คือฟีเจอร์ของเอนจิ้นที่ M0 (ร้านซูชิแมว) ยังไม่ได้ใช้ — ทุกอย่างยังเป็น draw call ต้นทุนต่ำเหมือนเดิม
+        ต่างกันแค่วิธีประกอบและอนิเมตในโค้ด
+      </p>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <span class="k">Kinematics</span>
+        <h3>เพลาหมุนจริงตลอดเวลา</h3>
+        <p>ใบพัด 4 ใบเป็นลูกของ <code>THREE.Group</code> เดียว หมุนรอบแกน Z ทุกเฟรมหลังสแนปเข้าล็อก ไม่ใช่แอนิเมชันจบแล้วหยุด</p>
+        <span class="val">hub.rotation.z += dt · เว้นการหมุนถ้า prefers-reduced-motion</span>
+      </div>
+      <div class="check">
+        <span class="k">Procedural texture</span>
+        <h3>ลายอิฐและผ้าใบวาดสด</h3>
+        <p>ไม่มีไฟล์ภาพสักไฟล์ — ลายอิฐบนเตาอบและลายทางบนกันสาดวาดด้วย Canvas 2D แล้วส่งเป็น <code>CanvasTexture</code></p>
+        <span class="val">2 texture generator: brickTexture(), awningTexture()</span>
+      </div>
+      <div class="check">
+        <span class="k">Curved geometry</span>
+        <h3>ปากเตาโค้งจริง</h3>
+        <p>ใช้ <code>TorusGeometry</code> ตัดครึ่งวงเป็นซุ้มโค้ง แทนการเรียงกล่องเป็นขั้นบันไดแบบที่เคยทำใน M0</p>
+        <span class="val">TorusGeometry(0.55, 0.1, 8, 20, Math.PI)</span>
+      </div>
+      <div class="check">
+        <span class="k">Compound rig</span>
+        <h3>โครงสร้างสองอาคารต่อกัน</h3>
+        <p>หอคอยกังหัน + ร้านเบเกอรี่ เป็นคนละกลุ่มที่เชื่อมด้วยทางเดินร่วม — ทดสอบว่าระบบสเตจของ M1 (JSON ต่อชุด) ต้องรองรับผังไม่สมมาตรได้ด้วย</p>
+        <span class="val">19 ชิ้น · 6 สเตจ</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wide">
+    <div class="sechead">
+      <span class="eyebrow">ยังไม่ได้ทำ</span>
+      <h2>ตั้งใจเว้นไว้เหมือน M0</h2>
+    </div>
+    <ul class="plain">
+      <li><b>ยังไม่แยก JSON</b> — ชุดนี้เขียนตรงในไฟล์เหมือน M0 เพื่อทดสอบกลไกก่อน ย้ายเข้าระบบข้อมูลพร้อมกันตอน M1</li>
+      <li><b>ยังไม่มี GLTF</b> — ทุกชิ้นยังปั้นจาก primitive (box/cylinder/torus/sphere) ในโค้ด ยังไม่ได้ทดสอบพอร์ตโมเดลจาก Blender เข้ามา ซึ่งเป็นก้าวถัดไปถ้าต้องการรายละเอียดสมจริงกว่านี้</li>
+      <li><b>ปากเตากับอิฐยังเป็นค่าคงที่</b> — ยังไม่ผูกกับ palette swap ของระบบตกแต่งที่ระบุไว้ใน Outline</li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<footer><div class="wide">Nyan Kit Workshop · Kit 04 prototype · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var canvas = document.getElementById('cv');
+  var stageEl = document.getElementById('stage');
+  var renderer;
+
+  if (typeof THREE === 'undefined') { boot(false); return; }
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  } catch (err) { boot(false); return; }
+
+  function boot(ok) {
+    if (!ok) {
+      document.getElementById('fallback').style.display = 'grid';
+      document.querySelectorAll('.panel,.acts,.tips').forEach(function (n) { n.style.display = 'none'; });
+    }
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ===================== tuning knobs =====================
+  var SNAP_RADIUS = 1.8;
+  var LIFT        = 1.0;
+  var TRAY_SCALE  = 0.40;
+  var TRAY_Z      = 6.4;
+  var SNAP_TIME   = reduce ? 0.01 : 0.20;
+  var BACK_TIME   = reduce ? 0.01 : 0.30;
+  var ISO_ELEV    = Math.atan(1 / Math.SQRT2);
+  var WIND_SPEED  = reduce ? 0 : 0.9;
+
+  // ===================== palette =====================
+  var C = {
+    cream: 0xF0E4CB, kraftLt: 0xD0A468, kraft: 0xBE8E4E, kraftDk: 0xA87942,
+    brick: 0xAD5A3E, brickDk: 0x8A4530, indigo: 0x35497E, indigoDk: 0x263A66,
+    red: 0xC0472B, green: 0x4E7A52, dark: 0x2C2B36, white: 0xF6F2E8,
+    windowBlue: 0x6E93B8, sail: 0xE9DEC3, gold: 0xC9A24A
+  };
+  function mat(hex) { return new THREE.MeshLambertMaterial({ color: hex }); }
+  function box(w, h, d, hex) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(hex)); }
+
+  // ===================== lights =====================
+  var hemi = new THREE.HemisphereLight(0xFFF3DC, 0x6A5E4C, 0.85);
+  scene.add(hemi);
+  var key = new THREE.DirectionalLight(0xFFE9C4, 0.95);
+  key.position.set(8, 14, 10);
+  key.castShadow = true;
+  key.shadow.mapSize.width = 1024; key.shadow.mapSize.height = 1024;
+  var sc = key.shadow.camera;
+  sc.left = -13; sc.right = 13; sc.top = 13; sc.bottom = -13; sc.near = 1; sc.far = 44;
+  scene.add(key);
+  var fill = new THREE.DirectionalLight(0xBFD2FF, 0.28);
+  fill.position.set(-9, 6, -7);
+  scene.add(fill);
+
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(52, 52), new THREE.ShadowMaterial({ opacity: 0.16 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  var trayMat = box(12.6, 0.08, 2.3, C.cream);
+  trayMat.position.set(0, 0.04, TRAY_Z);
+  trayMat.receiveShadow = true;
+  scene.add(trayMat);
+
+  // ===================== procedural textures =====================
+  function brickTexture(base, mortar) {
+    var c = document.createElement('canvas'); c.width = 256; c.height = 256;
+    var g = c.getContext('2d');
+    g.fillStyle = mortar; g.fillRect(0, 0, 256, 256);
+    var bw = 42, bh = 20, gap = 4;
+    for (var row = 0, y = 0; y < 256; row++, y += bh + gap) {
+      var off = (row % 2) ? (bw + gap) / 2 : 0;
+      for (var x = -bw; x < 256; x += bw + gap) {
+        g.fillStyle = base + (Math.random() > 0.5 ? '' : '');
+        var shade = 6 - Math.floor(Math.random() * 12);
+        g.fillStyle = shadeHex(base, shade);
+        g.fillRect(x + off, y, bw, bh);
+      }
+    }
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  function shadeHex(hex, amt) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Math.min(255, Math.max(0, (n >> 16) + amt));
+    var g2 = Math.min(255, Math.max(0, ((n >> 8) & 0xff) + amt));
+    var b = Math.min(255, Math.max(0, (n & 0xff) + amt));
+    return 'rgb(' + r + ',' + g2 + ',' + b + ')';
+  }
+  function awningTexture() {
+    var c = document.createElement('canvas'); c.width = 256; c.height = 64;
+    var g = c.getContext('2d');
+    for (var i = 0; i < 8; i++) {
+      g.fillStyle = i % 2 ? '#C0472B' : '#F3E7CE';
+      g.fillRect(i * 32, 0, 32, 64);
+    }
+    var t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping; t.repeat.x = 3;
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+  function signTexture(lines, sub) {
+    var c = document.createElement('canvas'); c.width = 900; c.height = 320;
+    var g = c.getContext('2d');
+    g.fillStyle = '#F3E7CE'; g.fillRect(0, 0, 900, 320);
+    g.strokeStyle = '#8A5F2A'; g.lineWidth = 14; g.strokeRect(7, 7, 886, 306);
+    g.fillStyle = '#5A3A1E'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '700 92px Georgia, "Times New Roman", serif';
+    g.fillText(lines, 450, 140);
+    g.font = '500 40px "Helvetica Neue",Arial,sans-serif';
+    g.fillStyle = '#B4502F';
+    g.fillText(sub, 450, 224);
+    g.beginPath();
+    g.moveTo(150, 260); g.lineTo(750, 260);
+    g.strokeStyle = '#B4502F'; g.lineWidth = 4; g.stroke();
+    var t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  var brickWallTex = brickTexture('#AD5A3E', '#6E4634');
+  brickWallTex.repeat.set(2.4, 1.4);
+  var brickOvenTex = brickTexture('#B4623F', '#6E4634');
+  brickOvenTex.repeat.set(1.6, 1.2);
+  var brickMat = new THREE.MeshLambertMaterial({ map: brickWallTex });
+  var ovenBrickMat = new THREE.MeshLambertMaterial({ map: brickOvenTex });
+  var awningMat = new THREE.MeshLambertMaterial({ map: awningTexture() });
+
+  // ===================== part builders =====================
+  function windmillHub() {
+    var g = new THREE.Group();
+    var hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 12), mat(C.kraftDk));
+    hubCap.rotation.x = Math.PI / 2;
+    g.add(hubCap);
+    for (var i = 0; i < 4; i++) {
+      var blade = new THREE.Group();
+      var slat = box(0.34, 1.28, 0.05, C.sail);
+      slat.position.y = 0.7;
+      var frame = box(0.06, 1.3, 0.09, C.kraftDk);
+      frame.position.y = 0.7;
+      blade.add(slat, frame);
+      blade.rotation.z = (Math.PI / 2) * i;
+      g.add(blade);
+    }
+    g.userData.isWindmillHub = true;
+    return g;
+  }
+  function towerBody() {
+    var g = new THREE.Group();
+    var wall = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.25, 3.4, 10), brickMat);
+    wall.position.y = 1.7;
+    g.add(wall);
+    var cap = new THREE.Mesh(new THREE.ConeGeometry(1.15, 0.85, 10), mat(C.kraftDk));
+    cap.position.y = 3.83;
+    g.add(cap);
+    return g;
+  }
+  function chimney() {
+    var g = new THREE.Group();
+    var stack = box(0.42, 1.3, 0.42, C.brickDk);
+    stack.position.y = 0.65; g.add(stack);
+    var cap = box(0.56, 0.16, 0.56, C.dark);
+    cap.position.y = 1.36; g.add(cap);
+    return g;
+  }
+  function towerWindow() {
+    var g = new THREE.Group();
+    var frame = box(0.62, 0.78, 0.1, C.kraftDk);
+    var glass = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.6, 0.05), new THREE.MeshLambertMaterial({ color: C.windowBlue }));
+    glass.position.z = 0.03;
+    g.add(frame, glass);
+    var box2 = box(0.7, 0.14, 0.16, C.kraftDk); box2.position.y = -0.45; g.add(box2);
+    return g;
+  }
+  function ovenBase() {
+    var g = new THREE.Group();
+    var base = new THREE.Mesh(new THREE.BoxGeometry(1.9, 1.1, 1.5), ovenBrickMat);
+    base.position.y = 0.55; g.add(base);
+    var dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.95, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+      ovenBrickMat
+    );
+    dome.position.set(0, 1.1, 0);
+    dome.scale.set(1, 0.85, 0.86);
+    g.add(dome);
+    var mouth = box(0.75, 0.62, 0.12, C.dark);
+    mouth.position.set(0, 0.42, 0.76);
+    g.add(mouth);
+    var arch = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.09, 8, 20, Math.PI), mat(C.brickDk));
+    arch.position.set(0, 0.72, 0.78);
+    g.add(arch);
+    var ledge = box(2.1, 0.14, 0.3, C.kraftDk);
+    ledge.position.set(0, 0.07, 0.88); g.add(ledge);
+    return g;
+  }
+  function standeeSign() {
+    var g = new THREE.Group();
+    var board = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.05, 0.06), mat(C.dark));
+    board.position.set(0, 0.75, 0);
+    board.rotation.x = -0.12;
+    var tex = signTexture('Fresh', 'Bakery');
+    var trim = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.72, 0.9),
+      new THREE.MeshLambertMaterial({ map: tex })
+    );
+    trim.position.set(0, 0.77, 0.035);
+    trim.rotation.x = -0.12;
+    g.add(board, trim);
+    [-1, 1].forEach(function (s) {
+      var leg = box(0.06, 0.75, 0.06, C.kraftDk);
+      leg.position.set(s * 0.32, 0.36, 0.22);
+      leg.rotation.x = 0.32;
+      g.add(leg);
+    });
+    return g;
+  }
+  function basketGroup() {
+    var g = new THREE.Group();
+    var basket = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.34, 0.4, 14, 1, true), mat(C.kraftDk));
+    basket.position.y = 0.2; g.add(basket);
+    var rim = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.035, 8, 16), mat(C.kraft));
+    rim.rotation.x = Math.PI / 2; rim.position.y = 0.4; g.add(rim);
+    for (var i = 0; i < 5; i++) {
+      var loaf = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), mat(i % 2 ? C.kraft : C.gold));
+      var a = (i / 5) * Math.PI * 2;
+      loaf.position.set(Math.cos(a) * 0.16, 0.5 + (i % 2) * 0.06, Math.sin(a) * 0.16);
+      loaf.scale.set(1, 0.72, 1);
+      g.add(loaf);
+    }
+    return g;
+  }
+  function bakerCat() {
+    var g = new THREE.Group();
+    var body = box(0.6, 0.7, 0.44, C.white); body.position.y = 0.35; g.add(body);
+    var apron = box(0.46, 0.5, 0.05, C.kraftDk); apron.position.set(0, 0.32, 0.24); g.add(apron);
+    var head = new THREE.Mesh(new THREE.SphereGeometry(0.33, 20, 16), mat(C.white));
+    head.position.y = 1.0; g.add(head);
+    var hat = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.32, 14), mat(C.white));
+    hat.position.y = 1.42; g.add(hat);
+    var hatTop = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 10, 0, 6.3, 0, 1.6), mat(C.white));
+    hatTop.position.y = 1.58; g.add(hatTop);
+    [-1, 1].forEach(function (s) {
+      var ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.17, 4), mat(C.kraftLt));
+      ear.position.set(s * 0.17, 1.2, 0.02); g.add(ear);
+      var arm = box(0.12, 0.38, 0.12, C.white);
+      arm.position.set(s * 0.35, 0.42, 0.14); g.add(arm);
+    });
+    g.userData.isCat = true;
+    return g;
+  }
+  function stool() {
+    var g = new THREE.Group();
+    var seat = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 12), mat(C.kraftDk));
+    seat.position.y = 0.42; g.add(seat);
+    [[0.16,0.16],[-0.16,0.16],[0.16,-0.16],[-0.16,-0.16]].forEach(function (p) {
+      var leg = box(0.05, 0.4, 0.05, C.kraft);
+      leg.position.set(p[0], 0.2, p[1]); g.add(leg);
+    });
+    return g;
+  }
+
+  // ===================== part spec =====================
+  // name, obj, position, rotation, stage
+  var SPEC = [
+    ['ฐานร้าน',        box(9.6, 0.3, 4.6, C.cream),        [0.8, 0.15, 0],      [0, 0, 0], 'ฐาน'],
+    ['ทางเดินหน้าร้าน', box(8.4, 0.16, 1.3, C.kraftLt),      [0.8, 0.38, 1.75],   [0, 0, 0], 'ฐาน'],
+    ['หอคอยกังหัน',     towerBody(),                          [-3.0, 0.15, -0.6],  [0, 0, 0], 'หอคอย'],
+    ['ปล่องไฟ',        chimney(),                            [-2.15, 3.55, -1.3], [0, 0, 0], 'หอคอย'],
+    ['หน้าต่างหอคอย',   towerWindow(),                        [-3.0, 2.15, 0.62],  [0, 0, 0], 'หอคอย'],
+    ['ใบพัดกังหัน',     windmillHub(),                        [-3.0, 3.15, 0.72],  [0, 0, 0], 'หอคอย'],
+    ['ผนังร้านเบเกอรี่', box(6.0, 2.7, 0.2, C.cream),          [1.9, 1.5, -1.9],    [0, 0, 0], 'ร้าน'],
+    ['ผนังข้างร้าน',    box(0.2, 2.7, 3.6, C.cream),          [4.85, 1.5, -0.2],   [0, 0, 0], 'ร้าน'],
+    ['หน้าต่างโชว์',     box(2.3, 1.5, 0.1, C.windowBlue),     [3.0, 1.55, -1.78],  [0, 0, 0], 'ร้าน'],
+    ['กันสาดลาย',       new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 3.1, 10, 1, true, 0, Math.PI * 0.55), awningMat), [1.6, 2.55, -1.35], [0, 0, Math.PI * 0.72], 'ร้าน'],
+    ['ป้ายเบเกอรี่คลาสสิค', new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.68), new THREE.MeshLambertMaterial({ map: signTexture('Bakery Classic', 'Since 1962') })), [1.9, 2.86, -1.78], [0, 0, 0], 'ป้าย'],
+    ['ป้าย Bread Factory', new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.5), new THREE.MeshLambertMaterial({ map: signTexture('Bread Factory', 'Baking Time') })), [-3.0, 4.35, 0.5], [0, 0, 0], 'ป้าย'],
+    ['เตาอบอิฐ',        ovenBase(),                            [-0.5, 0, 1.15],     [0, 0.35, 0], 'เตาอบ'],
+    ['ป้ายตั้งพื้น',     standeeSign(),                         [3.9, 0, 1.9],       [0, -0.5, 0], 'ของประดับ'],
+    ['ตะกร้าขนมปัง',    basketGroup(),                         [4.35, 0.42, 0.35],  [0, 0, 0], 'ของประดับ'],
+    ['ม้านั่ง',          stool(),                               [-1.35, 0, 1.85],    [0, 0.3, 0], 'ของประดับ'],
+    ['เชฟแมวหัวหน้าเตา', bakerCat(),                            [-0.55, 0.42, 2.05], [0, -0.4, 0], 'ของประดับ']
+  ];
+
+  var ghostMat = new THREE.MeshBasicMaterial({ color: 0x5C7AB8, transparent: true, opacity: 0.14, depthWrite: false });
+
+  var parts = SPEC.map(function (s, i) {
+    var obj = s[1];
+    obj.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    obj.userData.partIndex = i;
+    scene.add(obj);
+
+    var ghost = obj.clone(true);
+    ghost.traverse(function (o) { if (o.isMesh) { o.material = ghostMat; o.castShadow = false; o.receiveShadow = false; } });
+    ghost.position.set(s[2][0], s[2][1], s[2][2]);
+    ghost.rotation.set(s[3][0], s[3][1], s[3][2]);
+    ghost.visible = false;
+    scene.add(ghost);
+
+    return {
+      name: s[0], obj: obj, ghost: ghost,
+      to: new THREE.Vector3(s[2][0], s[2][1], s[2][2]),
+      rot: s[3], stage: s[4],
+      home: new THREE.Vector3(), state: 'locked', tween: null,
+      isWindmill: !!obj.userData.isWindmillHub
+    };
+  });
+
+  var STAGES = [];
+  parts.forEach(function (p, i) {
+    if (!STAGES.length || STAGES[STAGES.length - 1].name !== p.stage) STAGES.push({ name: p.stage, idx: [] });
+    STAGES[STAGES.length - 1].idx.push(i);
+  });
+
+  // ===================== audio (synth) =====================
+  var AC = null, soundOn = true;
+  function ac() {
+    if (!AC) { var Ctx = window.AudioContext || window.webkitAudioContext; if (Ctx) AC = new Ctx(); }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function env(node, t0, peak, dur) {
+    node.gain.setValueAtTime(0.0001, t0);
+    node.gain.exponentialRampToValueAtTime(peak, t0 + 0.006);
+    node.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  }
+  function noiseBuf(a, dur) {
+    var n = Math.floor(a.sampleRate * dur);
+    var b = a.createBuffer(1, n, a.sampleRate);
+    var d = b.getChannelData(0);
+    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
+  function sfxClack() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    var src = a.createBufferSource(); src.buffer = noiseBuf(a, 0.09);
+    var bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1750; bp.Q.value = 1.4;
+    var g = a.createGain(); env(g, t, 0.30, 0.085);
+    src.connect(bp).connect(g).connect(a.destination); src.start(t); src.stop(t + 0.1);
+    [196, 392].forEach(function (f, i) {
+      var o = a.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(f, t);
+      o.frequency.exponentialRampToValueAtTime(f * 0.82, t + 0.09);
+      var og = a.createGain(); env(og, t, i ? 0.10 : 0.17, 0.11);
+      o.connect(og).connect(a.destination); o.start(t); o.stop(t + 0.14);
+    });
+  }
+  function sfxPaper() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    var src = a.createBufferSource(); src.buffer = noiseBuf(a, 0.22);
+    var hp = a.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.setValueAtTime(900, t);
+    hp.frequency.exponentialRampToValueAtTime(3400, t + 0.2);
+    var g = a.createGain(); env(g, t, 0.11, 0.22);
+    src.connect(hp).connect(g).connect(a.destination); src.start(t); src.stop(t + 0.24);
+  }
+  function sfxMiss() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    var src = a.createBufferSource(); src.buffer = noiseBuf(a, 0.3);
+    var lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1400, t);
+    lp.frequency.exponentialRampToValueAtTime(380, t + 0.28);
+    var g = a.createGain(); env(g, t, 0.07, 0.3);
+    src.connect(lp).connect(g).connect(a.destination); src.start(t); src.stop(t + 0.32);
+  }
+  function sfxPick() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(520, t);
+    o.frequency.exponentialRampToValueAtTime(760, t + 0.06);
+    var g = a.createGain(); env(g, t, 0.06, 0.09);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + 0.12);
+  }
+  function sfxChime() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    [880, 1320].forEach(function (f, i) {
+      var o = a.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+      var g = a.createGain(); env(g, t + i * 0.05, 0.10, 0.9);
+      o.connect(g).connect(a.destination); o.start(t + i * 0.05); o.stop(t + 1.1);
+    });
+  }
+  function sfxNote(freq, delay, vol) {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime + delay;
+    var o = a.createOscillator(); o.type = 'triangle'; o.frequency.value = freq;
+    var g = a.createGain(); env(g, t, vol || 0.12, 1.0);
+    o.connect(g).connect(a.destination); o.start(t); o.stop(t + 1.2);
+  }
+  function sfxCreak() {
+    var a = ac(); if (!a || !soundOn) return;
+    var t = a.currentTime;
+    var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(90, t);
+    o.frequency.linearRampToValueAtTime(64, t + 0.5);
+    var lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300;
+    var g = a.createGain(); env(g, t, 0.05, 0.55);
+    o.connect(lp).connect(g).connect(a.destination); o.start(t); o.stop(t + 0.6);
+  }
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} }
+
+  // ===================== camera =====================
+  var TARGET = new THREE.Vector3(0.6, 1.7, 1.4);
+  var camo = new THREE.OrthographicCamera(-5, 5, 5, -5, -60, 130);
+  var cam = { azim: -Math.PI / 4, elev: ISO_ELEV, dist: 27 };
+  var glide = { azim: null, elev: null };
+
+  function applyCamera() {
+    var w = stageEl.clientWidth || 1, h = stageEl.clientHeight || 1;
+    var aspect = w / h;
+    var fh = cam.dist * (aspect < 1 ? 0.30 : 0.235);
+    var fw = fh * aspect;
+    camo.left = -fw; camo.right = fw; camo.top = fh; camo.bottom = -fh;
+    camo.updateProjectionMatrix();
+    var r = Math.cos(cam.elev) * cam.dist;
+    camo.position.set(TARGET.x + r * Math.sin(cam.azim), Math.sin(cam.elev) * cam.dist, TARGET.z + r * Math.cos(cam.azim));
+    camo.lookAt(TARGET);
+  }
+  function snapBack() {
+    var step = Math.PI / 4;
+    glide.azim = Math.round(cam.azim / step) * step;
+    glide.elev = ISO_ELEV;
+  }
+
+  // ===================== game state =====================
+  var stageIdx = 0, missStreak = 0, done = false, night = 0, nightGoal = 0;
+  var held = null, dragCam = null, pinch = null, hintUntil = 0;
+  var ray = new THREE.Raycaster();
+  var ndc = new THREE.Vector2();
+  var dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  var hitPoint = new THREE.Vector3();
+
+  var elStgNo = document.getElementById('stgNo');
+  var elStgName = document.getElementById('stgName');
+  var elStgOf = document.getElementById('stgOf');
+  var elDots = document.getElementById('dots');
+  var elTips = document.getElementById('tips');
+  var elFinish = document.getElementById('finish');
+
+  function layoutTray() {
+    var n = STAGES[stageIdx].idx.length;
+    var span = Math.min(10.2, n * 2.1);
+    STAGES[stageIdx].idx.forEach(function (pi, k) {
+      var p = parts[pi];
+      var x = n === 1 ? 0 : -span / 2 + (span / (n - 1)) * k;
+      p.home.set(x, 0.55, TRAY_Z);
+      if (p.state === 'tray' && p !== (held && held.p)) p.obj.position.copy(p.home);
+    });
+  }
+
+  function openStage() {
+    var st = STAGES[stageIdx];
+    st.idx.forEach(function (pi, k) {
+      var p = parts[pi];
+      p.state = 'tray';
+      p.obj.visible = true;
+      p.obj.scale.setScalar(0.01);
+      p.obj.rotation.set(p.rot[0], p.rot[1], p.rot[2]);
+      p.tween = { kind: 'pop', t: -k * 0.09, dur: reduce ? 0.01 : 0.3 };
+      setTimeout(sfxPaper, k * 95);
+    });
+    layoutTray();
+    updateHud();
+  }
+
+  function updateHud() {
+    var st = STAGES[stageIdx];
+    elStgNo.textContent = String(stageIdx + 1);
+    elStgName.textContent = st.name;
+    var placed = st.idx.filter(function (i) { return parts[i].state === 'placed'; }).length;
+    elStgOf.textContent = placed + ' / ' + st.idx.length + ' ชิ้น · รวม ' +
+      parts.filter(function (p) { return p.state === 'placed'; }).length + '/' + parts.length;
+    elDots.innerHTML = '';
+    STAGES.forEach(function (s, i) {
+      var d = document.createElement('i');
+      if (i < stageIdx || (i === stageIdx && placed === s.idx.length)) d.className = 'on';
+      elDots.appendChild(d);
+    });
+  }
+
+  function tip(txt, ms) {
+    elTips.textContent = txt;
+    elTips.style.opacity = '1';
+    clearTimeout(tip._t);
+    if (ms) tip._t = setTimeout(function () { elTips.style.opacity = '0'; }, ms);
+  }
+
+  function checkStageDone() {
+    var st = STAGES[stageIdx];
+    var all = st.idx.every(function (i) { return parts[i].state === 'placed'; });
+    if (!all) return;
+    if (stageIdx < STAGES.length - 1) {
+      sfxChime();
+      stageIdx++;
+      tip('สเตจ "' + STAGES[stageIdx].name + '"', 2600);
+      setTimeout(openStage, 620);
+      updateHud();
+    } else {
+      done = true;
+      sfxChime();
+      elFinish.classList.add('show');
+      tip('ต่อครบแล้ว — เหลืออย่างเดียว', 4000);
+      updateHud();
+    }
+  }
+
+  // ===================== input =====================
+  function setNdc(e) {
+    var r = canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+  }
+  function pickTrayPart() {
+    ray.setFromCamera(ndc, camo);
+    var targets = STAGES[stageIdx].idx.filter(function (i) { return parts[i].state === 'tray'; }).map(function (i) { return parts[i].obj; });
+    var hits = ray.intersectObjects(targets, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && o.userData.partIndex === undefined) o = o.parent;
+    return o ? parts[o.userData.partIndex] : null;
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    ac();
+    if (e.pointerType === 'touch' && pinch) return;
+    canvas.setPointerCapture(e.pointerId);
+    setNdc(e);
+    var p = done ? null : pickTrayPart();
+    if (p) {
+      held = { p: p };
+      p.state = 'held';
+      p.tween = null;
+      p.ghost.visible = true;
+      dragPlane.constant = -p.to.y;
+      moveHeld(e);
+      sfxPick(); buzz(8);
+      canvas.classList.add('grabbing');
+    } else {
+      dragCam = { x: e.clientX, y: e.clientY };
+      glide.azim = null; glide.elev = null;
+      canvas.classList.add('grabbing');
+    }
+  });
+
+  function moveHeld(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    if (!ray.ray.intersectPlane(dragPlane, hitPoint)) return;
+    var p = held.p;
+    p.obj.position.set(hitPoint.x, p.to.y + LIFT, hitPoint.z);
+  }
+
+  canvas.addEventListener('pointermove', function (e) {
+    if (held) { moveHeld(e); return; }
+    if (!dragCam) return;
+    var dx = e.clientX - dragCam.x, dy = e.clientY - dragCam.y;
+    dragCam.x = e.clientX; dragCam.y = e.clientY;
+    cam.azim -= dx * 0.008;
+    cam.elev = Math.max(0.14, Math.min(1.40, cam.elev + dy * 0.006));
+  });
+
+  function release(e) {
+    canvas.classList.remove('grabbing');
+    try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (dragCam) { dragCam = null; snapBack(); return; }
+    if (!held) return;
+    var p = held.p;
+    held = null;
+    p.ghost.visible = false;
+    var d = Math.hypot(p.obj.position.x - p.to.x, p.obj.position.z - p.to.z);
+    if (d <= SNAP_RADIUS) {
+      p.state = 'placed';
+      p.tween = { kind: 'snap', t: 0, dur: SNAP_TIME, from: p.obj.position.clone(), fromScale: p.obj.scale.x };
+      missStreak = 0;
+      ghostMat.opacity = 0.14;
+      sfxClack(); buzz(18);
+      if (p.isWindmill) sfxCreak();
+      updateHud();
+      setTimeout(checkStageDone, 240);
+    } else {
+      p.state = 'tray';
+      p.tween = { kind: 'back', t: 0, dur: BACK_TIME, from: p.obj.position.clone(), fromScale: p.obj.scale.x };
+      missStreak++;
+      if (missStreak >= 2) { ghostMat.opacity = 0.30; tip('เงาโปร่งคือที่ของชิ้นนั้น ลากเข้าไปใกล้ ๆ ได้เลย', 3200); }
+      sfxMiss();
+    }
+  }
+  canvas.addEventListener('pointerup', release);
+  canvas.addEventListener('pointercancel', release);
+
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    cam.dist = Math.max(16, Math.min(42, cam.dist + e.deltaY * 0.02));
+  }, { passive: false });
+
+  canvas.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 2) {
+      dragCam = null;
+      pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function (e) {
+    if (e.touches.length === 2 && pinch) {
+      var d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      cam.dist = Math.max(16, Math.min(42, cam.dist * (pinch / d)));
+      pinch = d;
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchend', function (e) { if (e.touches.length < 2) pinch = null; }, { passive: true });
+
+  // ===================== buttons =====================
+  document.getElementById('btnHint').addEventListener('click', function () {
+    if (done) return;
+    var next = STAGES[stageIdx].idx.filter(function (i) { return parts[i].state === 'tray'; })[0];
+    if (next === undefined) return;
+    hintUntil = performance.now() + 2400;
+    parts[next].ghost.visible = true;
+    tip('ชิ้นถัดไปคือ "' + parts[next].name + '"', 2400);
+  });
+  var btnSound = document.getElementById('btnSound');
+  btnSound.addEventListener('click', function () {
+    soundOn = !soundOn;
+    btnSound.setAttribute('aria-pressed', String(soundOn));
+    btnSound.textContent = 'เสียง: ' + (soundOn ? 'เปิด' : 'ปิด');
+    if (soundOn) { ac(); sfxPick(); }
+  });
+  document.getElementById('btnReset').addEventListener('click', reset);
+  document.getElementById('btnLight').addEventListener('click', function () {
+    elFinish.classList.remove('show');
+    nightGoal = 1;
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { sfxNote(f, i * 0.24, 0.12); });
+    buzz([12, 90, 12, 90, 22]);
+    tip('โรงสีของพี่เปิดแล้ว 🌾', 5000);
+  });
+
+  function reset() {
+    stageIdx = 0; missStreak = 0; done = false; nightGoal = 0;
+    ghostMat.opacity = 0.14;
+    elFinish.classList.remove('show');
+    parts.forEach(function (p) {
+      p.state = 'locked'; p.tween = null;
+      p.obj.visible = false; p.ghost.visible = false;
+      p.obj.scale.setScalar(TRAY_SCALE);
+      p.obj.rotation.set(p.rot[0], p.rot[1], p.rot[2]);
+    });
+    openStage();
+    tip('แตะชิ้นส่วนในถาดค้างไว้ แล้วลากขึ้นไปที่เงาโปร่ง', 5000);
+  }
+
+  // ===================== night =====================
+  var lampA = new THREE.PointLight(0xFFB067, 0, 6.5);
+  lampA.position.set(-0.5, 1.9, 2.2); scene.add(lampA);
+  var nightClear = new THREE.Color(0x1B2033);
+
+  function applyNight() {
+    hemi.intensity = 0.85 - 0.55 * night;
+    key.intensity = 0.95 - 0.72 * night;
+    fill.intensity = 0.28 - 0.12 * night;
+    lampA.intensity = night * 1.6;
+    var base = themeClear();
+    var col = base.clone().lerp(nightClear, night);
+    renderer.setClearColor(col, 1);
+  }
+  function themeClear() {
+    var v = getComputedStyle(document.body).getPropertyValue('--sunk').trim();
+    try { return new THREE.Color(v || '#E7DCC7'); } catch (e) { return new THREE.Color(0xE7DCC7); }
+  }
+
+  // ===================== resize + loop =====================
+  function resize() {
+    var w = stageEl.clientWidth, h = stageEl.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    applyCamera();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stageEl);
+  window.addEventListener('resize', resize);
+
+  function easeOutBack(x) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); }
+  function easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); }
+
+  var last = performance.now();
+  var tmp = new THREE.Vector3();
+  var windmillPart = parts.filter(function (p) { return p.isWindmill; })[0];
+
+  function tick(now) {
+    var dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+
+    if (glide.azim !== null && !dragCam) {
+      cam.azim += (glide.azim - cam.azim) * Math.min(1, dt * 9);
+      if (Math.abs(glide.azim - cam.azim) < 0.0008) { cam.azim = glide.azim; glide.azim = null; }
+    }
+    if (glide.elev !== null && !dragCam) {
+      cam.elev += (glide.elev - cam.elev) * Math.min(1, dt * 9);
+      if (Math.abs(glide.elev - cam.elev) < 0.0008) { cam.elev = glide.elev; glide.elev = null; }
+    }
+
+    if (held) {
+      var hp = held.p;
+      hp.obj.scale.setScalar(hp.obj.scale.x + (1 - hp.obj.scale.x) * Math.min(1, dt * 12));
+      var dd = Math.hypot(hp.obj.position.x - hp.to.x, hp.obj.position.z - hp.to.z);
+      var near = Math.max(0, 1 - dd / (SNAP_RADIUS * 2.4));
+      ghostMat.opacity = (missStreak >= 2 ? 0.30 : 0.14) + near * 0.34;
+      hp.obj.rotation.set(hp.rot[0] + Math.sin(now * 0.004) * 0.02, hp.rot[1], hp.rot[2]);
+    }
+
+    parts.forEach(function (p) {
+      var tw = p.tween;
+      if (!tw) return;
+      tw.t += dt / tw.dur;
+      if (tw.kind === 'pop') {
+        if (tw.t < 0) return;
+        var k = Math.min(1, tw.t);
+        p.obj.scale.setScalar(TRAY_SCALE * easeOutBack(k));
+        p.obj.position.copy(p.home);
+        if (k >= 1) { p.obj.scale.setScalar(TRAY_SCALE); p.tween = null; }
+      } else if (tw.kind === 'snap') {
+        var k2 = Math.min(1, tw.t);
+        var e2 = easeOutBack(k2);
+        tmp.copy(tw.from).lerp(p.to, e2);
+        p.obj.position.copy(tmp);
+        p.obj.scale.setScalar(tw.fromScale + (1 - tw.fromScale) * easeOutCubic(k2));
+        if (k2 >= 1) {
+          p.obj.position.copy(p.to);
+          p.obj.scale.setScalar(1);
+          p.obj.rotation.set(p.rot[0], p.rot[1], p.rot[2]);
+          p.tween = null;
+        }
+      } else if (tw.kind === 'back') {
+        var k3 = Math.min(1, tw.t);
+        var e3 = easeOutCubic(k3);
+        tmp.copy(tw.from).lerp(p.home, e3);
+        p.obj.position.copy(tmp);
+        p.obj.scale.setScalar(tw.fromScale + (TRAY_SCALE - tw.fromScale) * e3);
+        if (k3 >= 1) {
+          p.obj.position.copy(p.home);
+          p.obj.scale.setScalar(TRAY_SCALE);
+          p.obj.rotation.set(p.rot[0], p.rot[1], p.rot[2]);
+          p.tween = null;
+        }
+      }
+    });
+
+    // windmill keeps turning on its shaft once it's locked in
+    if (windmillPart && windmillPart.state === 'placed' && !windmillPart.tween) {
+      windmillPart.obj.rotation.z += WIND_SPEED * dt;
+    }
+
+    if (hintUntil && now > hintUntil) {
+      hintUntil = 0;
+      parts.forEach(function (p) { if (p.state !== 'held') p.ghost.visible = false; });
+    }
+
+    if (night !== nightGoal) {
+      night += (nightGoal - night) * Math.min(1, dt * 0.9);
+      if (Math.abs(nightGoal - night) < 0.002) night = nightGoal;
+      applyNight();
+    }
+
+    if (done) {
+      parts.forEach(function (p) {
+        if (p.obj.userData.isCat && p.state === 'placed') {
+          p.obj.position.y = p.to.y + Math.sin(now * 0.0022) * 0.045;
+        }
+      });
+    }
+
+    applyCamera();
+    renderer.render(scene, camo);
+    requestAnimationFrame(tick);
+  }
+
+  applyNight();
+  resize();
+  reset();
+  requestAnimationFrame(tick);
+
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq.addEventListener) mq.addEventListener('change', applyNight);
+})();
+</script>
