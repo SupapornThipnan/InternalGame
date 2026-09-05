@@ -147,7 +147,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     <div class="row">
       <span class="eyebrow">Nyan Kit Workshop · House System</span>
       <span class="eyebrow" style="color:var(--ink-3)">Build Mode + Play Mode</span>
-      <span class="vbadge">v0.11.2</span>
+      <span class="vbadge">v0.12.0</span>
     </div>
     <h1>Nyan Home Builder</h1>
     <p class="note">
@@ -178,6 +178,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
         <button data-v="wallart" aria-pressed="false">🖼 ของแขวนผนัง</button>
         <button data-v="paint" aria-pressed="false">🎨 ทาสี</button>
         <button data-v="furn" aria-pressed="false">เฟอร์นิเจอร์</button>
+        <button data-v="surface" aria-pressed="false">🏺 ของบนโต๊ะ</button>
         <button data-v="erase" aria-pressed="false">ลบ</button>
       </div>
 
@@ -219,6 +220,12 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
             <input type="range" id="ispArtOffset" min="-0.45" max="0.45" step="0.01" value="0">
             <div class="k">ความสูงจากพื้น <span class="val" id="ispArtHVal">1.50</span></div>
             <input type="range" id="ispArtHeight" min="0.3" max="2.4" step="0.02" value="1.5">
+          </div>
+          <div id="ispSurfBody" style="display:none">
+            <div class="k">ตำแหน่งซ้าย-ขวา <span class="val" id="ispSurfXVal">กลาง</span></div>
+            <input type="range" id="ispSurfX" min="-0.7" max="0.7" step="0.01" value="0">
+            <div class="k">ตำแหน่งหน้า-หลัง <span class="val" id="ispSurfZVal">กลาง</span></div>
+            <input type="range" id="ispSurfZ" min="-0.4" max="0.4" step="0.01" value="0">
           </div>
           <button class="del" id="ispDel">🗑 ลบชิ้นนี้</button>
         </div>
@@ -290,6 +297,10 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     </div>
     <div class="changelog">
       <div class="crow now">
+        <span class="cv">v0.12.0</span>
+        <span class="cd"><b>ของวางบนโต๊ะ</b> — เครื่องมือใหม่ "🏺 ของบนโต๊ะ" มีแจกัน กองหนังสือ ชามผลไม้ เทียนหอม วางได้บนโต๊ะกินข้าว โต๊ะทำงาน โต๊ะข้างเตียง และเคาน์เตอร์ ของชิ้นนี้เป็นลูกของ mesh โต๊ะโดยตรง (ไม่ใช่กลุ่มแยกแบบของแขวนผนัง) ย้าย/หมุน/ขยายโต๊ะแล้วของบนโต๊ะตามไปเองอัตโนมัติผ่านระบบ scene graph ของ three.js ไม่ต้องคำนวณพิกัดใหม่เอง · เลือกแล้วลากย้ายบนโต๊ะได้ ลากข้ามไปโต๊ะตัวอื่นก็ได้ · ลบโต๊ะจะพาของบนโต๊ะหายไปด้วย · furniture ที่วางแล้วทุกชิ้นมี id ติดตัวแล้ว (สำหรับให้ของบนโต๊ะอ้างอิงกลับมาหาโต๊ะเจ้าของ)</span>
+      </div>
+      <div class="crow">
         <span class="cv">v0.11.2</span>
         <span class="cd"><b>ความละเอียดกริดเริ่มต้นเป็น 0.25 ม.</b> — เดิมเปิดเกมมาเป็น 1 ม. (กฎ Sims) ตอนนี้เริ่มที่ 0.25 ม. ทันที มีผลกับทั้งเฟอร์นิเจอร์พื้นและของแขวนผนัง เปลี่ยนกลับเป็น 1 หรือ 0.5 ได้ที่แผงเครื่องมือเฟอร์นิเจอร์เหมือนเดิม</span>
       </div>
@@ -390,7 +401,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
 </section>
 </main>
 
-<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.11.2</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.12.0</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -768,14 +779,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     { id: 'sofa', th: 'โซฟา', ic: '🛋', fp: [2, 1], b: sofa },
     { id: 'armchair', th: 'เก้าอี้นวม', ic: '💺', fp: [1, 1], b: armchair },
     { id: 'bed', th: 'เตียง', ic: '🛏', fp: [2, 2], b: bed },
-    { id: 'nightstand', th: 'โต๊ะข้างเตียง', ic: '🗄', fp: [1, 1], b: nightstand },
+    { id: 'nightstand', th: 'โต๊ะข้างเตียง', ic: '🗄', fp: [1, 1], b: nightstand, surfaceY: 0.55, surfaceHalf: [0.17, 0.14] },
     { id: 'wardrobe', th: 'ตู้เสื้อผ้า', ic: '🚪', fp: [1, 1], b: wardrobe },
-    { id: 'table', th: 'โต๊ะกินข้าว', ic: '🍽', fp: [2, 1], b: table },
+    { id: 'table', th: 'โต๊ะกินข้าว', ic: '🍽', fp: [2, 1], b: table, surfaceY: 0.785, surfaceHalf: [0.72, 0.36] },
     { id: 'chair', th: 'เก้าอี้', ic: '🪑', fp: [1, 1], b: chair },
-    { id: 'desk', th: 'โต๊ะทำงาน', ic: '🖥', fp: [2, 1], b: desk },
+    { id: 'desk', th: 'โต๊ะทำงาน', ic: '🖥', fp: [2, 1], b: desk, surfaceY: 0.785, surfaceHalf: [0.62, 0.28] },
     { id: 'bookshelf', th: 'ตู้หนังสือ', ic: '📚', fp: [1, 1], b: bookshelf },
     { id: 'tv', th: 'ทีวี + ตู้', ic: '📺', fp: [1, 1], b: tvStand },
-    { id: 'counter', th: 'เคาน์เตอร์', ic: '🧱', fp: [1, 1], b: counter },
+    { id: 'counter', th: 'เคาน์เตอร์', ic: '🧱', fp: [1, 1], b: counter, surfaceY: 0.925, surfaceHalf: [0.42, 0.28] },
     { id: 'stove', th: 'เตา', ic: '🔥', fp: [1, 1], b: stove },
     { id: 'sink', th: 'อ่างล้างจาน', ic: '🚰', fp: [1, 1], b: sink },
     { id: 'fridge', th: 'ตู้เย็น', ic: '🧊', fp: [1, 1], b: fridge },
@@ -788,6 +799,59 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   ];
   var FURN_BY = {}; FURN.forEach(function (f) { FURN_BY[f.id] = f; });
 
+  // ===================== things that sit on a tabletop =====================
+  function vaseArt() {
+    var g = G();
+    g.add(put(cyl(0.05, 0.07, 0.14, 10, P.terra), 0, 0.07));
+    g.add(put(cyl(0.035, 0.05, 0.02, 10, P.terra), 0, 0.145));
+    [[-0.02, 0.22, 0], [0.018, 0.25, 0.012], [0, 0.2, -0.016]].forEach(function (v) {
+      g.add(put(cyl(0.006, 0.006, 0.16, 5, P.leaf), v[0], v[1], v[2]));
+    });
+    g.add(put(sph(0.032, P.leaf, 8, 6), 0, 0.27, 0));
+    g.add(put(sph(0.026, P.leafLt, 8, 6), 0.018, 0.245, 0.014));
+    return g;
+  }
+  function bookStack() {
+    var g = G();
+    var cols = [P.fabricB, P.fabricA, P.fabricC];
+    var h = 0.03;
+    for (var i = 0; i < 3; i++) {
+      var w = 0.16 - i * 0.012, d = 0.11 - i * 0.008;
+      var b = bx(w, h, d, cols[i]);
+      b.position.set(i % 2 ? 0.008 : -0.006, h / 2 + i * h, i % 2 ? -0.006 : 0.005);
+      b.rotation.y = (i - 1) * 0.12;
+      g.add(b);
+    }
+    return g;
+  }
+  function fruitBowl() {
+    var g = G();
+    var bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.06, 0.05, 14, 1, true), M(P.white));
+    bowl.position.y = 0.03; g.add(bowl);
+    var base = cyl(0.05, 0.05, 0.01, 14, P.white); base.position.y = 0.005; g.add(base);
+    var cols = [P.terra, P.leaf, P.fabricB];
+    for (var i = 0; i < 5; i++) {
+      var a = (i / 5) * Math.PI * 2;
+      g.add(put(sph(0.028, cols[i % 3], 8, 6), Math.cos(a) * 0.045, 0.07, Math.sin(a) * 0.045));
+    }
+    return g;
+  }
+  function candleArt() {
+    var g = G();
+    g.add(put(cyl(0.035, 0.038, 0.12, 12, P.cream), 0, 0.06));
+    var wick = cyl(0.004, 0.004, 0.03, 5, P.black); wick.position.y = 0.135; g.add(wick);
+    var flame = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 6), glowM(P.warm, 0xB8873A));
+    flame.scale.set(0.7, 1.3, 0.7); flame.position.y = 0.16; g.add(flame);
+    return g;
+  }
+  var SURFACE_ITEMS = [
+    { id: 'vase', th: 'แจกันดอกไม้เล็ก', ic: '🏺', b: vaseArt },
+    { id: 'books', th: 'กองหนังสือ', ic: '📚', b: bookStack },
+    { id: 'bowl', th: 'ชามผลไม้', ic: '🍎', b: fruitBowl },
+    { id: 'candle', th: 'เทียนหอม', ic: '🕯', b: candleArt }
+  ];
+  var SURFACE_ITEM_BY = {}; SURFACE_ITEMS.forEach(function (s) { SURFACE_ITEM_BY[s.id] = s; });
+
   var OPENING_KINDS = [
     { id: 'door', th: 'ประตู', ic: '🚪', width: 0.9 },
     { id: 'window', th: 'หน้าต่าง', ic: '🪟', width: 0.8 }
@@ -795,9 +859,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   var OPENING_KIND_BY = {}; OPENING_KINDS.forEach(function (k) { OPENING_KIND_BY[k.id] = k; });
 
   // ===================== world state =====================
-  var world = { floors: {}, walls: {}, objects: [], openings: [], wallArt: [], foundation: false };
+  var world = { floors: {}, walls: {}, objects: [], openings: [], wallArt: [], surfaceItems: [], foundation: false };
   var undoStack = [];
-  var APP_VERSION = '0.11.2';
+  var APP_VERSION = '0.12.0';
   function plainState() {
     var f = {}, w = {};
     Object.keys(world.floors).forEach(function (k) { f[k] = { mat: world.floors[k].mat }; });
@@ -807,7 +871,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       floors: f, walls: w, foundation: world.foundation,
       openings: world.openings.map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; }),
       wallArt: world.wallArt.map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; }),
-      objects: world.objects.map(function (o) { return { d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift }; })
+      objects: world.objects.map(function (o) { return { id: o.id, d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift }; }),
+      surfaceItems: world.surfaceItems.map(function (s) { return { def: s.def, hostId: s.hostId, offsetX: s.offsetX, offsetZ: s.offsetZ }; })
     };
   }
   function snap() {
@@ -1204,9 +1269,100 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     }
   }
   function removeObject(o) {
+    world.surfaceItems.filter(function (s) { return s.hostId === o.id; }).forEach(removeSurfaceItemMesh);
+    world.surfaceItems = world.surfaceItems.filter(function (s) { return s.hostId !== o.id; });
     if (o.mesh) gObjects.remove(o.mesh);
     var i = world.objects.indexOf(o);
     if (i >= 0) world.objects.splice(i, 1);
+  }
+  function findHostById(id) {
+    for (var i = 0; i < world.objects.length; i++) if (world.objects[i].id === id) return world.objects[i];
+    return null;
+  }
+  function addSurfaceItemMesh(item) {
+    var host = findHostById(item.hostId);
+    if (!host || !host.mesh) return;
+    var def = FURN_BY[host.def];
+    var g = SURFACE_ITEM_BY[item.def].b();
+    g.position.set(item.offsetX, def.surfaceY, item.offsetZ);
+    g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    g.userData.surfaceItemRef = item;
+    host.mesh.add(g);           // parented to the host — moving/rotating/scaling the
+    item.mesh = g;               // table carries the item along for free, no extra math
+  }
+  function removeSurfaceItemMesh(item) {
+    if (item.mesh && item.mesh.parent) item.mesh.parent.remove(item.mesh);
+  }
+  function removeSurfaceItem(item) {
+    removeSurfaceItemMesh(item);
+    var i = world.surfaceItems.indexOf(item);
+    if (i >= 0) world.surfaceItems.splice(i, 1);
+  }
+  function pickSurfaceItem(e) {
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gObjects.children, true);
+    if (!hits.length) return null;
+    var o = hits[0].object;
+    while (o && !o.userData.surfaceItemRef && !o.userData.objRef) o = o.parent;
+    return (o && o.userData.surfaceItemRef) ? o.userData.surfaceItemRef : null;
+  }
+  // raycast the furniture layer, resolve which host + tabletop point was hit, and turn
+  // that into a clamped (offsetX, offsetZ) pair — snapped to furnGrid when Snap is on,
+  // exactly like the wall-art equivalent. excludeMesh hides the piece being dragged
+  // first, so its own geometry can't block the ray from reaching the tabletop under it.
+  function surfaceItemHitInfo(e, excludeMesh) {
+    var wasVisible = excludeMesh ? excludeMesh.visible : null;
+    if (excludeMesh) excludeMesh.visible = false;
+    setNdc(e);
+    ray.setFromCamera(ndc, camo);
+    var hits = ray.intersectObjects(gObjects.children, true);
+    if (excludeMesh) excludeMesh.visible = wasVisible;
+    if (!hits.length) return null;
+    var hit0 = hits[0], o = hit0.object;
+    while (o && !o.userData.objRef) o = o.parent;
+    if (!o) return null;
+    var host = o.userData.objRef;
+    var def = FURN_BY[host.def];
+    if (!def.surfaceY) return null;
+    var local = o.worldToLocal(hit0.point.clone());
+    if (Math.abs(local.y - def.surfaceY) > 0.08) return null;
+    var hx = def.surfaceHalf[0], hz = def.surfaceHalf[1];
+    var offsetX = Math.max(-hx, Math.min(hx, local.x));
+    var offsetZ = Math.max(-hz, Math.min(hz, local.z));
+    if (snapOn) {
+      offsetX = Math.max(-hx, Math.min(hx, Math.round(offsetX / furnGrid) * furnGrid));
+      offsetZ = Math.max(-hz, Math.min(hz, Math.round(offsetZ / furnGrid) * furnGrid));
+    }
+    return { hostId: host.id, offsetX: offsetX, offsetZ: offsetZ };
+  }
+  function placeSurfaceItemAt(e) {
+    var hit = surfaceItemHitInfo(e, null);
+    if (!hit) return;
+    snap();
+    var item = { def: surfaceKind, hostId: hit.hostId, offsetX: hit.offsetX, offsetZ: hit.offsetZ };
+    world.surfaceItems.push(item);
+    addSurfaceItemMesh(item);
+    updateStats(); save();
+  }
+  function showSurfacePreview(e) {
+    var def = SURFACE_ITEM_BY[surfaceKind];
+    if (previewFor !== surfaceKind || !previewObj) {
+      clearPreview();
+      previewObj = def.b();
+      previewObj.traverse(function (m) {
+        if (m.isMesh) m.material = new THREE.MeshBasicMaterial({ color: 0x5C7AB8, transparent: true, opacity: 0.42, depthWrite: false });
+      });
+      gPreview.add(previewObj);
+      previewFor = surfaceKind;
+    }
+    var hit = surfaceItemHitInfo(e, null);
+    var host = hit ? findHostById(hit.hostId) : null;
+    if (!hit || !host || !host.mesh) { previewObj.visible = false; return; }
+    var worldPt = host.mesh.localToWorld(new THREE.Vector3(hit.offsetX, FURN_BY[host.def].surfaceY, hit.offsetZ));
+    previewObj.visible = true;
+    previewObj.position.copy(worldPt);
+    previewObj.rotation.y = host.mesh.rotation.y;
   }
 
   function rebuildAll() {
@@ -1221,6 +1377,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     world.openings.forEach(addOpeningMesh);
     world.wallArt.forEach(addWallArtMesh);
     world.objects.forEach(addObjectMesh);
+    world.surfaceItems.forEach(addSurfaceItemMesh);   // needs host.mesh, so runs after addObjectMesh
     applyWallView();
     updateStats();
   }
@@ -1306,7 +1463,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   function updateCursor() {
     var c;
     if (camDrag) c = 'grabbing';
-    else if (act && (act.kind === 'move' || act.kind === 'moveArt')) c = 'grabbing';
+    else if (act && (act.kind === 'move' || act.kind === 'moveArt' || act.kind === 'moveSurface')) c = 'grabbing';
     else if (mode === 'play') c = 'grab';
     else if (tool === 'select') c = hoverPick ? 'pointer' : 'default';
     else c = 'crosshair';
@@ -1371,6 +1528,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   var openingKind = 'door';
   var wallArtKind = 'frameSq';
   var furnId = 'sofa';
+  var nextObjId = 1;
+  var surfaceKind = 'vase';
   var furnGrid = 0.25;   // metres between snap positions; 1 keeps the Sims edge-aware rule below, default is finer
   var placeRot = 0;
   var ROT_STEP_SNAP = Math.PI / 4;    // 45° when Snap is on
@@ -1386,6 +1545,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   var elIspFurn = document.getElementById('ispFurnBody');
   var elIspOpen = document.getElementById('ispOpenBody');
   var elIspWallArt = document.getElementById('ispWallArtBody');
+  var elIspSurf = document.getElementById('ispSurfBody');
 
   function updateStats() {
     elStats.textContent =
@@ -1402,6 +1562,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     wallart: 'คลิกบนผนังตรงจุดที่จะแขวน · เลือกแล้วปรับตำแหน่ง/ความสูงที่แผงขวา',
     paint: 'คลิกผนังเพื่อทาสี · ลากยาวเพื่อทารวดเดียวหลายช่วง · ปิด "ทาทั้งสองด้าน" เพื่อแยกสีในกับนอก',
     furn: 'คลิกเพื่อวาง · R หรือคลิกขวาเพื่อหมุนก่อนวาง · ปิด Snap เพื่อวางอิสระ',
+    surface: 'คลิกบนโต๊ะ/เคาน์เตอร์ตรงจุดที่จะวาง · ลากของที่วางแล้วข้ามไปโต๊ะตัวอื่นได้',
     erase: 'คลิกพื้น ผนัง หรือของ เพื่อลบทีละชิ้น'
   };
   function updateHint() {
@@ -1534,6 +1695,24 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
         pf.appendChild(b);
       });
       elSide.appendChild(pf);
+    } else if (tool === 'surface') {
+      addGroup('ของบนโต๊ะ');
+      var nps = document.createElement('div'); nps.className = 'nowplacing';
+      nps.innerHTML = 'กำลังวาง: <b>' + SURFACE_ITEM_BY[surfaceKind].ic + ' ' + SURFACE_ITEM_BY[surfaceKind].th + '</b>';
+      elSide.appendChild(nps);
+      var ps = document.createElement('div'); ps.className = 'palette';
+      SURFACE_ITEMS.forEach(function (si) {
+        var b = document.createElement('button');
+        b.innerHTML = '<span class="ic">' + si.ic + '</span>' + si.th;
+        b.setAttribute('aria-pressed', String(si.id === surfaceKind));
+        b.addEventListener('click', function () { surfaceKind = si.id; buildSide(); refreshPreview(); });
+        ps.appendChild(b);
+      });
+      elSide.appendChild(ps);
+      var tips2 = document.createElement('div');
+      tips2.style.cssText = 'padding:10px 14px;font-size:.8rem;color:var(--ink-2);line-height:1.6';
+      tips2.textContent = 'วางได้เฉพาะบนโต๊ะกินข้าว โต๊ะทำงาน โต๊ะข้างเตียง และเคาน์เตอร์ — เฟอร์นิเจอร์อื่นยังไม่มีพื้นที่วางของ';
+      elSide.appendChild(tips2);
     } else {
       addGroup(tool === 'erase' ? 'เครื่องมือลบ' : 'เลือก / ย้าย');
       var note = document.createElement('div');
@@ -1625,7 +1804,9 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     world.openings = (s.openings || []).map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; });
     world.wallArt = (s.wallArt || []).map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; });
     world.foundation = s.foundation;
-    world.objects = s.objects.map(function (o) { return { def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l }; });
+    world.objects = s.objects.map(function (o) { return { id: o.id, def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l }; });
+    world.surfaceItems = (s.surfaceItems || []).map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX, offsetZ: si.offsetZ }; });
+    nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id || 0); }, 0);
     btnFound.setAttribute('aria-pressed', String(world.foundation));
     select(null); rebuildAll(); save();
   }
@@ -1640,6 +1821,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     elIspFurn.style.display = selectedType === 'furn' ? '' : 'none';
     elIspOpen.style.display = selectedType === 'opening' ? '' : 'none';
     elIspWallArt.style.display = selectedType === 'wallart' ? '' : 'none';
+    elIspSurf.style.display = selectedType === 'surface' ? '' : 'none';
     if (!o) { updateSelVisual(); return; }   // clears the highlight box/pad too, not just the panel
     if (selectedType === 'furn') {
       document.getElementById('ispName').textContent = FURN_BY[o.def].th;
@@ -1652,15 +1834,30 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       document.getElementById('ispName').textContent = OPENING_KIND_BY[o.kind].ic + ' ' + OPENING_KIND_BY[o.kind].th;
       syncOpeningSliders(o);
       document.getElementById('ispDel').textContent = '🗑 ลบช่องเปิดนี้';
-    } else {
+    } else if (selectedType === 'wallart') {
       document.getElementById('ispName').textContent = WALLART_BY[o.def].ic + ' ' + WALLART_BY[o.def].th;
       ispArtOffset.value = String(o.offset);
       document.getElementById('ispArtOffVal').textContent = Math.abs(o.offset) < 0.005 ? 'กลาง' : o.offset.toFixed(2);
       ispArtHeight.value = String(o.height);
       document.getElementById('ispArtHVal').textContent = o.height.toFixed(2);
       document.getElementById('ispDel').textContent = '🗑 ลบของแขวนนี้';
+    } else {
+      document.getElementById('ispName').textContent = SURFACE_ITEM_BY[o.def].ic + ' ' + SURFACE_ITEM_BY[o.def].th;
+      syncSurfaceSliders(o);
+      document.getElementById('ispDel').textContent = '🗑 ลบของชิ้นนี้';
     }
     updateSelVisual();
+  }
+  function syncSurfaceSliders(item) {
+    var host = findHostById(item.hostId);
+    var def = host ? FURN_BY[host.def] : null;
+    var hx = def ? def.surfaceHalf[0] : 0.7, hz = def ? def.surfaceHalf[1] : 0.4;
+    ispSurfX.min = String(-hx); ispSurfX.max = String(hx); ispSurfX.value = String(item.offsetX);
+    ispSurfZ.min = String(-hz); ispSurfZ.max = String(hz); ispSurfZ.value = String(item.offsetZ);
+    var step = snapOn ? Math.max(0.05, furnGrid) : 0.01;
+    ispSurfX.step = String(step); ispSurfZ.step = String(step);
+    document.getElementById('ispSurfXVal').textContent = Math.abs(item.offsetX) < 0.005 ? 'กลาง' : item.offsetX.toFixed(2);
+    document.getElementById('ispSurfZVal').textContent = Math.abs(item.offsetZ) < 0.005 ? 'กลาง' : item.offsetZ.toFixed(2);
   }
   function syncOpeningSliders(o) {
     var maxOff = 0.49 - o.width / 2;
@@ -1718,8 +1915,25 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     snap();
     if (selectedType === 'furn') removeObject(selected);
     else if (selectedType === 'opening') removeOpening(selected);
-    else removeWallArt(selected);
+    else if (selectedType === 'wallart') removeWallArt(selected);
+    else removeSurfaceItem(selected);
     select(null); updateStats(); save();
+  });
+  var ispSurfX = document.getElementById('ispSurfX');
+  var ispSurfZ = document.getElementById('ispSurfZ');
+  ispSurfX.addEventListener('input', function () {
+    if (!selected || selectedType !== 'surface') return;
+    selected.offsetX = +ispSurfX.value;
+    document.getElementById('ispSurfXVal').textContent = Math.abs(selected.offsetX) < 0.005 ? 'กลาง' : selected.offsetX.toFixed(2);
+    removeSurfaceItemMesh(selected); addSurfaceItemMesh(selected);
+    updateSelVisual(); saveSoon();
+  });
+  ispSurfZ.addEventListener('input', function () {
+    if (!selected || selectedType !== 'surface') return;
+    selected.offsetZ = +ispSurfZ.value;
+    document.getElementById('ispSurfZVal').textContent = Math.abs(selected.offsetZ) < 0.005 ? 'กลาง' : selected.offsetZ.toFixed(2);
+    removeSurfaceItemMesh(selected); addSurfaceItemMesh(selected);
+    updateSelVisual(); saveSoon();
   });
   var ispArtOffset = document.getElementById('ispArtOffset');
   var ispArtHeight = document.getElementById('ispArtHeight');
@@ -2006,21 +2220,28 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     var p = groundPoint(e);
     if (!p) return;
     if (tool === 'select') {
-      var o = pickObject(e);
-      if (o) {
-        select(o, 'furn');
-        act = { kind: 'move', o: o, moved: false };
+      var si = pickSurfaceItem(e);
+      if (si) {
+        select(si, 'surface');
+        act = { kind: 'moveSurface', o: si, moved: false };
         snap();
       } else {
-        var op = pickOpening(e);
-        if (op) { select(op, 'opening'); }
-        else {
-          var wa = pickWallArt(e);
-          if (wa) {
-            select(wa, 'wallart');
-            act = { kind: 'moveArt', o: wa, moved: false };
-            snap();
-          } else select(null);
+        var o = pickObject(e);
+        if (o) {
+          select(o, 'furn');
+          act = { kind: 'move', o: o, moved: false };
+          snap();
+        } else {
+          var op = pickOpening(e);
+          if (op) { select(op, 'opening'); }
+          else {
+            var wa = pickWallArt(e);
+            if (wa) {
+              select(wa, 'wallart');
+              act = { kind: 'moveArt', o: wa, moved: false };
+              snap();
+            } else select(null);
+          }
         }
       }
     } else if (tool === 'floor') {
@@ -2037,6 +2258,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       placeOpeningAt(e);
     } else if (tool === 'wallart') {
       placeWallArtAt(e);
+    } else if (tool === 'surface') {
+      placeSurfaceItemAt(e);
     } else if (tool === 'paint') {
       snap();
       act = { kind: 'paint', hit: false };
@@ -2152,6 +2375,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
           updateSelVisual();
           act.moved = true;
         }
+      } else if (act.kind === 'moveSurface') {
+        var hitS = surfaceItemHitInfo(e, act.o.mesh);
+        if (hitS) {
+          act.o.hostId = hitS.hostId; act.o.offsetX = hitS.offsetX; act.o.offsetZ = hitS.offsetZ;
+          removeSurfaceItemMesh(act.o); addSurfaceItemMesh(act.o);
+          updateSelVisual();
+          act.moved = true;
+        }
       }
     } else if (mode === 'build' && tool === 'furn') {
       showFurnPreview(p.x, p.z);
@@ -2165,9 +2396,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     } else if (mode === 'build' && tool === 'wallart') {
       showWallArtPreview(e);
       clearHover();
+    } else if (mode === 'build' && tool === 'surface') {
+      showSurfacePreview(e);
+      clearHover();
     } else if (mode === 'build' && (tool === 'select' || tool === 'erase')) {
       var col = tool === 'erase' ? ERASE_COLOR : SEL_COLOR;
-      var ho = pickObject(e) || pickOpening(e) || pickWallArt(e);   // furniture, then doors/windows, then wall art
+      // surface items first — they're nested inside their host's mesh, so a plain
+      // pickObject() would otherwise match the table underneath instead of the vase
+      var ho = pickSurfaceItem(e) || pickObject(e) || pickOpening(e) || pickWallArt(e);
       if (ho) { hoverObject(ho, col); setHoverPick(true); return; }
       setHoverPick(false);
       if (tool === 'erase') {
@@ -2202,6 +2438,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     else if (act.kind === 'line' && p) commitLine(act.a, cornerOf(p));
     else if (act.kind === 'move') { if (act.moved) save(); else undoStack.pop(); }
     else if (act.kind === 'moveArt') { if (act.moved) save(); else undoStack.pop(); }
+    else if (act.kind === 'moveSurface') { if (act.moved) save(); else undoStack.pop(); }
     else if (act.kind === 'paint') { if (act.hit) save(); else undoStack.pop(); }
     else if (act.kind === 'opening') { if (act.hit) save(); else undoStack.pop(); }
     if (act.kind !== 'move') clearPreview();
@@ -2258,7 +2495,8 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
         snap();
         if (selectedType === 'furn') removeObject(selected);
         else if (selectedType === 'opening') removeOpening(selected);
-        else removeWallArt(selected);
+        else if (selectedType === 'wallart') removeWallArt(selected);
+        else removeSurfaceItem(selected);
         select(null); updateStats(); save();
       }
     } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); }
@@ -2294,12 +2532,14 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     var def = FURN_BY[furnId];
     var pos = snapOn ? snapFurn(p.x, p.z, def, placeRot) : { x: p.x, z: p.z };
     snap();
-    var o = { def: furnId, x: pos.x, z: pos.z, rotY: placeRot, scale: 1, lift: 0 };
+    var o = { id: nextObjId++, def: furnId, x: pos.x, z: pos.z, rotY: placeRot, scale: 1, lift: 0 };
     world.objects.push(o);
     addObjectMesh(o);
     updateStats(); save();
   }
   function eraseAt(e, p) {
+    var si = pickSurfaceItem(e);
+    if (si) { snap(); removeSurfaceItem(si); updateStats(); save(); return; }
     var o = pickObject(e);
     if (o) { snap(); removeObject(o); updateStats(); save(); return; }
     var op = pickOpening(e);
@@ -2352,8 +2592,12 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       world.wallArt = (s.wallArt || []).filter(function (a) { return WALLART_BY[a.def] && world.walls[a.wall]; })
         .map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset || 0, height: a.height || 1.5, side: a.side || 1 }; });
       world.foundation = !!s.foundation;
+      var nid = 1;
       world.objects = (s.objects || []).filter(function (o) { return FURN_BY[o.d]; })
-        .map(function (o) { return { def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0 }; });
+        .map(function (o) { return { id: o.id || nid++, def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0 }; });
+      nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
+      world.surfaceItems = (s.surfaceItems || []).filter(function (si) { return SURFACE_ITEM_BY[si.def] && findHostById(si.hostId); })
+        .map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX || 0, offsetZ: si.offsetZ || 0 }; });
       return true;
     } catch (e) { return false; }
   }
@@ -2375,13 +2619,17 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       if (world.walls[k]) { world.walls[k].paintOut = 'sage'; world.walls[k].paintIn = 'sage'; }
     });
     world.wallArt.push({ def: 'frameSq', wall: 'h,-2,-3', offset: 0, height: 1.7, side: 1 });
+    var tableObj = null;
     [['sofa', -2.5, 1.5, 0], ['tv', -2.5, -1.5, Math.PI], ['rug', -2, 0, 0],
      ['table', 1, 1.5, 0], ['chair', 1.5, 0.5, Math.PI], ['counter', 2.5, -2.5, 0],
      ['stove', 1.5, -2.5, 0], ['fridge', 0.5, -2.5, 0], ['lamp', -3.5, 2.5, 0],
      ['plant', 2.5, 2.5, 0], ['bookshelf', -3.5, -2.5, 0]
     ].forEach(function (a) {
-      world.objects.push({ def: a[0], x: a[1], z: a[2], rotY: a[3], scale: 1, lift: 0 });
+      var o = { id: nextObjId++, def: a[0], x: a[1], z: a[2], rotY: a[3], scale: 1, lift: 0 };
+      world.objects.push(o);
+      if (a[0] === 'table') tableObj = o;
     });
+    if (tableObj) world.surfaceItems.push({ def: 'vase', hostId: tableObj.id, offsetX: 0.4, offsetZ: 0 });
   }
 
   // ===================== boot =====================

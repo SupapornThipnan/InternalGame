@@ -127,7 +127,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.13 · กำลังโหลด…</span>
+  <span id="status">v5.15 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -411,14 +411,12 @@
       </div>
       <p id="testResult"></p>
 
-      <h3 style="margin-top:24px">📅 คิวคลิป (จับคู่เดือน ↔ ชื่อชีต TODOLIST)</h3>
-      <p>ตั้งชื่อชีต TODOLIST ของแต่ละเดือนไว้ล่วงหน้าได้เลย แล้วไปสลับดูเดือนไหนก็ได้จากช่อง "เลือกเดือน" ในแท็บ 📅 คิวคลิป — กด "โหลดรายชื่อชีต" ช่วยดึงชื่อชีตทั้งหมดมาเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
-      <div id="todolistMonthRows"></div>
-      <datalist id="sheetNameList"></datalist>
+      <h3 style="margin-top:24px">🗓️ จับคู่เดือน ↔ ชื่อชีต (อ่านจากชีต Database-Pages)</h3>
+      <p>เว็บอ่านการจับคู่เดือนกับชื่อชีตของ 📅 คิวคลิป และ 💰 บันทึกค่าคอม จากชีต <b>Database-Pages</b> โดยตรง — ขึ้นเดือนใหม่แค่เติมชื่อชีตในชีตนั้น เปิดจากเครื่องไหนก็เห็นเหมือนกันทันที ไม่ต้องมากรอกในเว็บ (เดือนที่ยังไม่ได้ใส่ชื่อชีต จะยังไม่ขึ้นในช่อง "เลือกเดือน" ของแท็บนั้น)</p>
+      <div id="dbPagesTable"></div>
       <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn ghost" id="btnAddTodolistMonth">➕ เพิ่มเดือน</button>
-        <button class="btn" id="btnSaveTodolistMap">💾 บันทึกทั้งหมด</button>
-        <button class="btn ghost" id="btnLoadSheetList">🔄 โหลดรายชื่อชีต</button>
+        <button class="btn ghost" id="btnReloadDbPages">🔄 โหลดใหม่จากชีต</button>
+        <a class="btn ghost" id="dbPagesLink" target="_blank" rel="noopener">📄 เปิด Google Sheet (แท็บ Database-Pages)</a>
       </div>
 
       <h3 style="margin-top:24px">🏷️ ข้อความแฮชแท็ก Shopee (ปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม แท็บคิวคลิป)</h3>
@@ -437,15 +435,6 @@
         <button class="btn" id="btnSaveTiktokSheetId">💾 บันทึก</button>
       </div>
 
-      <h3 style="margin-top:24px">💰 บันทึกค่าคอม (จับคู่เดือน ↔ ชื่อชีต)</h3>
-      <p>ตั้งชื่อชีต "บันทึกค่าคอม" ของแต่ละเดือนไว้ล่วงหน้าได้เลย แล้วไปสลับดูเดือนไหนก็ได้จากช่อง "เลือกเดือน" ในแท็บ 💰 บันทึกค่าคอม — กด "โหลดรายชื่อชีต" ช่วยดึงชื่อชีตทั้งหมดมาเลือก (ต้องเชื่อม Apps Script ด้านบนก่อน)</p>
-      <div id="commissionMonthRows"></div>
-      <datalist id="commissionSheetList"></datalist>
-      <div class="actions" style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
-        <button class="btn ghost" id="btnAddCommissionMonth">➕ เพิ่มเดือน</button>
-        <button class="btn" id="btnSaveCommissionMap">💾 บันทึกทั้งหมด</button>
-        <button class="btn ghost" id="btnLoadCommissionSheetList">🔄 โหลดรายชื่อชีต</button>
-      </div>
     </div>
   </section>
 </main>
@@ -596,7 +585,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.13';
+const VERSION = 'v5.15';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -606,22 +595,9 @@ const SHEET_PROGRESS = '⚡️Progress';
 const SHEET_LISTITME = '🗂️ ListITME';
 const SHEET_PROGRESS_DAY = 'Progress-Day '; // มีเว้นวรรคท้ายจริง ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-// ค่าเริ่มต้นที่ฝังไว้ในโค้ด กันต้องกรอกใหม่ทุกครั้งที่รีเฟรช/เปิดเบราว์เซอร์ใหม่/เปิดเครื่องใหม่ — แก้ในแท็บตั้งค่าเว็บได้ตามปกติ (ค่าที่กรอกเองจะทับค่านี้)
-// ชื่อชีต TODOLIST เปลี่ยนทุกเดือน — เพิ่มเดือนใหม่ในแมพนี้เลย ไม่ต้องพึ่ง localStorage ของแต่ละเครื่อง
+const SHEET_DB_PAGES = 'Database-Pages'; // ตารางจับคู่ "เดือน ↔ ชื่อชีต" ของทั้งคิวคลิปและบันทึกค่าคอม (A=เดือน, B=คิวคลิป, C=บันทึกค่าคอม)
 const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbxssiQazWkQnC20Wtv03ledew7nRrNpaFbxrlQWfKlpBYwP71hsUibfvZxY0UxrXv7X6A/exec';
-const DEFAULT_TODOLIST_SHEET = '7️⃣ 📝 TODOLIST-JULY26';
-const DEFAULT_TODOLIST_MAP = {
-  '2026-07': '7️⃣ 📝 TODOLIST-JULY26',
-  '2026-08': '8️⃣ 📝 TODOLIST-AUG26',
-  '2026-09': '9️⃣ 📝 TODOLIST-SEP26',
-};
 const DEFAULT_TIKTOK_SHEET_ID = '1jyBUyofpn1s0Eesh_w0pHdE7eE7iXuANK7qjtSZ8Ts0'; // ไฟล์ยอดขาย TikTok แยกไฟล์ กันไฟล์หลักหนัก
-const DEFAULT_COMMISSION_SHEET = '7️⃣ 📝  บันทึกค่าคอม-JULY26'; // มีเว้นวรรค 2 ที่ระหว่าง 📝 กับ บันทึก ห้ามลบออก ไม่งั้นหาชีตไม่เจอ
-const DEFAULT_COMMISSION_MAP = {
-  '2026-07': '7️⃣ 📝  บันทึกค่าคอม-JULY26', // มีเว้นวรรค 2 จุดจริง (ตามชื่อชีต) ห้ามลบออก
-  '2026-08': '8️⃣ 📝 บันทึกค่าคอม-AUG26',
-  '2026-09': '9️⃣ 📝 บันทึกค่าคอม-SEP26',
-};
 
 /* ================== STATE ================== */
 let products = [], sales = [], catalog = [], range = 'all';
@@ -632,25 +608,50 @@ const num = (v) => parseFloat(String(v ?? '0').replace(/,/g, '')) || 0;
 const baht = (v) => num(v).toLocaleString('th-TH', { maximumFractionDigits: 0 });
 const apiUrl = () => localStorage.getItem('appsScriptUrl') || DEFAULT_API_URL;
 
-/* ---- TODOLIST เดือน ↔ ชื่อชีต: จับคู่หลายเดือนไว้ล่วงหน้า สลับดูได้จากแท็บคิวคลิป ---- */
+/* ---- เดือน ↔ ชื่อชีต: อ่านจากชีต Database-Pages ที่เดียว (แหล่งความจริงเดียว ทุกเครื่องเห็นตรงกัน) ----
+   localStorage เก็บไว้เป็น "cache" เฉยๆ เผื่อเน็ตหลุด/โหลดชีตไม่ทัน จะได้ใช้ค่าล่าสุดทำงานต่อได้
+   ขึ้นเดือนใหม่ = เติมชื่อชีตในชีต Database-Pages พอ ไม่ต้องแก้โค้ด ไม่ต้องกรอกในเว็บทีละเครื่อง */
 const todolistMonthKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
-function getTodolistMap() {
-  try { return JSON.parse(localStorage.getItem('todolistSheetMap') || '{}'); } catch (e) { return {}; }
+const commissionMonthKey = () => todolistMonthKey(); // รูปแบบเดือนเดียวกัน (YYYY-MM) ใช้ตัวช่วยเดิมได้เลย
+const MONTH_ABBR3 = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+// "July 2026" / "Aug 2026" / "Sep 2026" / "2026-07" → "2026-07" (รับทั้งชื่อเต็มและชื่อย่อ ไม่ต้องบังคับให้ในชีตสะกดเหมือนกันหมด)
+function parseMonthLabel(label) {
+  const s = String(label || '').trim().toUpperCase();
+  const year = (s.match(/(20\d{2})/) || [])[1];
+  if (!year) return '';
+  const iso = s.match(/20\d{2}-(0[1-9]|1[0-2])/);
+  if (iso) return iso[0];
+  const mo = MONTH_ABBR3.findIndex(a => s.includes(a));
+  return mo < 0 ? '' : `${year}-${String(mo + 1).padStart(2, '0')}`;
 }
-function saveTodolistMap(map) { localStorage.setItem('todolistSheetMap', JSON.stringify(map)); }
-// ครั้งแรกที่ยังไม่มี map เลย (เครื่อง/เบราว์เซอร์ใหม่ หรือผู้ใช้เก่าที่เคยตั้งชื่อชีตเดี่ยวไว้) → เริ่มจากแมพที่ฝังไว้ในโค้ด (DEFAULT_TODOLIST_MAP) กันต้องกรอกใหม่ทุกเครื่อง
-// ถ้าเครื่องนี้เคยตั้งชื่อชีตเดือนปัจจุบันไว้เองแบบเก่า (ก่อนมีระบบแมพ) ให้ใช้ค่าที่ตั้งเองทับค่าเริ่มต้นของเดือนนั้น
-(function migrateTodolistSheet() {
-  if (Object.keys(getTodolistMap()).length === 0) {
-    const legacy = localStorage.getItem('todolistSheet');
-    const map = { ...DEFAULT_TODOLIST_MAP };
-    if (legacy) map[todolistMonthKey()] = legacy;
-    saveTodolistMap(map);
-  }
-})();
+function getDbPages() {
+  try { return JSON.parse(localStorage.getItem('dbPagesCache') || '[]'); } catch (e) { return []; }
+}
+// เดือนที่ยังไม่ได้ใส่ชื่อชีตในชีต (ช่องว่าง) จะไม่ถูกนับเข้าแมพ → ยังไม่โผล่ในช่อง "เลือกเดือน"
+const dbPagesMap = (field) => {
+  const map = {};
+  getDbPages().forEach(r => { if (r.key && r[field]) map[r.key] = r[field]; });
+  return map;
+};
+const getTodolistMap = () => dbPagesMap('todolist');
+const getCommissionMap = () => dbPagesMap('commission');
+async function loadDbPages() {
+  try {
+    const rows = await loadRaw(SHEET_DB_PAGES);
+    const parsed = rows.map(r => ({
+      key: parseMonthLabel(r[0]),
+      label: String(r[0] || '').trim(),
+      todolist: String(r[1] || '').trim(),
+      commission: String(r[2] || '').trim(),
+    })).filter(r => r.key); // ตัดแถวหัวตาราง/แถวว่างออก
+    if (!parsed.length) return false;
+    localStorage.setItem('dbPagesCache', JSON.stringify(parsed));
+    return true;
+  } catch (e) { return false; }
+}
 function selectedTodolistMonth() {
   const map = getTodolistMap();
   const stored = localStorage.getItem('todolistSelectedMonth');
@@ -660,25 +661,9 @@ function selectedTodolistMonth() {
   const months = Object.keys(map).sort();
   return months.length ? months[months.length - 1] : cur;
 }
-const todolistSheet = () => getTodolistMap()[selectedTodolistMonth()] || DEFAULT_TODOLIST_SHEET;
+const todolistSheet = () => getTodolistMap()[selectedTodolistMonth()] || '';
 // ถ้าพี่ย้ายชีตยอดขาย TikTok ไปไว้ Google Sheet ไฟล์อื่น (กันไฟล์หลักหนัก) ใส่ Sheet ID ไฟล์นั้นไว้ตรงนี้ — ว่างไว้ = ดึงจากไฟล์หลักเหมือนเดิม
 const tiktokSheetId = () => localStorage.getItem('tiktokSheetId') || DEFAULT_TIKTOK_SHEET_ID;
-
-/* ---- บันทึกค่าคอม เดือน ↔ ชื่อชีต: จับคู่หลายเดือนไว้ล่วงหน้าเหมือน TODOLIST ---- */
-const commissionMonthKey = () => todolistMonthKey(); // รูปแบบเดือนเดียวกัน (YYYY-MM) ใช้ตัวช่วยเดิมได้เลย
-function getCommissionMap() {
-  try { return JSON.parse(localStorage.getItem('commissionSheetMap') || '{}'); } catch (e) { return {}; }
-}
-function saveCommissionMap(map) { localStorage.setItem('commissionSheetMap', JSON.stringify(map)); }
-// เหมือน migrateTodolistSheet ด้านบน — เริ่มจากแมพที่ฝังไว้ในโค้ด (DEFAULT_COMMISSION_MAP) กันต้องกรอกใหม่ทุกเครื่อง
-(function migrateCommissionSheet() {
-  if (Object.keys(getCommissionMap()).length === 0) {
-    const legacy = localStorage.getItem('commissionSheet');
-    const map = { ...DEFAULT_COMMISSION_MAP };
-    if (legacy) map[commissionMonthKey()] = legacy;
-    saveCommissionMap(map);
-  }
-})();
 function selectedCommissionMonth() {
   const map = getCommissionMap();
   const stored = localStorage.getItem('commissionSelectedMonth');
@@ -688,7 +673,7 @@ function selectedCommissionMonth() {
   const months = Object.keys(map).sort();
   return months.length ? months[months.length - 1] : cur;
 }
-const commissionSheet = () => getCommissionMap()[selectedCommissionMonth()] || DEFAULT_COMMISSION_SHEET;
+const commissionSheet = () => getCommissionMap()[selectedCommissionMonth()] || '';
 const queueStagesCollapsed = () => localStorage.getItem('queueStagesCollapsed') === '1';
 // ข้อความแฮชแท็กสำหรับปุ่ม "#SHOPEE" ในป็อปอัพข้อมูลไอเทม — ตั้งค่าใหม่ได้ในแท็บ ⚙️ ตั้งค่า
 const SHOPEE_TAGS_DEFAULT = '#ของเด็ดแอพส้ม #ของปังดังในแอพส้ม #ช้อปปี้ป้ายยา #ถูกสุดที่ช้อปปี้ #ShopeeVideo #Shopee';
@@ -1190,42 +1175,33 @@ $('#btnTestUrl').onclick = async () => {
   } catch (e) { r.textContent = '❌ เชื่อมต่อไม่ได้ — เช็คว่า Deploy แบบ Anyone และ copy URL ที่ลงท้าย /exec'; }
 };
 
-function renderTodolistMonthRows() {
-  const map = getTodolistMap();
-  const months = Object.keys(map).sort();
-  $('#todolistMonthRows').innerHTML = (months.length ? months : [todolistMonthKey()]).map(m => `
-    <div class="todolistMonthRow" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input type="month" class="tlMonth" value="${esc(m)}" style="max-width:160px">
-      <input type="text" class="tlSheetName" list="sheetNameList" placeholder="ชื่อชีต TODOLIST เช่น 7️⃣ 📝 TODOLIST-JULY26" value="${esc(map[m] || '')}" style="flex:1">
-      <button class="btn ghost tlRemove" title="ลบเดือนนี้">🗑️</button>
-    </div>`).join('');
+// ตารางสรุปการจับคู่เดือน↔ชื่อชีตในแท็บตั้งค่า — แสดงอย่างเดียว แก้ที่ชีต Database-Pages ที่เดียว จะได้ไม่มีค่า 2 ที่ขัดกันเอง
+// โชว์ทุกแถวที่มีในชีต รวมเดือนที่ยังไม่ได้ใส่ชื่อชีต (จะได้รู้ว่าเหลือเดือนไหนต้องเติม)
+function renderDbPagesTable() {
+  const rows = getDbPages();
+  if (!rows.length) {
+    $('#dbPagesTable').innerHTML = '<div class="nolinks">ยังอ่านชีต Database-Pages ไม่ได้ — กด "🔄 โหลดใหม่จากชีต" อีกครั้ง หรือเช็คการแชร์ Sheet</div>';
+    return;
+  }
+  const blank = '<span style="color:var(--muted)">— ยังไม่ได้ใส่ —</span>';
+  $('#dbPagesTable').innerHTML = `<div class="tablewrap"><table class="qtable">
+    <thead><tr><th>เดือน</th><th>📅 คิวคลิป</th><th>💰 บันทึกค่าคอม</th></tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td>${esc(r.label)}</td>
+      <td>${r.todolist ? esc(r.todolist) : blank}</td>
+      <td>${r.commission ? esc(r.commission) : blank}</td>
+    </tr>`).join('')}</tbody></table></div>`;
 }
-renderTodolistMonthRows();
-$('#todolistMonthRows').addEventListener('click', (e) => {
-  const btn = e.target.closest('.tlRemove'); if (!btn) return;
-  btn.closest('.todolistMonthRow').remove();
-});
-$('#btnAddTodolistMonth').onclick = () => {
-  const row = document.createElement('div');
-  row.className = 'todolistMonthRow';
-  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
-  row.innerHTML = `
-    <input type="month" class="tlMonth" value="${todolistMonthKey()}" style="max-width:160px">
-    <input type="text" class="tlSheetName" list="sheetNameList" placeholder="ชื่อชีต TODOLIST เช่น 7️⃣ 📝 TODOLIST-JULY26" style="flex:1">
-    <button class="btn ghost tlRemove" title="ลบเดือนนี้">🗑️</button>`;
-  $('#todolistMonthRows').appendChild(row);
-};
-$('#btnSaveTodolistMap').onclick = () => {
-  const map = {};
-  document.querySelectorAll('.todolistMonthRow').forEach(row => {
-    const m = row.querySelector('.tlMonth').value;
-    const name = row.querySelector('.tlSheetName').value.trim();
-    if (m && name) map[m] = name;
-  });
-  saveTodolistMap(map);
-  renderTodolistMonthRows();
+$('#dbPagesLink').href = SHEET_URL;
+$('#btnReloadDbPages').onclick = async () => {
+  $('#btnReloadDbPages').disabled = true;
+  const ok = await loadDbPages();
+  $('#btnReloadDbPages').disabled = false;
+  renderDbPagesTable();
   renderQueueMonthSelect();
-  toast('บันทึกรายชื่อชีตแล้ว ✓'); loadQueue();
+  renderCommissionMonthSelect();
+  toast(ok ? 'โหลดจากชีต Database-Pages แล้ว ✓' : 'โหลดชีต Database-Pages ไม่ได้ — ใช้ค่าที่จำไว้ล่าสุดต่อไปก่อน');
+  if (ok) { loadQueue(); loadCommissionDay(); loadCommissionForecast(); }
 };
 $('#shopeeCopyTextInput').value = shopeeCopyText();
 $('#btnSaveShopeeCopyText').onclick = () => {
@@ -1237,63 +1213,6 @@ $('#tiktokSheetIdInput').value = tiktokSheetId();
 $('#btnSaveTiktokSheetId').onclick = () => {
   localStorage.setItem('tiktokSheetId', $('#tiktokSheetIdInput').value.trim());
   toast('บันทึก Sheet ID แล้ว ✓ — โหลดเดือนใหม่/รีโหลดครั้งถัดไปจะดึงจากไฟล์นี้');
-};
-function renderCommissionMonthRows() {
-  const map = getCommissionMap();
-  const months = Object.keys(map).sort();
-  $('#commissionMonthRows').innerHTML = (months.length ? months : [commissionMonthKey()]).map(m => `
-    <div class="commissionMonthRow" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input type="month" class="cmMonth" value="${esc(m)}" style="max-width:160px">
-      <input type="text" class="cmSheetName" list="commissionSheetList" placeholder="ชื่อชีตบันทึกค่าคอม เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26" value="${esc(map[m] || '')}" style="flex:1">
-      <button class="btn ghost cmRemove" title="ลบเดือนนี้">🗑️</button>
-    </div>`).join('');
-}
-renderCommissionMonthRows();
-$('#commissionMonthRows').addEventListener('click', (e) => {
-  const btn = e.target.closest('.cmRemove'); if (!btn) return;
-  btn.closest('.commissionMonthRow').remove();
-});
-$('#btnAddCommissionMonth').onclick = () => {
-  const row = document.createElement('div');
-  row.className = 'commissionMonthRow';
-  row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
-  row.innerHTML = `
-    <input type="month" class="cmMonth" value="${commissionMonthKey()}" style="max-width:160px">
-    <input type="text" class="cmSheetName" list="commissionSheetList" placeholder="ชื่อชีตบันทึกค่าคอม เช่น 7️⃣ 📝  บันทึกค่าคอม-JULY26" style="flex:1">
-    <button class="btn ghost cmRemove" title="ลบเดือนนี้">🗑️</button>`;
-  $('#commissionMonthRows').appendChild(row);
-};
-$('#btnSaveCommissionMap').onclick = () => {
-  const map = {};
-  document.querySelectorAll('.commissionMonthRow').forEach(row => {
-    const m = row.querySelector('.cmMonth').value;
-    const name = row.querySelector('.cmSheetName').value.trim();
-    if (m && name) map[m] = name;
-  });
-  saveCommissionMap(map);
-  renderCommissionMonthRows();
-  renderCommissionMonthSelect();
-  toast('บันทึกรายชื่อชีตแล้ว ✓'); loadCommissionDay(); loadCommissionForecast();
-};
-$('#btnLoadCommissionSheetList').onclick = async () => {
-  if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
-  try {
-    const res = await fetch(`${apiUrl()}?list=1`);
-    const j = await res.json();
-    if (!j.ok) throw new Error(j.error);
-    $('#commissionSheetList').innerHTML = j.sheets.filter(s => s.includes('บันทึกค่าคอม')).map(s => `<option value="${esc(s)}">`).join('');
-    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่องชื่อชีตแต่ละเดือนได้เลย');
-  } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
-};
-$('#btnLoadSheetList').onclick = async () => {
-  if (!apiUrl()) { toast('ต้องเชื่อม Apps Script ก่อนครับ'); return; }
-  try {
-    const res = await fetch(`${apiUrl()}?list=1`);
-    const j = await res.json();
-    if (!j.ok) throw new Error(j.error);
-    $('#sheetNameList').innerHTML = j.sheets.filter(s => s.includes('TODOLIST')).map(s => `<option value="${esc(s)}">`).join('');
-    toast('โหลดรายชื่อชีตแล้ว ✓ เลือกจากช่องชื่อชีตแต่ละเดือนได้เลย');
-  } catch (e) { toast('โหลดรายชื่อชีตไม่สำเร็จ'); }
 };
 function renderBanner() { $('#banner').style.display = apiUrl() ? 'none' : ''; }
 
@@ -1376,7 +1295,7 @@ async function loadQueue() {
   renderQueueMonthSelect();
   const name = todolistSheet();
   if (!name) {
-    $('#queueInfo').textContent = 'ยังไม่ได้เลือกชีต TODOLIST — ไปที่แท็บ ⚙️ ตั้งค่า เพื่อเลือกก่อนครับ';
+    $('#queueInfo').textContent = 'ยังไม่มีชื่อชีต TODOLIST ของเดือนนี้ — ไปเติมในชีต Database-Pages คอลัมน์ "📅 คิวคลิป" แล้วกด "🔄 โหลดใหม่จากชีต" ในแท็บ ⚙️ ตั้งค่า';
     $('#queueList').innerHTML = '';
     $('#queueStats').style.display = 'none';
     return;
@@ -2499,6 +2418,12 @@ $('#commissionMonthSelect').addEventListener('change', () => {
 async function loadCommissionDay() {
   renderCommissionMonthSelect();
   if (!$('#cmDay').value) $('#cmDay').value = cmTodayDateStr();
+  if (!commissionSheet()) {
+    $('#cmInfo').textContent = 'ยังไม่มีชื่อชีตบันทึกค่าคอมของเดือนนี้ — ไปเติมในชีต Database-Pages คอลัมน์ "💰 บันทึกค่าคอม" แล้วกด "🔄 โหลดใหม่จากชีต" ในแท็บ ⚙️ ตั้งค่า';
+    $('#cmForm').style.display = 'none';
+    $('#cmActions').style.display = 'none';
+    return;
+  }
   $('#cmInfo').textContent = 'กำลังโหลด…';
   $('#cmForm').style.display = 'none';
   $('#cmActions').style.display = 'none';
@@ -2722,6 +2647,17 @@ function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBan
 
 loadAll();
 loadReminders(); // เช็คแจ้งเตือนตั้งแต่เปิดเว็บครั้งแรก โชว์แบนเนอร์ได้ทุกแท็บไม่ต้องรอกดเข้าแท็บ 🔔 ก่อน
+// อ่านการจับคู่เดือน↔ชื่อชีตจาก Database-Pages ตั้งแต่เปิดเว็บ — ระหว่างรอ (หรือถ้าโหลดไม่ได้) ใช้ค่าที่ cache ไว้ล่าสุดทำงานต่อได้
+renderDbPagesTable();
+loadDbPages().then(ok => {
+  if (!ok) return;
+  renderDbPagesTable();
+  renderQueueMonthSelect();
+  renderCommissionMonthSelect();
+  // แท็บที่เปิดค้างอยู่ตอนนี้เท่านั้นที่ต้องโหลดซ้ำ แท็บอื่นเดี๋ยวโหลดเองตอนกดเข้าไป
+  if ($('#tab-queue').style.display !== 'none') loadQueue();
+  if ($('#tab-commission').style.display !== 'none') { loadCommissionDay(); loadCommissionForecast(); }
+});
 </script>
 </body>
 </html>
