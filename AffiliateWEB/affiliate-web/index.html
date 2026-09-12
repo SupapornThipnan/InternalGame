@@ -127,7 +127,7 @@
 <body>
 <header>
   <h1>deetao Affiliate 📊</h1>
-  <span id="status">v5.15 · กำลังโหลด…</span>
+  <span id="status">v5.16 · กำลังโหลด…</span>
 </header>
 <nav>
   <button class="active" data-tab="dash">📊 Dashboard</button>
@@ -585,7 +585,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.15';
+const VERSION = 'v5.16';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -700,7 +700,37 @@ async function loadCsvRaw(name, sheetId = SHEET_ID) {
   return Papa.parse(text, { header: false, skipEmptyLines: true }).data;
 }
 
+// ---- รวมหลายชีตในคำขอเดียว (batch) ----
+// Apps Script เสีย overhead ต่อคำขอ ~1-2 วิ (redirect + warm-up) ไม่ว่าข้อมูลจะเล็กแค่ไหน — ตอนเปิดเว็บเดิมยิงแยก 7 รอบ
+// ตอนนี้ prefetchApi() ยิงรอบเดียวแล้วฝากผลไว้ใน prefetched ให้ loadApi/loadApiRaw หยิบไปใช้ (ผู้เรียกเดิมไม่ต้องแก้อะไร)
+// ใช้ได้ครั้งเดียวต่อชีต — โหลดซ้ำครั้งถัดไป (เช่น หลังบันทึก) ยิงจริงตามปกติ จะได้ข้อมูลสดเสมอ
+// ถ้า batch ล้ม (Apps Script ยังเป็นเวอร์ชันเก่าที่ไม่รู้จัก batch / เน็ตสะดุด) ทุกตัวจะถอยไปยิงเดี่ยวเองอัตโนมัติ ไม่พัง
+const prefetched = new Map();
+const prefetchKey = (name, raw) => `${raw ? 'raw' : 'data'}|${name}`;
+function prefetchApi(specs) {
+  if (!apiUrl()) return;
+  const batch = fetch(`${apiUrl()}?batch=${encodeURIComponent(JSON.stringify(specs))}&_=${Date.now()}`, { cache: 'no-store' })
+    .then(r => r.json())
+    .then(j => { if (!j.ok || !Array.isArray(j.results)) throw new Error(j.error || 'OLD_SCRIPT_VERSION'); return j.results; });
+  specs.forEach((s, i) => {
+    const item = batch.then(results => {
+      const r = results[i];
+      if (!r || !r.ok) throw new Error((r && r.error) || 'BATCH_ITEM_FAILED');
+      return s.raw ? r.rows : r.data;
+    });
+    item.catch(() => {}); // กัน "unhandled rejection" ในคอนโซล กรณีไม่มีใครมาหยิบชีตนี้ไปใช้
+    prefetched.set(prefetchKey(s.sheet, s.raw), item);
+  });
+}
+function takePrefetched(key) {
+  const p = prefetched.get(key);
+  if (p) prefetched.delete(key);
+  return p;
+}
+
 async function loadApi(name) {
+  const pre = takePrefetched(prefetchKey(name, false));
+  if (pre) { try { return await pre; } catch (e) { /* batch ล้ม → ยิงเดี่ยวตามเดิม */ } }
   const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&_=${Date.now()}`, { cache: 'no-store' });
   const j = await res.json();
   if (!j.ok) throw new Error(j.error);
@@ -708,6 +738,8 @@ async function loadApi(name) {
 }
 
 async function loadApiRaw(name) {
+  const pre = takePrefetched(prefetchKey(name, true));
+  if (pre) { try { return await pre; } catch (e) { /* batch ล้ม → ยิงเดี่ยวตามเดิม */ } }
   const res = await fetch(`${apiUrl()}?sheet=${encodeURIComponent(name)}&raw=1&_=${Date.now()}`, { cache: 'no-store' });
   const j = await res.json();
   if (!j.ok || !j.rows) throw new Error(j.error || 'OLD_SCRIPT_VERSION');
@@ -2645,6 +2677,11 @@ function toast(msg) {
 }
 function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBanner(); }
 
+// ยิงคำขอเดียวขอทุกชีตที่ต้องใช้ตอนเปิดเว็บ — ต้องเรียกก่อน loadAll/loadReminders/loadDbPages ด้านล่าง ไม่งั้นพวกนั้นจะยิงแยกกันเอง
+prefetchApi([
+  { sheet: SHEET_PRODUCTS }, { sheet: SHEET_SALES }, { sheet: SHEET_REMINDERS },
+  { sheet: SHEET_DESC, raw: 1 }, { sheet: SHEET_LINKS, raw: 1 }, { sheet: SHEET_PROGRESS, raw: 1 }, { sheet: SHEET_DB_PAGES, raw: 1 },
+]);
 loadAll();
 loadReminders(); // เช็คแจ้งเตือนตั้งแต่เปิดเว็บครั้งแรก โชว์แบนเนอร์ได้ทุกแท็บไม่ต้องรอกดเข้าแท็บ 🔔 ก่อน
 // อ่านการจับคู่เดือน↔ชื่อชีตจาก Database-Pages ตั้งแต่เปิดเว็บ — ระหว่างรอ (หรือถ้าโหลดไม่ได้) ใช้ค่าที่ cache ไว้ล่าสุดทำงานต่อได้

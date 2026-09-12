@@ -92,6 +92,14 @@ header.mast{border-bottom:1px solid var(--line);background:var(--card);padding:2
 .swatches button{width:38px;height:38px;border-radius:5px;border:2px solid var(--line);cursor:pointer;padding:0}
 .swatches button{position:relative}
 .swatches button[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 0 3px color-mix(in srgb,var(--sel) 34%,transparent)}
+.tintparts{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
+.tintparts button{display:flex;align-items:center;gap:6px;font:inherit;font-size:.76rem;color:var(--ink-2);background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 5px;cursor:pointer}
+.tintparts button[aria-pressed="true"]{border-color:var(--sel);color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--sel) 30%,transparent)}
+.tintparts .dot{width:15px;height:15px;border-radius:50%;border:1px solid rgba(0,0,0,.22);flex:none}
+.tintsw{display:flex;flex-wrap:wrap;gap:5px}
+.tintsw button{width:26px;height:26px;border-radius:5px;border:2px solid var(--line);cursor:pointer;padding:0;position:relative}
+.tintsw button[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 0 2px color-mix(in srgb,var(--sel) 34%,transparent)}
+.tintsw button.reset{font-size:.68rem;width:auto;padding:0 8px;background:var(--sunk);color:var(--ink-2)}
 .swatches button[aria-pressed="true"]::after{content:"\2713";position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:1rem;text-shadow:0 1px 3px rgba(0,0,0,.65)}
 
 .stage{position:relative;background:var(--sunk);min-height:600px;overflow:hidden;user-select:none}
@@ -153,7 +161,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     <div class="row">
       <span class="eyebrow">Nyan Kit Workshop · House System</span>
       <span class="eyebrow" style="color:var(--ink-3)">Build Mode + Play Mode</span>
-      <span class="vbadge">v0.15.0</span>
+      <span class="vbadge">v0.18.0</span>
     </div>
     <h1>Nyan Home Builder</h1>
     <p class="note">
@@ -209,7 +217,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
           <div class="k">ความสว่างรวม <span class="val" id="lbVal">100%</span></div>
           <input type="range" id="lbSlider" min="50" max="150" value="100">
           <div class="k">ความเข้มเงา <span class="val" id="ssVal">80%</span></div>
-          <input type="range" id="ssSlider" min="0" max="100" value="80">
+          <input type="range" id="ssSlider" min="0" max="100" value="90">
         </div>
 
         <div class="panel inspector" id="insp">
@@ -224,6 +232,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
             <input type="range" id="ispScale" min="40" max="220" value="100">
             <div class="k">ความสูง <span class="val" id="ispLiftVal">0.00</span></div>
             <input type="range" id="ispLift" min="0" max="160" value="0">
+            <div id="ispTint"></div>
           </div>
           <div id="ispOpenBody" style="display:none">
             <div class="k">ตำแหน่งในผนัง <span class="val" id="ispOffVal">กลาง</span></div>
@@ -252,7 +261,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
 
         <div class="panel playbar" id="playbar">
           <span class="clock" id="clock">14:00</span>
-          <input type="range" id="timeSlider" min="0" max="1440" value="840">
+          <input type="range" id="timeSlider" min="0" max="1440" value="1008">
           <div class="presets">
             <button data-h="7">เช้า</button>
             <button data-h="13">กลางวัน</button>
@@ -317,6 +326,26 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     </div>
     <div class="changelog">
       <div class="crow now">
+        <span class="cv">v0.18.0</span>
+        <span class="cd"><b>เปลี่ยนสีเฟอร์นิเจอร์ได้ทีละชิ้นส่วน</b> — เลือกเฟอร์แล้วดูแผงขวา จะมีชิปบอกชิ้นส่วนที่เปลี่ยนสีได้ กดเลือกส่วนไหนแล้วจิ้มสีจาก 18 สี หรือกด "เดิม" คืนค่า · <b>ไม่ต้องเซตอะไรไว้ล่วงหน้าตอนปั้นโมเดล</b> — เกมไล่ดูเองว่าโมเดลนั้นใช้วัสดุกี่สี แล้วยกมาเป็นช่องให้เลือก เฟอร์เก่าทุกตัวเลยได้ฟีเจอร์นี้ทันทีโดยไม่ต้องแก้ builder สักตัว และโมเดลที่ปั้นเพิ่มทีหลังก็ได้ฟรีเหมือนกัน · เรียงช่องตาม<b>ปริมาตร</b>ของชิ้นส่วน ไม่ใช่จำนวน mesh — ไม่งั้นฟันปล่องเตาอบ 18 ซี่จิ๋ว ๆ จะได้ที่หนึ่ง ส่วนโดมทั้งลูกตกรอบ · คีย์ของแต่ละช่องใช้สีเดิมของวัสดุ (ไม่ใช่ uuid ที่เปลี่ยนทุกครั้งที่โหลด) สีที่เลือกไว้เลยกลับมาถูกช่องหลังเปิดเซฟใหม่ · อิฐเตาอบเป็นเท็กซ์เจอร์ที่ไม่มีสีของตัวเองให้ยึด เลยติดแท็กไว้ให้ตอนสร้าง จะได้ย้อมได้เหมือนกัน · วัสดุถูกโคลนเฉพาะช่องที่เปลี่ยนสีจริงเท่านั้น ชิ้นที่ไม่ได้แตะยังใช้ material ก้อนกลางร่วมกันเหมือนเดิม</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.17.0</span>
+        <span class="cd"><b>ย้ายเตาอบพิซซ่าจากหน้า 3D Model TEST เข้ามาในเกม</b> — อยู่ในแคตตาล็อกเฟอร์นิเจอร์ 🍕 ถัดจากเตา ขนาดจริง <b>สูง 1.44 ม. ฐาน 1.69×1.58 ม.</b> (footprint 2×2 ช่อง) · ปั้นไว้ที่สเกลแท่นโชว์แล้วคูณ 1.8 ทีเดียวที่กรุ๊ปชั้นใน แทนการไล่แก้เลขทั้งห้าสิบจุด · <b>ลายอิฐเป็น canvas texture</b> วาดตอนรันไทม์ ไม่ใช่ไฟล์ภาพ (เปิดจากไฟล์ตรง ๆ ได้เหมือนเดิม) และแคชไว้ วางเตาสิบตัวก็ใช้เท็กซ์เจอร์ชุดเดียว · ไฟถ่านในปากเตาต่อเข้ากับระบบไฟกลางวัน-กลางคืนเดิม ติดพร้อมโคมไฟดวงอื่น แต่ขยายให้ตั้งสี/ระยะไฟได้ (<code>lampColor</code>/<code>lampRange</code>) เตาเลยเรืองส้มแทนที่จะเป็นขาวนวลแบบโคมไฟ · <b>เก็บ memory leak ที่เจอระหว่างทาง</b>: <code>glowM()</code> เดิมสร้าง material ใหม่ยัดเข้า <code>GLOW</code> ทุกครั้งที่ build ฉะนั้นทุก undo/โหลดเซฟ อาเรย์ที่ถูกวนทุกครั้งที่แสงเปลี่ยนจะโตขึ้นเรื่อย ๆ ไม่มีวันหด ตอนนี้แคชแบบเดียวกับ <code>M()</code> แล้ว · <b>ยังไม่ได้ใส่ควัน</b> เพราะกลุ่มควันเป็นลูกของ mesh เตา กรอบไฮไลต์ตอนเลือก (<code>Box3.setFromObject</code>) จะยืดขึ้นไปคลุมกลุ่มควันด้วย ถ้าอยากได้บอกได้ เดี๋ยวหาทางแยกออกจากกรอบให้</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.16.1</span>
+        <span class="cd"><b>สไลเดอร์ “ความเข้มเงา” ปรับเงาจริง ๆ แล้ว ไม่ใช่ปรับความสว่างทั้งจอ</b> — ของเดิมพอลากสไลเดอร์ลง มีสามอย่างสว่างขึ้นพร้อมกัน (ไฟ ambient เสริม, hemi, และฉากหลัง) แต่ไฟหลักคงที่ ผลคือฝั่งสว่างกับฝั่งเงาขึ้นไปด้วยกัน เลยรู้สึกเหมือนปุ่มปรับความสว่างซ้ำอีกตัว · เหตุผลที่ลึกกว่านั้น: shadow map บังได้แค่ไฟทิศทางเดียว ส่วน ambient ตกลงบนทั้งฝั่งสว่างและฝั่งเงาเท่ากัน การเพิ่ม ambient เพื่อให้เงาจางลงจึงยกฝั่งสว่างขึ้นเท่า ๆ กันเสมอ · แก้เป็น <b>สลับน้ำหนักระหว่างไฟหลักกับ ambient</b> แทน — ลาก 0%→100% ตอนนี้ไฟหลักไต่ 0.45→1.25 พร้อมกับ ambient ลด 0.85→0.18 ฝั่งสว่างเลยแทบไม่ขยับ (1.39→1.13) ส่วนฝั่งเงาเข้มลง <b>5.8 เท่า</b> (1.05→0.18) · และตัดฉากหลังออกจากสไลเดอร์นี้ ตรึงไว้ค่าเดียว เพราะเป็นสาเหตุใหญ่ที่ทำให้รู้สึกว่าทั้งจอสว่างขึ้น</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.16.0</span>
+        <span class="cd"><b>จัดไฟใหม่ทั้งชุดให้เป็นแบบ “ไดโอรามาใต้โคมไฟ”</b> — รอบที่แล้วเลื่อนแค่เวลากับตัวเลข ยังแบนอยู่ เพราะรากปัญหาอยู่ที่<b>อัตราส่วนไฟ</b>: ตอน 16:48 ไฟหลัก (sun) เหลือแค่ 0.29 แต่ไฟรอบทิศ (hemi) อยู่ที่ 0.8 → ambient กลบ key อยู่ 1:3 เงาบนพื้นจึงเข้มกว่าที่สว่างแค่ 9% เท่านั้น รอบนี้แก้ 4 จุด: (1) ไฟหลักไม่ผูกกับความสูงดวงอาทิตย์ตรง ๆ อีกต่อไป ใช้เส้นโค้งที่คงความแรงไว้ตลอดช่วงโกลเด้นอาวร์ (0.29 → 1.05) (2) ลด hemi 0.8 → 0.4 และให้สไลเดอร์ “ความเข้มเงา” หรี่ ambient ลงอีกเมื่อดันขึ้นสูง — รวมแล้วอัตราส่วน key:ambient จาก 0.4:1 เป็น <b>4.2:1</b> เงาบนพื้นเข้มลงเหลือ 49% ของฝั่งสว่าง (3) พื้นสนามเดิมถูกบังคับเป็นสีขาวตอนกลางวัน เงาเลยไม่มีที่ตก เปลี่ยนเป็นโทนอุ่นกลาง ๆ ให้บ้านสีครีมเด้งออกมา (4) พื้นหลังท้องฟ้าเข้มลงตามความเข้มเงา ให้บ้านที่โดนไฟอ่านเป็นโมเดลจิ๋วใต้สปอตไลท์ แทนที่จะจมไปกับฉากหลังที่สว่างเท่ากัน · เพิ่มไฟเย็นอ่อน ๆ ฝั่งตรงข้ามตลอดวัน ได้คู่ warm key / cool rim เหมือนหน้า 3D Model TEST · ค่าเริ่มต้นความเข้มเงา 85% → 90%</span>
+      </div>
+      <div class="crow">
+        <span class="cv">v0.15.1</span>
+        <span class="cd"><b>ค่าเริ่มต้นเปิดเกมเป็นช่วงโกลเด้นอาวร์</b> — เลื่อนนาฬิกาเริ่มต้นจากเที่ยง 14:00 (แดดจ้า) เป็น 16:48 ซึ่งตรงกับช่วงที่ตารางสีท้องฟ้า (SKY ramp) ไล่ไปทางสีทองอมส้มพอดี และใกล้พีคของฟังก์ชัน dusk มากขึ้น ทำให้แสงแดด/ท้องฟ้าอุ่นขึ้นทันทีที่เปิดเกมโดยไม่ต้องมือลากสไลเดอร์เอง ปรับความเข้มเงาเริ่มต้น 80%→85% ให้คอนทราสต์ลึกขึ้นอีกนิด ได้อารมณ์ใกล้เคียงกับแสงในหน้าโมเดลจิบิ (spotlight อุ่น + เงาเข้ม) โดยไม่ทำให้ Build mode มืดจนทำงานลำบาก — โทนสีอุ่น (lightWarmth) ไม่แตะ ของเดิมที่เคยจูนตามภาพอ้างอิงร้านกาแฟไว้แล้วยังอยู่ครบ · สไลเดอร์ทั้งหมดที่ปุ่ม "🔆 แสง" ยังปรับกลับไปเป็นแสงกลางวันสว่างจ้าสำหรับตอนทำงานได้ตามปกติ ค่านี้แค่เปลี่ยนจุดเริ่มต้นเฉย ๆ</span>
+      </div>
+      <div class="crow">
         <span class="cv">v0.15.0</span>
         <span class="cd"><b>เฟอร์นิเจอร์ทุกชิ้นวางบนโต๊ะได้แล้ว</b> — ไม่จำกัดแค่ของบนโต๊ะ 4 ชิ้นเดิมอีกต่อไป ทุกอย่างในแคตตาล็อกเฟอร์นิเจอร์ (ต้นไม้ โคมตั้งโต๊ะ เก้าอี้ ฯลฯ) เล็งไปที่หน้าโต๊ะ/เคาน์เตอร์ก็จะเกาะไปวางบนนั้นแทนพื้นได้เลย ใช้เครื่องมือ "เฟอร์นิเจอร์" เดิม ไม่มีเครื่องมือแยก · ระบบตรวจจับหน้าโต๊ะแบบเดียวกับของบนโต๊ะ (v0.12.0) ใช้ scene-graph parent-child เดียวกัน โต๊ะเองก็วางซ้อนบนโต๊ะอีกใบได้ (ลำดับการสร้างตอนโหลดเซฟรองรับการซ้อนกันหลายชั้นแล้ว) · ลากของที่วางแล้วข้ามพื้น↔โต๊ะสลับไปมาได้ตลอด ลบเฟอร์นิเจอร์ที่เป็นโต๊ะจะลบของที่วางอยู่บนมันไปด้วย (cascade delete)</span>
       </div>
@@ -441,7 +470,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
 </section>
 </main>
 
-<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.15.0</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
+<footer><div class="wide">Nyan Kit Workshop · House builder <b style="color:var(--sel);font-weight:500">v0.18.0</b> · three.js r128 · เปิดไฟล์นี้ตรง ๆ ได้เลย ไม่ต้องมีเซิร์ฟเวอร์</div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -486,11 +515,63 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   };
   var MC = {};
   function M(hex) { if (!MC[hex]) MC[hex] = new THREE.MeshLambertMaterial({ color: hex }); return MC[hex]; }
-  var GLOW = [];
-  function glowM(hex, e) { var m = new THREE.MeshLambertMaterial({ color: hex }); m.userData.glow = e; GLOW.push(m); return m; }
+  var GLOW = [], GLOW_MC = {};
+  // cached like M(): every rebuildAll used to push a fresh material per lamp into GLOW,
+  // so the array (walked on every light change) grew for the life of the session
+  function glowM(hex, e) {
+    var k = hex + '|' + e;
+    if (!GLOW_MC[k]) {
+      var m = new THREE.MeshLambertMaterial({ color: hex });
+      m.userData.glow = e;
+      GLOW.push(m); GLOW_MC[k] = m;
+    }
+    return GLOW_MC[k];
+  }
   function bx(w, h, d, c) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); }
   function cyl(rt, rb, h, s, c) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s || 12), M(c)); }
   function sph(r, c, w, h) { return new THREE.Mesh(new THREE.SphereGeometry(r, w || 12, h || 9), M(c)); }
+  // same three, but taking a material instead of a colour — for the textured pieces
+  function bxM(w, h, d, m) { return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); }
+  function cylM(rt, rb, h, s, m) { return new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, s || 14), m); }
+  // brick courses drawn on a canvas rather than stacked as one mesh per brick — the oven
+  // dome alone would otherwise be a few hundred boxes, and its courses have to curve
+  var BRICK_MAT = {};
+  function shadeCss(hex, k) {
+    var r = Math.min(255, ((hex >> 16) & 255) * k) | 0;
+    var g = Math.min(255, ((hex >> 8) & 255) * k) | 0;
+    var b = Math.min(255, (hex & 255) * k) | 0;
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+  function brickMat(base, mortar, cols, rows, repX, repY) {
+    var key = [base, mortar, cols, rows, repX, repY].join('|');
+    if (BRICK_MAT[key]) return BRICK_MAT[key];      // cached: many ovens share one texture
+    var cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 256;
+    var x = cv.getContext('2d');
+    x.fillStyle = shadeCss(mortar, 1); x.fillRect(0, 0, 256, 256);
+    var bw = 256 / cols, bh = 256 / rows;
+    for (var r = 0; r < rows; r++) {
+      var off = (r % 2) ? bw / 2 : 0;
+      for (var i = -1; i <= cols; i++) {
+        // cheap hash so each brick gets its own tone — a flat fill reads as printed paper
+        var n = Math.sin(r * 12.9898 + i * 78.233) * 43758.5453;
+        var v = n - Math.floor(n);
+        x.fillStyle = shadeCss(base, 0.86 + v * 0.28);
+        x.fillRect(i * bw + off + 1, r * bh + 1, bw - 2, bh - 2);
+      }
+    }
+    var t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repX, repY);
+    t.anisotropy = 4;
+    var bm = new THREE.MeshLambertMaterial({ map: t });
+    // a texture has no colour of its own to key on, so tag it — and remember the brick
+    // tone for the swatch, since material.color here is plain white multiplying the map
+    bm.userData.slotKey = 'brick' + base.toString(16);
+    bm.userData.slotTint = base;
+    BRICK_MAT[key] = bm;
+    return bm;
+  }
   function G() { return new THREE.Group(); }
   function put(o, x, y, z) { o.position.set(x || 0, y || 0, z || 0); return o; }
 
@@ -650,6 +731,93 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     });
     g.add(put(bx(0.9, 0.5, 0.04, 0x6E7784), 0, 0.5, 0.34));
     g.add(put(bx(0.8, 0.05, 0.06, P.metalDk), 0, 0.72, 0.37));
+    return g;
+  }
+  // wood-fired pizza oven — authored at display scale on the model bench, then scaled
+  // to metres here in one place rather than re-deriving fifty numbers
+  function pizzaOven() {
+    var g = G(), inner = G(), S = 1.8;
+    inner.scale.setScalar(S);
+    g.add(inner);
+
+    var wallMat = brickMat(0xC2673B, 0x8A5636, 7, 6, 2, 1);
+    var domeMat = brickMat(0xCE8352, 0x8A5636, 14, 10, 2.4, 1);
+    var flueMat = brickMat(0xC2673B, 0x8A5636, 9, 3, 2, 1);
+    var stoneMat = M(0xD8C6A2), stoneLtMat = M(0xE3D6BC);
+    var paverMat = M(0xCFCABD), trimMat = M(0x7A4A30), darkMat = M(0x241A14);
+
+    // stepped paving slab
+    inner.add(put(bxM(0.94, 0.028, 0.88, paverMat), 0, 0.014, 0));
+    inner.add(put(bxM(0.85, 0.026, 0.79, stoneLtMat), 0, 0.041, 0));
+    // brick plinth
+    inner.add(put(bxM(0.68, 0.30, 0.62, wallMat), 0, 0.204, 0));
+
+    // arched mouth on the +Z face; crown clears the plinth top at 0.354
+    var archR = 0.13, springY = 0.175, faceZ = 0.31;
+    inner.add(put(bxM(0.212, 0.1, 0.02, darkMat), 0, 0.125, faceZ - 0.02));
+    var mouthArch = new THREE.Mesh(new THREE.CircleGeometry(0.106, 22, 0, Math.PI), darkMat);
+    inner.add(put(mouthArch, 0, springY, faceZ - 0.009));
+    // embers ride the shared day/night glow system, like the lamps and candles
+    var embers = bxM(0.17, 0.012, 0.02, glowM(0xE85A18, 0xB04A10));
+    inner.add(put(embers, 0, 0.088, faceZ - 0.012));
+
+    // voussoirs: wedge bricks stepped around the arch, each turned to point outward
+    var vN = 11;
+    for (var v = 0; v <= vN; v++) {
+      var a = (v / vN) * Math.PI;
+      var vb = bxM(0.044, 0.05, 0.055, v % 2 ? stoneLtMat : M(0xCE8352));
+      put(vb, Math.cos(a) * archR, springY + Math.sin(a) * archR, faceZ + 0.018);
+      vb.rotation.z = a - Math.PI / 2;
+      inner.add(vb);
+    }
+    [-1, 1].forEach(function (sd) {
+      for (var j = 0; j < 2; j++) {
+        inner.add(put(bxM(0.044, 0.05, 0.055, j % 2 ? stoneLtMat : M(0xCE8352)),
+          sd * archR, springY - 0.027 - j * 0.05, faceZ + 0.018));
+      }
+    });
+    inner.add(put(bxM(0.44, 0.03, 0.1, stoneMat), 0, 0.062, faceZ + 0.03));   // hearth lip
+
+    // counter slab + octagonal collar
+    inner.add(put(bxM(0.8, 0.05, 0.74, stoneMat), 0, 0.379, 0));
+    inner.add(put(bxM(0.74, 0.012, 0.68, stoneLtMat), 0, 0.41, 0));
+    inner.add(put(cylM(0.335, 0.365, 0.055, 8, trimMat), 0, 0.443, 0));
+
+    // ribbed brick dome — squashed as a group so the straps stay flush with the shell
+    var domeGrp = G();
+    domeGrp.position.y = 0.468;
+    domeGrp.scale.set(1, 0.86, 1);
+    domeGrp.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.3, 26, 14, 0, Math.PI * 2, 0, Math.PI / 2), domeMat));
+    // a quarter-torus in the XY plane is exactly a meridian arc, so each strap only
+    // needs spinning around Y to land on its seam
+    for (var k = 0; k < 8; k++) {
+      var rib = new THREE.Mesh(new THREE.TorusGeometry(0.302, 0.017, 6, 20, Math.PI / 2), trimMat);
+      rib.rotation.y = k * Math.PI / 4;
+      domeGrp.add(rib);
+    }
+    inner.add(domeGrp);
+
+    // chimney drum, comb of teeth round the rim, capped slab with the flue hole
+    inner.add(put(cylM(0.149, 0.149, 0.028, 20, trimMat), 0, 0.6, 0));
+    inner.add(put(cylM(0.135, 0.135, 0.17, 20, flueMat), 0, 0.665, 0));
+    for (var t2 = 0; t2 < 18; t2++) {
+      var ta = (t2 / 18) * Math.PI * 2;
+      var tooth = bxM(0.026, 0.05, 0.016, trimMat);
+      put(tooth, Math.cos(ta) * 0.134, 0.735, Math.sin(ta) * 0.134);
+      tooth.rotation.y = -ta;
+      inner.add(tooth);
+    }
+    inner.add(put(bxM(0.36, 0.036, 0.36, stoneMat), 0, 0.775, 0));
+    inner.add(put(bxM(0.3, 0.01, 0.3, stoneLtMat), 0, 0.797, 0));
+    inner.add(put(cylM(0.082, 0.082, 0.05, 22, darkMat), 0, 0.772, 0));
+    var holeRim = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.011, 6, 22), trimMat);
+    put(holeRim, 0, 0.802, 0); holeRim.rotation.x = Math.PI / 2; inner.add(holeRim);
+
+    // fire in the mouth, wired into the same lamp system the floor/table lamps use
+    g.userData.lampAt = [0, 0.13 * S, 0.3 * S];
+    g.userData.lampColor = 0xFF7A2A;
+    g.userData.lampRange = 3.4;
     return g;
   }
   function sink() {
@@ -828,6 +996,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     { id: 'tv', th: 'ทีวี + ตู้', ic: '📺', fp: [1, 1], b: tvStand },
     { id: 'counter', th: 'เคาน์เตอร์', ic: '🧱', fp: [1, 1], b: counter, surfaceY: 0.925, surfaceHalf: [0.42, 0.28] },
     { id: 'stove', th: 'เตา', ic: '🔥', fp: [1, 1], b: stove },
+    { id: 'oven', th: 'เตาอบพิซซ่า', ic: '🍕', fp: [2, 2], b: pizzaOven },
     { id: 'sink', th: 'อ่างล้างจาน', ic: '🚰', fp: [1, 1], b: sink },
     { id: 'fridge', th: 'ตู้เย็น', ic: '🧊', fp: [1, 1], b: fridge },
     { id: 'toilet', th: 'สุขภัณฑ์', ic: '🚽', fp: [1, 1], b: toilet },
@@ -901,7 +1070,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   // ===================== world state =====================
   var world = { floors: {}, walls: {}, objects: [], openings: [], wallArt: [], surfaceItems: [], foundation: false };
   var undoStack = [];
-  var APP_VERSION = '0.15.0';
+  var APP_VERSION = '0.18.0';
   function plainState() {
     var f = {}, w = {};
     Object.keys(world.floors).forEach(function (k) { f[k] = { mat: world.floors[k].mat }; });
@@ -911,7 +1080,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       floors: f, walls: w, foundation: world.foundation,
       openings: world.openings.map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; }),
       wallArt: world.wallArt.map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; }),
-      objects: world.objects.map(function (o) { return { id: o.id, d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift, h: o.hostId || null, ox: o.offsetX, oz: o.offsetZ }; }),
+      objects: world.objects.map(function (o) { return { id: o.id, d: o.def, x: o.x, z: o.z, r: o.rotY, s: o.scale, l: o.lift, h: o.hostId || null, ox: o.offsetX, oz: o.offsetZ, tn: o.tint }; }),
       surfaceItems: world.surfaceItems.map(function (s) { return { def: s.def, hostId: s.hostId, offsetX: s.offsetX, offsetZ: s.offsetZ, x: s.x, z: s.z, scale: s.scale }; })
     };
   }
@@ -1295,7 +1464,18 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     var g = def.b();
     g.scale.setScalar(o.scale);
     g.rotation.y = o.rotY;
-    g.traverse(function (m) { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+    // one clone per recoloured slot, shared by every mesh in it — untinted pieces keep
+    // using the global cached materials, so nothing is cloned unless it was actually changed
+    var tinted = {};
+    g.traverse(function (m) {
+      if (!m.isMesh) return;
+      m.castShadow = true; m.receiveShadow = true;
+      if (!o.tint || !m.material) return;
+      var k = slotKeyOf(m.material);
+      if (!k || o.tint[k] === undefined) return;
+      if (!tinted[k]) { tinted[k] = m.material.clone(); tinted[k].color.setHex(o.tint[k]); }
+      m.material = tinted[k];
+    });
     g.userData.objRef = o;
     var host = o.hostId ? findHostById(o.hostId) : null;
     if (host && host.mesh) {
@@ -1307,7 +1487,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     }
     o.mesh = g;
     if (g.userData.lampAt) {
-      var l = new THREE.PointLight(0xFFC178, 0, 6.5);
+      var l = new THREE.PointLight(g.userData.lampColor || 0xFFC178, 0, g.userData.lampRange || 6.5);
       var la = g.userData.lampAt;
       l.position.set(la[0], la[1] * o.scale, la[2]);
       g.add(l);
@@ -1608,7 +1788,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
 
   var lightWarmth = 0.65;    // -1 (cool) .. 1 (warm), user-controlled mood tint
   var lightBright = 1.0;     // 0.5 .. 1.5, overall brightness multiplier
-  var shadowStrength = 0.8;  // 0 (washed out) .. 1 (full contrast)
+  var shadowStrength = 0.9;  // 0 (washed out) .. 1 (full contrast)
 
   // ===================== camera =====================
   var camo = new THREE.OrthographicCamera(-5, 5, 5, -5, -100, 220);
@@ -1942,7 +2122,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     world.openings = (s.openings || []).map(function (op) { return { kind: op.kind, wall: op.wall, offset: op.offset, width: op.width }; });
     world.wallArt = (s.wallArt || []).map(function (a) { return { def: a.def, wall: a.wall, offset: a.offset, height: a.height, side: a.side }; });
     world.foundation = s.foundation;
-    world.objects = s.objects.map(function (o) { return { id: o.id, def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz }; });
+    world.objects = s.objects.map(function (o) { return { id: o.id, def: o.d, x: o.x, z: o.z, rotY: o.r, scale: o.s, lift: o.l, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz, tint: o.tn }; });
     world.surfaceItems = (s.surfaceItems || []).map(function (si) { return { def: si.def, hostId: si.hostId, offsetX: si.offsetX, offsetZ: si.offsetZ, x: si.x, z: si.z, scale: si.scale || 1 }; });
     nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id || 0); }, 0);
     btnFound.setAttribute('aria-pressed', String(world.foundation));
@@ -1967,6 +2147,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       document.getElementById('ispScaleVal').textContent = o.scale.toFixed(2) + '×';
       ispLift.value = String(Math.round(o.lift * 100));
       document.getElementById('ispLiftVal').textContent = o.lift.toFixed(2);
+      tintSlot = 0; renderTint(o);
       document.getElementById('ispDel').textContent = '🗑 ลบชิ้นนี้';
     } else if (selectedType === 'opening') {
       document.getElementById('ispName').textContent = OPENING_KIND_BY[o.kind].ic + ' ' + OPENING_KIND_BY[o.kind].th;
@@ -2162,14 +2343,22 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     var ang = (hour - 6) / 12 * Math.PI;
     var sy = Math.sin(ang), sx = Math.cos(ang);
     sun.position.set(sx * 22, Math.max(0.6, sy * 24), 9 + sy * 4);
-    var day = Math.max(0, sy);
     var dusk = Math.max(0, 1 - Math.abs(hour - 18) / 2.2);
-    sun.intensity = day * 0.95;
-    sun.color.setHSL(0.09 + dusk * 0.02, 0.35 + dusk * 0.35, 0.72 - dusk * 0.1);
+    // key light holds its strength right through golden hour and only drops after sunset.
+    // tying it straight to sun elevation (the old `day * 0.95`) made late afternoon dim,
+    // which left the hemisphere ambient dominating and the whole scene reading flat
+    var solar = Math.max(0, Math.min(1, (sy + 0.12) / 0.45));
     var night = Math.max(0, Math.min(1, (0.16 - sy) / 0.34));
-    hemi.intensity = 0.8 - night * 0.5;
+    // "ความเข้มเงา" trades the key light against the ambient rather than just adding fill.
+    // a shadow map only blocks the directional light, so ambient lands on lit and shadowed
+    // surfaces alike: raising it to soften shadows lifted the lit side by exactly as much,
+    // and the slider read as a second brightness knob. dropping the key by the matching
+    // amount holds the lit side still, so only the shadow side actually moves.
+    sun.intensity = solar * (0.45 + 0.8 * shadowStrength);      // 0.45 (flat) .. 1.25 (hard)
+    hemi.intensity = (0.85 - 0.67 * shadowStrength) * (1 - night * 0.45);   // 0.85 .. 0.18
+    sun.color.setHSL(0.09 + dusk * 0.02, 0.35 + dusk * 0.35, 0.72 - dusk * 0.1);
     hemi.color.set(night > 0.5 ? 0xBACBEC : 0xFFF6E2);
-    moon.intensity = night * 0.34;
+    moon.intensity = 0.1 + night * 0.3;      // a little cool counter-light all day — warm key vs cool rim
 
     // ---- manual mood controls, layered on top of the hour-driven base above ----
     var tint = lightWarmth >= 0 ? new THREE.Color(0xFF8C42) : new THREE.Color(0x8FB0E8);
@@ -2179,21 +2368,160 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
     sun.intensity *= lightBright;
     hemi.intensity *= lightBright;
     moon.intensity *= lightBright;
-    shadowFill.intensity = (1 - shadowStrength) * 0.55;
+    shadowFill.intensity = (1 - shadowStrength) * 0.2 * lightBright;
 
     // cranking warmth up also wakes the lamps/candles a little, even in daylight — the
     // reference look a cozy shop goes for is "lights on inside" regardless of the hour
     var cozyGlow = Math.max(0, lightWarmth) * 0.55;
     var glowLevel = Math.max(night, cozyGlow);
 
-    lawnMat.color.setRGB(1 - night * 0.55, 1 - night * 0.48, 1 - night * 0.35);
+    // ground was pure white in daylight, so cast shadows on it had almost nowhere to fall.
+    // a warm mid-tone gives the shadows somewhere to go and lets the pale house pop off it
+    var lawnLit = 0.5 - night * 0.28;
+    lawnMat.color.setRGB(lawnLit, lawnLit * 0.97, lawnLit * 0.8);
     GLOW.forEach(function (m) {
       if (!m.emissive) m.emissive = new THREE.Color();
       var e = new THREE.Color(m.userData.glow);
       m.emissive.setRGB(e.r * glowLevel, e.g * glowLevel, e.b * glowLevel);
     });
     world.objects.forEach(function (o) { if (o.light) o.light.intensity = glowLevel * 1.5 * lightBright; });
-    renderer.setClearColor(rampColor(hour), 1);
+    // deep surround so the lit house reads as a diorama under a lamp instead of blending
+    // into an equally bright backdrop — fixed, because tying it to the shadow slider was
+    // most of why that slider felt like it was just brightening the whole screen
+    var sky = rampColor(hour);
+    sky.multiplyScalar(0.62);
+    renderer.setClearColor(sky, 1);
+  }
+
+  // ===================== per-object recolouring =====================
+  // slots are discovered from whatever materials a model happens to use, so nothing has
+  // to be declared per model — every existing piece, and anything built later, gets this
+  // for free. the key has to survive a reload, so it is the material's own colour (or,
+  // for the textured brick, the stable tag brickMat stamps on it) rather than a uuid.
+  function slotKeyOf(mat) {
+    if (!mat || mat.userData.glow) return null;          // shared day/night glow drives these
+    if (mat.userData.slotKey) return mat.userData.slotKey;
+    if (mat.map) return null;                            // untagged texture: no stable key
+    return mat.color.getHexString();
+  }
+  function slotBaseOf(mat) {
+    return mat.userData.slotTint !== undefined ? mat.userData.slotTint : mat.color.getHex();
+  }
+  function colorName(hex) {
+    var hsl = {};
+    new THREE.Color(hex).getHSL(hsl);
+    if (hsl.l > 0.93) return 'ขาว';
+    if (hsl.l < 0.12) return 'ดำ';
+    if (hsl.s < 0.12) return hsl.l > 0.6 ? 'เทาอ่อน' : 'เทา';
+    var h = hsl.h * 360;
+    if (h < 16 || h >= 345) return 'แดง';
+    if (h < 40) return hsl.l < 0.5 ? 'น้ำตาล' : 'ส้ม';
+    if (h < 66) return 'เหลือง';
+    if (h < 160) return 'เขียว';
+    if (h < 200) return 'ฟ้า';
+    if (h < 255) return 'น้ำเงิน';
+    if (h < 290) return 'ม่วง';
+    return 'ชมพู';
+  }
+  var SLOTS = {};
+  function slotsOf(defId) {
+    if (SLOTS[defId]) return SLOTS[defId];
+    var def = FURN_BY[defId], list = [], seen = {};
+    if (!def) return [];
+    var probe = def.b(), _sz = new THREE.Vector3();
+    probe.traverse(function (m) {
+      if (!m.isMesh || !m.material) return;
+      var k = slotKeyOf(m.material);
+      if (!k) return;
+      // rank by bulk, not by mesh count: the oven's 18 chimney teeth are one mesh each
+      // and would otherwise outrank its dome. a floor keeps flat shapes from scoring zero
+      m.geometry.computeBoundingBox();
+      m.geometry.boundingBox.getSize(_sz);
+      var vol = Math.max(_sz.x, 0.01) * Math.max(_sz.y, 0.01) * Math.max(_sz.z, 0.01);
+      if (seen[k]) { seen[k].vol += vol; return; }
+      seen[k] = { key: k, base: slotBaseOf(m.material), vol: vol };
+      list.push(seen[k]);
+    });
+    probe.traverse(function (m) { if (m.isMesh && m.geometry) m.geometry.dispose(); });
+    list.sort(function (a, b) { return b.vol - a.vol; });   // the piece's dominant part first
+    SLOTS[defId] = list.slice(0, 6);
+    return SLOTS[defId];
+  }
+  var TINTS = [
+    0xF2ECE0, 0xD9C8A6, 0xC9A24A, 0xD3A552, 0xC1704A, 0xA9563C,
+    0x8A5E33, 0xB07A45, 0xD9A894, 0xB2708B, 0xA8BC9C, 0x5FA046,
+    0x9FB4C7, 0x5C7AB8, 0x7B8FA8, 0x8B6FC4, 0x9AA0AC, 0x4E525C
+  ];
+
+  // rebuilds one piece's mesh in place, plus anything resting on it — swapping a
+  // material means a fresh group, which would otherwise orphan its children
+  function rebuildObjectTree(o) {
+    var kids = world.objects.filter(function (c) { return c.hostId === o.id; });
+    var props = world.surfaceItems.filter(function (sp) { return sp.hostId === o.id; });
+    if (o.mesh && o.mesh.parent) o.mesh.parent.remove(o.mesh);
+    o.light = null;
+    addObjectMesh(o);
+    kids.forEach(rebuildObjectTree);
+    props.forEach(function (sp) { removeSurfaceItemMesh(sp); addSurfaceItemMesh(sp); });
+  }
+
+  var tintSlot = 0;
+  function renderTint(o) {
+    var host = document.getElementById('ispTint');
+    host.innerHTML = '';
+    var slots = slotsOf(o.def);
+    if (!slots.length) return;
+    if (tintSlot >= slots.length) tintSlot = 0;
+
+    var head = document.createElement('div');
+    head.className = 'k'; head.textContent = 'สีของชิ้นส่วน';
+    host.appendChild(head);
+
+    var parts = document.createElement('div'); parts.className = 'tintparts';
+    slots.forEach(function (sl, i) {
+      var cur = (o.tint && o.tint[sl.key] !== undefined) ? o.tint[sl.key] : sl.base;
+      var b = document.createElement('button');
+      b.setAttribute('aria-pressed', String(i === tintSlot));
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = '#' + new THREE.Color(cur).getHexString();
+      b.appendChild(dot);
+      b.appendChild(document.createTextNode(colorName(cur)));
+      b.addEventListener('click', function () { tintSlot = i; renderTint(o); });
+      parts.appendChild(b);
+    });
+    host.appendChild(parts);
+
+    var slot = slots[tintSlot];
+    var cur = (o.tint && o.tint[slot.key] !== undefined) ? o.tint[slot.key] : null;
+    var sw = document.createElement('div'); sw.className = 'tintsw';
+
+    var rb = document.createElement('button');
+    rb.className = 'reset'; rb.textContent = 'เดิม';
+    rb.title = 'กลับไปใช้สีที่ปั้นมาแต่แรก';
+    rb.setAttribute('aria-pressed', String(cur === null));
+    rb.addEventListener('click', function () {
+      if (!o.tint) return;
+      snap();
+      delete o.tint[slot.key];
+      rebuildObjectTree(o); applySky(); updateSelVisual(); renderTint(o); save();
+    });
+    sw.appendChild(rb);
+
+    TINTS.forEach(function (hex) {
+      var b = document.createElement('button');
+      b.style.background = '#' + new THREE.Color(hex).getHexString();
+      b.title = colorName(hex);
+      b.setAttribute('aria-pressed', String(cur === hex));
+      b.addEventListener('click', function () {
+        snap();
+        if (!o.tint) o.tint = {};
+        o.tint[slot.key] = hex;
+        rebuildObjectTree(o); applySky(); updateSelVisual(); renderTint(o); save();
+      });
+      sw.appendChild(b);
+    });
+    host.appendChild(sw);
   }
 
   // ===================== picking helpers =====================
@@ -2799,7 +3127,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
       world.foundation = !!s.foundation;
       var nid = 1;
       world.objects = (s.objects || []).filter(function (o) { return FURN_BY[o.d]; })
-        .map(function (o) { return { id: o.id || nid++, def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz }; });
+        .map(function (o) { return { id: o.id || nid++, def: o.d, x: o.x, z: o.z, rotY: o.r || 0, scale: o.s || 1, lift: o.l || 0, hostId: o.h || null, offsetX: o.ox, offsetZ: o.oz, tint: o.tn || null }; });
       nextObjId = 1 + world.objects.reduce(function (m, o) { return Math.max(m, o.id); }, 0);
       world.surfaceItems = (s.surfaceItems || []).filter(function (si) { return SURFACE_ITEM_BY[si.def] && (si.hostId ? findHostById(si.hostId) : true); })
         .map(function (si) { return { def: si.def, hostId: si.hostId || null, offsetX: si.offsetX || 0, offsetZ: si.offsetZ || 0, x: si.x || 0, z: si.z || 0, scale: si.scale || 1 }; });
@@ -2853,7 +3181,7 @@ footer{border-top:1px solid var(--line);padding:26px 0 48px;color:var(--ink-3);f
   rebuildAll();
   buildSide();
   updateHint();
-  setHour(14);
+  setHour(16.8);
   setMode('build');
   resize();
 

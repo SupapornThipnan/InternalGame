@@ -32,14 +32,28 @@ function setup() {
 // ---- อ่านข้อมูล: GET ?sheet=สินค้า → { ok, data: [...] } ----
 // เพิ่ม &raw=1 → คืนข้อมูลดิบเป็นแถวๆ (สำหรับชีตที่ไม่มีหัวคอลัมน์ เช่น 📝#คำอธิบาย)
 // เพิ่ม &list=1 → คืนรายชื่อชีตทั้งหมด (ใช้เลือกชีต TODOLIST เดือนปัจจุบันจากหน้าเว็บ)
+// เพิ่ม &batch=[{"sheet":"สินค้า"},{"sheet":"📝#คำอธิบาย","raw":1}] → อ่านหลายชีตในคำขอเดียว คืน { ok, results: [ผลแต่ละชีตตามลำดับ] }
+//   (หน้าเว็บใช้ตอนเปิดครั้งแรก — เดิมยิงแยก 7 รอบ แต่ละรอบเสีย overhead ของ Apps Script ~1-2 วิ รวมเป็นรอบเดียวเร็วขึ้นมาก)
 function doGet(e) {
-  if (e.parameter && e.parameter.list === '1') {
+  const p = e.parameter || {};
+  if (p.list === '1') {
     return json({ ok: true, sheets: SS.getSheets().map(function (s) { return s.getName(); }) });
   }
-  const sheet = SS.getSheetByName((e.parameter && e.parameter.sheet) || 'สินค้า');
-  if (!sheet) return json({ ok: false, error: 'SHEET_NOT_FOUND' });
-  if (e.parameter && e.parameter.raw === '1') {
-    return json({ ok: true, rows: sheet.getDataRange().getDisplayValues() });
+  if (p.batch) {
+    var specs;
+    try { specs = JSON.parse(p.batch); } catch (err) { return json({ ok: false, error: 'BATCH_BAD_JSON' }); }
+    if (!Array.isArray(specs)) return json({ ok: false, error: 'BATCH_NOT_ARRAY' });
+    return json({ ok: true, results: specs.map(function (s) { return readSheet(s && s.sheet, s && s.raw); }) });
+  }
+  return json(readSheet(p.sheet || 'สินค้า', p.raw === '1'));
+}
+
+// อ่าน 1 ชีต — raw=true คืน rows (getDisplayValues ตามที่เห็นในชีตเป๊ะๆ), ไม่ raw คืน data (object ต่อแถวตามหัวคอลัมน์)
+function readSheet(name, raw) {
+  const sheet = SS.getSheetByName(name);
+  if (!sheet) return { ok: false, error: 'SHEET_NOT_FOUND', sheet: name };
+  if (raw === true || raw === 1 || raw === '1') {
+    return { ok: true, rows: sheet.getDataRange().getDisplayValues() };
   }
   const rows = sheet.getDataRange().getValues();
   const headers = rows.shift() || [];
@@ -52,7 +66,7 @@ function doGet(e) {
       });
       return o;
     });
-  return json({ ok: true, data: data });
+  return { ok: true, data: data };
 }
 
 // ---- เขียนข้อมูล: POST { sheet, action: 'add'|'update'|'delete', ... } ----
