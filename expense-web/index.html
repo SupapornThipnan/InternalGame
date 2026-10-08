@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>💰 รายรับ-รายจ่าย</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="vendor/papaparse.min.js"></script>
+<script src="vendor/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#0d0d12; --card:#17171f; --card2:#1f1f2a; --line:#2c2c3a;
@@ -383,7 +383,16 @@ async function loadData(opts){
         saveDataCache();
         return;
       }
-    }catch(e){ /* listPages ใช้ไม่ได้ (เดพลอยเวอร์ชันเก่า/เน็ตหลุด) — ลองอ่านชีต default ตรงๆ ต่อ */ }
+    }catch(e){
+      const cached = loadDataCache();
+      if (cached){
+        PAGES = cached.pages || []; CUR_PAGE = cached.curPage ?? null; ROWS = cached.rows;
+        CAN_WRITE = true; CACHE_ONLY = true;
+        SOURCE = 'ใช้ข้อมูลที่บันทึกไว้ล่าสุด (เชื่อมต่อไม่ได้ตอนนี้)';
+        say('โหลดข้อมูลสดไม่สำเร็จ — ใช้ข้อมูลที่บันทึกไว้ล่าสุดครับ กด ↻ เพื่อลองใหม่','warn');
+        return;
+      }
+    }
 
     // 1b) listPages ใช้ไม่ได้ → ลองอ่านชีต default ตรงๆ (backward compat กับเดพลอยเวอร์ชันเก่า)
     try{
