@@ -585,7 +585,7 @@
 
 <script>
 /* ================== CONFIG ================== */
-const VERSION = 'v5.16';
+const VERSION = 'v5.17';
 const SHEET_ID = '1ZBFUpDBsCqTXxh6WkGwjBy1aeRBuIRQ4nc4NVEo-Xx4';
 const SHEET_PRODUCTS = 'สินค้า';
 const SHEET_SALES = 'ยอดขาย';
@@ -781,26 +781,72 @@ async function loadRaw(name, sheetId) {
   return loadCsvRaw(name, sid);
 }
 
-async function loadAll() {
-  $('#status').textContent = 'กำลังโหลด…';
+// แคชแยกตามแหล่งข้อมูล ไม่ปนกันเมื่อเปลี่ยน Apps Script URL
+const dashboardCacheKey = () => `dashboard:v1:${SHEET_ID}:${apiUrl()}`;
+function restoreDashboard() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(dashboardCacheKey()) || 'null');
+    if (!cached || !Array.isArray(cached.products) || !Array.isArray(cached.sales)) return;
+    products = cached.products; sales = cached.sales;
+    renderAll();
+    $('#status').textContent = `ข้อมูลที่เก็บไว้ · ${new Date(cached.updatedAt).toLocaleString('th-TH')} · กำลังอัปเดต…`;
+  } catch (e) { /* แคชเสียหรือพื้นที่เต็ม ยังโหลดจากชีตได้ */ }
+}
+let catalogReady = false, catalogLoading = null;
+async function ensureCatalog() {
+  if (catalogReady) return;
+  if (catalogLoading) return catalogLoading;
+  catalogLoading = (async () => {
+    try {
+      prefetchApi([{ sheet: SHEET_DESC, raw: 1 }, { sheet: SHEET_LINKS, raw: 1 }, { sheet: SHEET_PROGRESS, raw: 1 }]);
+      const [descRows, linkRows] = await Promise.all([loadRaw(SHEET_DESC), loadRaw(SHEET_LINKS), Object.keys(progressPending).length ? Promise.resolve() : loadProgress()]);
+      catalog = buildCatalog(descRows, linkRows);
+      catalogReady = true;
+      renderSearch();
+    } catch (e) { toast('โหลดคำอธิบายและลิงก์ไม่ได้ ลองเปิดแท็บอีกครั้ง'); }
+    finally { catalogLoading = null; renderSearch(); }
+  })();
+  renderSearch();
+  return catalogLoading;
+}
+async function loadAll(sheets = [SHEET_PRODUCTS, SHEET_SALES]) {
+  $('#status').textContent = products.length || sales.length ? 'กำลังอัปเดตข้อมูล…' : 'กำลังโหลด…';
   try {
     const loader = apiUrl() ? loadApi : loadCsv;
-    let descRows, linkRows;
-    [products, sales, descRows, linkRows] = await Promise.all([
-      loader(SHEET_PRODUCTS).catch(() => []),
-      loader(SHEET_SALES).catch(() => []),
-      loadRaw(SHEET_DESC).catch(() => []),
-      loadRaw(SHEET_LINKS).catch(() => []),
-      loadProgress(), // โหลด ⚡️Progress ไว้ล่วงหน้าด้วย ใช้โชว์ในแท็บค้นหา (มี try/catch ในตัวอยู่แล้ว)
-    ]);
-    products = products.filter(p => p.SKU);
-    sales = sales.filter(s => s.SKU);
-    catalog = buildCatalog(descRows, linkRows);
-    $('#status').textContent = `${VERSION} · ✅ อัปเดต ${new Date().toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'})} น.`;
+    const fresh = await Promise.all(sheets.map(async sheet => ({ sheet, rows: await loader(sheet) })));
+    fresh.forEach(({ sheet, rows }) => {
+      if (sheet === SHEET_PRODUCTS) products = rows.filter(p => p.SKU);
+      if (sheet === SHEET_SALES) sales = rows.filter(s => s.SKU);
+    });
+    const updatedAt = Date.now();
+    try { localStorage.setItem(dashboardCacheKey(), JSON.stringify({ products, sales, updatedAt })); } catch (e) {}
+    $('#status').textContent = `${VERSION} · ✅ อัปเดต ${new Date(updatedAt).toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'})} น.`;
   } catch (e) {
-    $('#status').textContent = `${VERSION} · ⚠️ โหลดข้อมูลไม่ได้ — เช็คการแชร์ Sheet (Anyone with link – Viewer)`;
+    $('#status').textContent = `${VERSION} · ⚠️ อัปเดตไม่ได้ ข้อมูลที่แสดงอาจยังไม่ล่าสุด`;
   }
   renderAll();
+}
+
+// รวมการบันทึกติดกันเป็นการรีเฟรชครั้งเดียว เฉพาะข้อมูล Dashboard ที่เปลี่ยน
+const dashboardRefreshSheets = new Set();
+let dashboardRefreshTimer;
+function refreshAfterSave(payload) {
+  if (payload.sheet === SHEET_PRODUCTS || payload.sheet === SHEET_SALES) {
+    dashboardRefreshSheets.add(payload.sheet);
+    clearTimeout(dashboardRefreshTimer);
+    dashboardRefreshTimer = setTimeout(() => {
+      const sheets = [...dashboardRefreshSheets];
+      dashboardRefreshSheets.clear();
+      loadAll(sheets);
+    }, 200);
+  }
+  // เพิ่มครบวงจรเปลี่ยนคำอธิบาย/ลิงก์/Progress; TikTok เปลี่ยน Progress ด้วย
+  const catalogChanged = payload.action === 'addNewProductFull';
+  const progressChanged = ['markPosted', 'unmarkPosted'].includes(payload.action) && payload.platform === 'tiktok';
+  if (catalogChanged || progressChanged) {
+    catalogReady = false;
+    if ($('#tab-search').style.display !== 'none' || $('#tab-queue').style.display !== 'none') ensureCatalog();
+  }
 }
 
 /* ================== WRITE ================== */
@@ -816,8 +862,8 @@ async function saveToSheet(payload) {
     if (!j.ok) { console.error('saveToSheet failed:', j.error, payload); toast(`บันทึกไม่สำเร็จ: ${j.error || 'ไม่ทราบสาเหตุ'}`); return false; }
     // บันทึกของหลักสำเร็จแล้ว แต่ขั้นตอน sync ต่อเนื่องบางตัวพัง — บอกให้รู้ว่าตัวไหน จะได้ตามแก้ถูกจุด
     if (j.warning) console.warn('saveToSheet warning:', j.warning, payload);
-    toast(j.warning ? `⚠️ ${j.warning}` : 'บันทึกแล้ว ✓ กำลังรีเฟรชข้อมูล…');
-    setTimeout(loadAll, 1500);
+    toast(j.warning ? `⚠️ ${j.warning}` : 'บันทึกแล้ว ✓');
+    refreshAfterSave(payload);
     return true;
   } catch (e) {
     console.error('saveToSheet exception:', e, payload);
@@ -993,6 +1039,7 @@ function catalogCard(it) {
 }
 
 function renderSearch() {
+  if ($('#tab-search').style.display === 'none') return;
   const q = $('#sq').value.trim().toLowerCase();
   const f = $('#sFilter').value;
   const qNum = q.replace(/\D/g, '');
@@ -1008,8 +1055,10 @@ function renderSearch() {
     (f !== 'desc' || it.descs.length) && (f !== 'link' || it.links.length));
   fillOptions('#sCat', [...new Set(catalog.map(x => x.cat).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th')), 'ทุกประเภท');
   const shown = rows.slice(0, 50);
-  $('#searchInfo').textContent = catalog.length === 0
-    ? 'ยังโหลดข้อมูลไม่ได้ครับ — ถ้าเชื่อม Apps Script แล้ว ให้อัปเดตโค้ด apps-script.gs เวอร์ชั่นล่าสุด แล้วกด Deploy → Manage deployments → Edit → New version'
+  $('#searchInfo').textContent = catalogLoading
+    ? 'กำลังโหลดคำอธิบาย ลิงก์ และความคืบหน้า…'
+    : catalog.length === 0
+    ? (catalogReady ? 'ยังไม่มีข้อมูลสินค้าในชีตคำอธิบายและลิงก์' : 'ยังโหลดข้อมูลไม่ได้ ลองเปิดแท็บค้นหาอีกครั้ง')
     : `พบ ${rows.length} รายการ${rows.length > 50 ? ' (แสดง 50 รายการแรก — พิมพ์ค้นหาให้แคบลง)' : ''}`;
   $('#searchResults').innerHTML = shown.map(it => `<div class="item">${catalogCard(it)}</div>`).join('');
 }
@@ -1158,6 +1207,10 @@ $('#formSale').addEventListener('submit', (e) => {
 function switchTab(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   ['dash', 'search', 'products', 'queue', 'progress', 'listitme', 'progday', 'commission', 'reminders', 'settings'].forEach(t => $('#tab-' + t).style.display = t === name ? '' : 'none');
+  if (name === 'dash') renderDash();
+  if (name === 'products') renderProducts();
+  if (name === 'search') renderSearch();
+  if (name === 'search' || name === 'queue') ensureCatalog();
   if (name === 'queue') loadQueue();
   if (name === 'progress') loadProgress();
   if (name === 'listitme') loadListItme();
@@ -1196,6 +1249,10 @@ $('#apiUrl').value = apiUrl();
 $('#sheetLink').href = $('#bannerSheetLink').href = SHEET_URL;
 $('#btnSaveUrl').onclick = () => {
   localStorage.setItem('appsScriptUrl', $('#apiUrl').value.trim());
+  prefetched.clear();
+  catalogReady = false;
+  catalog = []; products = []; sales = [];
+  renderAll(); restoreDashboard();
   toast('บันทึก URL แล้ว ✓'); renderBanner(); loadAll();
 };
 $('#btnTestUrl').onclick = async () => {
@@ -1336,7 +1393,7 @@ async function loadQueue() {
   try { queueGroupOpen = JSON.parse(localStorage.getItem(queueGroupOpenKey()) || '{}'); } catch (e) { queueGroupOpen = {}; }
   $('#queueInfo').textContent = 'กำลังโหลด…';
   try {
-    const rows = await loadRaw(name);
+    const [rows] = await Promise.all([loadRaw(name), ensureCatalog()]);
     renderQueue(rows);
   } catch (e) {
     $('#queueInfo').textContent = '⚠️ โหลดคิวคลิปไม่ได้ — เช็คชื่อชีตหรือการแชร์ Sheet';
@@ -1519,7 +1576,9 @@ $('#queueList').addEventListener('click', async (e) => {
   }
   const copyBtn = e.target.closest('[data-copy]');
   if (copyBtn) {
-    copyText(copyBtn.dataset.copy, copyBtn);
+    await ensureCatalog();
+    const currentItem = catalog.find(c => c.id === copyBtn.dataset.showInfo);
+    copyText(currentItem ? currentItem.descs.join('\n\n') : copyBtn.dataset.copy, copyBtn);
     // ไอคอน 📋 ข้างชื่อไอเทม (มี data-show-info ด้วย) — เปิด pop-up โชว์การ์ดข้อมูลเต็มแบบหน้า 🔍 ค้นหา ไปพร้อมกับก๊อป
     if (copyBtn.dataset.showInfo) {
       const it = catalog.find(c => c.id === copyBtn.dataset.showInfo);
@@ -1664,6 +1723,8 @@ async function loadProgress() {
 }
 
 function renderProgressTable() {
+  // dropdown หลายหมื่นตัวไม่จำเป็นตอนโหลด Progress เพื่อประกอบการค้นหา/คิวคลิป
+  if ($('#tab-progress').style.display === 'none') return;
   const q = $('#pq').value.trim().toLowerCase();
   const rows = progressItems.filter(it => !q || it.id.toLowerCase().includes(q) || (it.name || '').toLowerCase().includes(q));
   $('#progressInfo').textContent = progressItems.length === 0 ? 'ยังโหลดข้อมูลไม่ได้ครับ' : `พบ ${rows.length} รายการ`;
@@ -2160,7 +2221,8 @@ async function autoDiscoverTiktokMonths() {
     if (found.length) await refreshTiktokMonthOptions($('#tiktokMonthSelect').value || found[found.length - 1].name);
   } catch (e) { /* เช็คไม่สำเร็จ ไม่ต้องรบกวนพี่ */ }
 }
-autoDiscoverTiktokMonths();
+// ไม่ดึงรายงานย้อนหลังตอนเปิดเว็บ โหลดเมื่อผู้ใช้เปิดส่วนเลือกเดือน
+$('#btnTiktokAddMonth').addEventListener('click', () => autoDiscoverTiktokMonths());
 
 /* ================== PROGRESS-DAY: นับงานรายวัน กด +1/-1 ================== */
 // คอลัมน์ตามชีต "Progress-Day ": A=วันที่ (Date object โชว์เป็น "1 July 2026"), B-G=6 สเตจตามลำดับ
@@ -2675,13 +2737,19 @@ function toast(msg) {
   const hold = String(msg).length > 80 ? 20000 : 3000;
   clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', hold);
 }
-function renderAll() { renderDash(); renderSearch(); renderProducts(); renderBanner(); }
+function renderAll() {
+  if ($('#tab-dash').style.display !== 'none') renderDash();
+  if ($('#tab-products').style.display !== 'none') renderProducts();
+  renderSearch();
+  renderBanner();
+}
 
-// ยิงคำขอเดียวขอทุกชีตที่ต้องใช้ตอนเปิดเว็บ — ต้องเรียกก่อน loadAll/loadReminders/loadDbPages ด้านล่าง ไม่งั้นพวกนั้นจะยิงแยกกันเอง
+// ยิงคำขอเดียวเฉพาะชีตหลักที่ต้องใช้ตอนเปิดเว็บ — ต้องเรียกก่อน loadAll/loadReminders/loadDbPages ด้านล่าง ไม่งั้นพวกนั้นจะยิงแยกกันเอง
 prefetchApi([
   { sheet: SHEET_PRODUCTS }, { sheet: SHEET_SALES }, { sheet: SHEET_REMINDERS },
-  { sheet: SHEET_DESC, raw: 1 }, { sheet: SHEET_LINKS, raw: 1 }, { sheet: SHEET_PROGRESS, raw: 1 }, { sheet: SHEET_DB_PAGES, raw: 1 },
+  { sheet: SHEET_DB_PAGES, raw: 1 },
 ]);
+restoreDashboard();
 loadAll();
 loadReminders(); // เช็คแจ้งเตือนตั้งแต่เปิดเว็บครั้งแรก โชว์แบนเนอร์ได้ทุกแท็บไม่ต้องรอกดเข้าแท็บ 🔔 ก่อน
 // อ่านการจับคู่เดือน↔ชื่อชีตจาก Database-Pages ตั้งแต่เปิดเว็บ — ระหว่างรอ (หรือถ้าโหลดไม่ได้) ใช้ค่าที่ cache ไว้ล่าสุดทำงานต่อได้
