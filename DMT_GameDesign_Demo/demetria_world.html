@@ -316,7 +316,7 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#070c1
 
 <div id="hud">
   <div class="logo">🌸 Demetria</div>
-  <button class="pill cl-btn" onclick="openChangelog()" title="ดูรายละเอียดการอัปเดต">📜 <b>Changelog</b> <span class="cl-ver">v1.17.1</span></button>
+  <button class="pill cl-btn" onclick="openChangelog()" title="ดูรายละเอียดการอัปเดต">📜 <b>Changelog</b> <span class="cl-ver">v1.17.3</span></button>
   <div class="pill">วันที่ <b id="hDay">1</b> <span id="hPhase" style="color:var(--dim);font-size:11px">เช้า</span></div>
   <div class="pill">💰 <b id="hMoney">0</b></div>
   <button class="pill" id="saveBtn" onclick="quickSave()" title="บันทึกเกมทันที">💾</button>
@@ -452,7 +452,11 @@ body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#070c1
     <button class="x-btn" onclick="closePanels()">✕</button>
   </div>
   <div class="side-body">
-    <div class="sect" style="margin-top:0">📦 ปั้มไอเทมเข้าคลัง</div>
+    <div class="sect" style="margin-top:0">🗺️ แสดงผลบนแมพ</div>
+    <label style="display:flex;align-items:center;gap:6px;margin-bottom:8px;cursor:pointer">
+      <input type="checkbox" id="devShowStageNames" onchange="G.devShowStageNames=this.checked;render()"> โชว์ชื่อด่านทั้งหมด
+    </label>
+    <div class="sect">📦 ปั้มไอเทมเข้าคลัง</div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <input type="text" id="devItemInput" list="devItemList" class="dev-input" placeholder="พิมพ์ชื่อไอเทม..." style="flex:1">
       <input type="number" id="devItemQty" class="dev-input" value="10" min="1" style="width:54px;text-align:center">
@@ -763,7 +767,7 @@ const G={
   warehouse:{}, warehouseTier:0, whQty:{}, sellQty:{},
   showMainQuestHud:true, showAllDeliveryOnHud:true,
   deliveryOn:false, deliveryPaidUntil:0, deliveryWarned:false,
-  zoom:1, nextId:null,
+  zoom:1, nextId:null, devShowStageNames:false,
   // journal (GAME_DESIGN 5.9 phase 1) — journalNotify persists (map stage id → opted
   // in?), journalZone is just which tab is open right now, never saved like openPanel
   journalNotify:{}, journalZone:'center',
@@ -1206,9 +1210,9 @@ function drawBuilding(s,sx,sy,night){
     ctx.globalAlpha=1;
   }
 
-  // name plate when player is close (or it's the guidance target — always show it)
+  // Dev preview includes locked stages; normal labels still follow proximity/guidance.
   const d=Math.hypot(G.player.x-s.gx, G.player.y-s.gy);
-  if(d<4.2||s.id===G.nextId){
+  if(G.devShowStageNames||d<4.2||s.id===G.nextId){
     ctx.font='600 10px system-ui,sans-serif';
     const tw=ctx.measureText(s.name).width+10;
     ctx.fillStyle='rgba(10,16,24,.82)';
@@ -3151,6 +3155,14 @@ function renderModal(){
 //  CHANGELOG MODAL
 // ═══════════════════════════════════════════════════════════
 const CHANGELOG=[
+  {v:'1.17.3',title:'Dev Tool ติ๊กโชว์ชื่อด่านทั้งหมดบนแมพ',bullets:[
+    'เพิ่ม checkbox โชว์ชื่อด่านทั้งหมดใน Dev Panel เห็นชื่อทั้งด่านที่ปลดล็อคแล้วและยังล็อคอยู่ทันที',
+    'ค่าเริ่มต้นปิด เป็นตัวช่วยทดสอบชั่วคราวไม่บันทึกลงเซฟ ปิดแล้วกลับไปแสดงชื่อตามระยะใกล้และเป้าหมายเดิม',
+  ]},
+  {v:'1.17.2',title:'ปรับการซูมแทร็กแพดบน Mac ให้ควบคุมง่ายขึ้น',bullets:[
+    'ซูมตามระยะเลื่อนจริงแทนการเปลี่ยน 10% ทุก event ลดอาการซูมไหลจากแทร็กแพดและรองรับการบีบนิ้วซูม',
+    'แปลงหน่วย wheel แบบ pixel/line/page และจำกัดระยะซูมต่อ event พร้อมคงขอบเขต 50–240% เดิม',
+  ]},
   {v:'1.17.1',title:'ไอคอนทิศบนการ์ดเควสเปลี่ยนจาก emoji เป็นตัวอักษร N/S/E/W',bullets:[
     'พี่แยมขอเปลี่ยนไอคอนทิศบนการ์ดเควส (v1.17.0) จาก emoji โซน (🏰❄️🌾🌋⛏️) เป็นตัวอักษรทิศแบบเข็มทิศ N/S/E/W แทน อ่านเร็วกว่าและชัดเจนกว่าไม่ต้องตีความ emoji',
     'เพิ่มตาราง `ZONE_LETTER` คู่กับ `ZONE_META` เดิม (`{center:\'C\',north:\'N\',east:\'E\',south:\'S\',west:\'W\'}`) — center ไม่ใช่ทิศเข็มทิศจริงๆ เลยเลือกตัว "C" (capital) เป็นตัวที่ใกล้เคียงที่สุด ถ้าพี่แยมอยากได้ตัวอื่นสำหรับเมืองหลวงบอกได้เลย ปรับจุดเดียวจบ',
@@ -3598,11 +3610,18 @@ function doUnlock(){
   renderModal(); if(G.openPanel)renderPanels();
 }
 
-// mouse-wheel zoom, centered on screen (camera re-centers on player every frame anyway)
+// Scale by distance rather than event count: Mac trackpads send many tiny events.
+function zoomForWheel(zoom,e){
+  const pixels=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1);
+  if(!Number.isFinite(pixels)||pixels===0) return zoom;
+  // Browsers expose trackpad pinch as Ctrl+wheel; keep that gesture responsive.
+  const limit=e.ctrlKey?30:100;
+  const delta=Math.max(-limit,Math.min(limit,pixels));
+  return Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom*Math.exp(-delta*(e.ctrlKey?0.004:0.001))));
+}
 cv.addEventListener('wheel',e=>{
   e.preventDefault();
-  const factor=e.deltaY<0?1.1:1/1.1;
-  G.zoom=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,G.zoom*factor));
+  G.zoom=zoomForWheel(G.zoom,e);
 },{passive:false});
 
 // click a building or warp point on the canvas to walk-check + open it

@@ -1809,7 +1809,7 @@ $('#btnSaveProgress').onclick = async () => {
 /* ================== LISTITME: โควตาถ่ายคิว B+Bต / C+Cต (real-time) ================== */
 // Tier A และ B2 พี่แยมกำหนดจำนวนเอง (คงที่ 7 ชิ้น) — ไม่คำนวณอัตโนมัติที่นี่
 const LISTITME_QUOTA = 14;
-const LISTITME_FOOTAGE_THRESHOLD = 4; // Footage >= 4 = success (ไม่นับในโควตา) / Footage < 4 = waiting (นับในโควตา)
+const LISTITME_FOOTAGE_THRESHOLD = 2; // Footage >= 2 = success (ไม่นับในโควตา) / Footage < 2 = waiting (นับในโควตา)
 
 async function loadListItme() {
   $('#listitmeInfo').textContent = 'กำลังโหลด…';
@@ -1967,10 +1967,13 @@ function renderListItme(rows) {
   }).filter(Boolean);
   listitmeItems = items;
 
-  // มุมเล็กๆ บอกจำนวนคลิปค้างตัด: Footage เกิน EP = ถ่ายแล้วยังไม่ตัด Draft, Draft เกิน EP = ตัด Draft แล้วยังไม่ Final/โพสต์
-  const draftBacklog = items.reduce((a, it) => a + Math.max(0, (it.footage === '' ? 0 : it.footage) - it.ep), 0);
-  const finalBacklog = items.reduce((a, it) => a + Math.max(0, (it.draft === '' ? 0 : it.draft) - it.ep), 0);
-  $('#listBacklogInfo').textContent = items.length ? `🎬 เหลือตัด Draft ${draftBacklog} คลิป · เหลือตัด Final ${finalBacklog} คลิป` : '';
+  // 1 Footage ตัดได้ 2 คลิป; ยอดงานค้างยกเว้น Tier A/B2 และไม่เกี่ยวกับโควตาด้านบน
+  const backlogItems = items.filter(it => !it.manual);
+  const draftBacklog = backlogItems.reduce((a, it) => a + Math.max(0, (it.footage === '' ? 0 : it.footage) * 2 - (it.draft === '' ? 0 : it.draft)), 0);
+  const finalBacklog = backlogItems.reduce((a, it) => a + Math.max(0, (it.draft === '' ? 0 : it.draft) - it.ep), 0);
+  $('#listBacklogInfo').innerHTML = items.length
+    ? `<div>🎬 เหลือตัด Draft ${draftBacklog} คลิป · เหลือตัด Final ${finalBacklog} คลิป</div><div style="margin-top:4px">ไม่นับ Tier A และ B2 · 1 Footage = 2 คลิป</div>`
+    : '';
 
   $('#listitmeInfo').textContent = items.length ? '' : 'ยังไม่มีข้อมูลในชีต ListITME ครับ';
   $('#listitmeStats').style.display = items.length ? '' : 'none';
